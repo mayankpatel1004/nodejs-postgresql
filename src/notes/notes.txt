@@ -1,0 +1,6 @@
+http://localhost:3900/databases
+http://localhost:3900/databases?tableName=item_section&pk=item_section_id
+http://localhost:3900/databases?tableName=item_section&pk=item_section_id&pk_id=34
+
+clear && node src/migrations/migrations.js
+clear && node src/migrations/seeders.js
