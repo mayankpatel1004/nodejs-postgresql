@@ -1,0 +1,7 @@
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=Demonstration
+DB_PWD=online@112018
+DB_PORT=5432
+APP_PORT=3900
+ENV=DEV
