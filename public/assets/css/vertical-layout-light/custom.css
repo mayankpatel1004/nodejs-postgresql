@@ -2,6 +2,21 @@
     height: 30px;
 }
 
+.card-main{
+  width: 96%;
+}
+
+.content-wrapper {
+    background: #edeef2;
+    padding: 2.25rem 2.25rem;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.stretch-card1{
+  margin: 2%;
+}
+
 .searchbar .form-control-sm{
   margin-bottom: 10px;
 }

@@ -5,14 +5,14 @@
   <div class="main-panel">
     <div class="content-wrapper">
       <div class="row">
-        <div class="col-12 col-sm-12 col-md-12 col-xl-12 grid-margin stretch-card mt-2">
-          <div class="card">
+        <div class="col-12 stretch-card1">
+          <div class="card card-main">
             <div class="card-body">
               <div class="d-flex1 flex-wrap justify-content-between">
                 <div>
                   <h4 class="card-title mb-3 text-primary pt-3 pl-2">Databases overview : <small class="text-danger font-weight-bold">Total number of database tables : {{total_database_tables}}</small></h4>
                 </div>
-                
+                    
                 <div class="row mb-2">
                   <div class="col-3">
                     <select class="form-control"  id="table_name">
@@ -50,38 +50,41 @@
                 <div class="row">
                   {{#if selectedTableRowstructure}}
                   <div class="col-12">
+                    
+
                     <div class="table-responsive">
-                      <table class="table table-bordered table-striped">
-                        <thead>
-                          <tr class="bg bg-primary">
-                            {{#each selectedTableRowstructure}}
-                            <th class="text-white">{{column_name}}</th>
-                            {{/each}}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {{#if selected_table_rows}}
-                          {{#each selected_table_rows}}
-                          <tr>
-                            {{#each this}}
-                            <td>
-                              {{#if this}}
-                              {{this}}
-                              {{else}}
-                              <span class="text-muted">NULL</span>
-                              {{/if}}
-                            </td>
-                            {{/each}}
-                          </tr>
-                          {{/each}}
-                          {{else}}
-                          <tr>
-                            <td colspan="{{total_columns}}" class="text-left text-muted">No data found</td>
-                          </tr>
-                          {{/if}}
-                        </tbody>
-                      </table>
-                    </div>
+                            <table class="table table-bordered table-striped">
+                              <thead>
+                                <tr class="bg bg-primary">
+                                  {{#each selectedTableRowstructure}}
+                                  <th class="text-white">{{column_name}}</th>
+                                  {{/each}}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {{#if selected_table_rows}}
+                                {{#each selected_table_rows}}
+                                <tr>
+                                  {{#each this}}
+                                  <td>
+                                    {{#if this}}
+                                    {{this}}
+                                    {{else}}
+                                    <span class="text-muted">NULL</span>
+                                    {{/if}}
+                                  </td>
+                                  {{/each}}
+                                </tr>
+                                {{/each}}
+                                {{else}}
+                                <tr>
+                                  <td colspan="{{total_columns}}" class="text-left text-muted">No data found</td>
+                                </tr>
+                                {{/if}}
+                              </tbody>
+                            </table>
+                          </div>
+
                   </div>
                   {{/if}}
                 </div>
