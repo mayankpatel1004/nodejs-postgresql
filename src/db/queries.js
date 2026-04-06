@@ -21,8 +21,13 @@ const queries = {
             ORDER BY t.table_schema, t.table_name`;
             return sqlQuery;
     },
-    getTableData: (table_name,filter_string) => {
-        let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string}`;
+    getTableStructure(table_name) {
+        let sqlQuery = `SELECT column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_name = '${table_name}' ORDER BY ordinal_position`;
+        return sqlQuery;
+    },
+    getTableData: (table_name,filter_string,primary_key,sort_by) => {
+        let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string} ORDER BY ${primary_key ? primary_key : '1'} ${sort_by ? sort_by : 'ASC'}`; 
+        console.log("Generated SQL Query for fetching table data:", sqlQuery);
         return sqlQuery;
     }
 };

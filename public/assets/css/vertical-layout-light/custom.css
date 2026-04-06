@@ -1,3 +1,7 @@
+.navbar .navbar-brand-wrapper .navbar-brand img{
+    height: 30px;
+}
+
 .searchbar .form-control-sm{
   margin-bottom: 10px;
 }

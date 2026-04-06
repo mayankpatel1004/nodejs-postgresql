@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="./../public/assets/vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="./../public/assets/vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="./../public/assets/vendors/flag-icon-css/css/flag-icon.min.css">
-    {{!-- <link href='https://fonts.googleapis.com/css?family=Sansita' rel='stylesheet'> --}}
     <!-- endinject -->
     <!-- plugin css for this page -->
     <!-- End plugin css for this page -->
@@ -19,30 +18,4 @@
 
     <!-- endinject -->
     <link rel="shortcut icon" href="./../public/assets/images/favicon.png" />
-    <script type="text/javascript">
-      function formatDecimal(number, decimalPlaces = 2) {
-        const num = Number(number); 
-        if (isNaN(num)) {
-          return 0;
-        }
-        const rounded = num.toFixed(decimalPlaces);
-        return parseFloat(rounded).toString();
-      }
-      document.addEventListener('keydown', function(event) {
-        
-        /*if (event.altKey) keys.push('alt');
-        if (event.ctrlKey) keys.push('ctrl');
-        if (event.shiftKey) keys.push('shift');*/
-
-        if (event.altKey && event.key.toLowerCase() === 's') {
-          event.preventDefault();
-          updateFooterPart();
-          document.getElementById('submit-button').click();
-        }
-        if (event.altKey && event.key.toLowerCase() === 'c') {
-          event.preventDefault();
-          $(".swal-button--confirm").click();
-        }
-      });
-    </script>
 </head>

@@ -9,6 +9,7 @@ const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const queries = require('../db/queries');
 const fs = require('node:fs');
+const { defaultSEO } = require('../helpers/seo');
 
 router.get('/', async (req, res) => {
     const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
       if(decoded && decoded.web_or_app == 'Web'){
         res.render("index",{
             data : decoded,
+            ...defaultSEO,
             partialsDir: [
                 path.join(__dirname, 'views/partials')
             ]
@@ -31,6 +33,7 @@ router.get('/', async (req, res) => {
       }
     }
 });
+
 
 router.get('/login', (req, res) => {
     res.render("login",{
@@ -151,25 +154,54 @@ function logToFile(message, flag, url = '') {
 
 router.get('/databases', async (req, res) => {
   try {
+    let table_name = '';
+    let primary_key_column = '';
+    let selected_sort_by = '';
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
     let selectedTableRows = [];
+    let selectedTableStructure = [];
+    let total_columns = 0;
     const database_tables_result = await query(queries.getAllTables());
     
     if(req.query && req.query.tableName){
-      let table_name = req.query.tableName;
-      let primary_key_column = req.query.pk;
+      table_name = req.query.tableName;
+      primary_key_column = req.query.pk;
+      selected_sort_by = req.query.sort_by;
       let primary_key_value = req.query.pk_id;
       let filter_string = ` AND deleted_status = 'N'`;
       if(primary_key_column && primary_key_value){
         filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
       }
-      const resultColumns = await query(queries.getTableData(table_name, filter_string));
+      const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
       selectedTableRows = resultColumns.rows;
+      
+      const resultStructure = await query(queries.getTableStructure(table_name));
+      selectedTableStructure = resultStructure.rows;
+      total_columns = selectedTableStructure.length;
     }
-    res.send({
-      total_database_tables: database_tables_result.rows.length,
-      database_tables:database_tables_result.rows,
-      selected_table_rows: selectedTableRows
+    if(decoded && decoded.web_or_app == 'Web'){
+      res.render("databases",{
+        selected_table_name: table_name,
+        selected_primary_key : primary_key_column,
+        selected_sort_by : selected_sort_by,
+        total_database_tables: database_tables_result.rows.length,
+        database_tables:database_tables_result.rows,
+        selected_table_rows: selectedTableRows,
+        selectedTableRowstructure: selectedTableStructure,
+        total_columns: total_columns,
+        partialsDir: [
+            path.join(__dirname, 'views/partials')
+        ]
     });
+    } else {
+      res.send({
+        selected_table_name: table_name,
+        total_database_tables: database_tables_result.rows.length,
+        database_tables:database_tables_result.rows,
+        selected_table_rows: selectedTableRows
+      });  
+    }
+    
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
