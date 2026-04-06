@@ -1,0 +1,49 @@
+
+<footer class="footer" onclick="fnCloseBottomProductDetails();">
+  <div class="row d-none fixed-bottom" id="product_batch_information">
+    <div class="col-12">
+      <table class="table mx-auto table-secondary w-75">
+        <tr>
+          <td class="text-center small font-weight-bold">HSN</td>
+          <td class="text-center small font-weight-bold">MRP</td>
+          <td class="text-center small font-weight-bold">Purchase Rate</td>
+          <td class="text-center small font-weight-bold">Sale Rate</td>
+          <td class="text-center small font-weight-bold">Pack</td>
+          <td class="text-center small font-weight-bold">P.Tax(%)</td>
+          <td class="text-center small font-weight-bold">S.Tax(%)</td>
+          <td class="text-center small font-weight-bold">Cess(%)</td>
+          <td class="text-center small font-weight-bold">Add Cess(%)</td>
+          <td class="text-center small font-weight-bold">Ins. Tax(%)</td>
+          <td class="text-center small font-weight-bold">GST%</td>
+        </tr>
+        <tr>
+          <td class="text-center"><span id="pb_hsn">0</span></td>
+          <td class="text-center"><span id="pb_mrp">0</span></td>
+          <td class="text-center"><span id="pb_purrate">0</span></td>
+          <td class="text-center"><span id="pb_salerate">0</span></td>
+          <td class="text-center"><span id="pb_pack">0</span></td>
+          <td class="text-center"><span id="pb_pur_tax">0</span></td>
+          <td class="text-center"><span id="pb_sal_tax">0</span></td>
+          <td class="text-center"><span id="pb_cess">0</span></td>
+          <td class="text-center"><span id="pb_cess_addl">0</span></td>
+          <td class="text-center"><span id="pb_ins_tax">0</span></td>
+          <td class="text-center"><span id="pb_gst">0</span></td>
+        </tr>
+        <tr class="d-none">
+          <td colspan="5"><div class="pull-right btn-sm float-right"><a href="javascript:void(0)" onclick="fnCloseBottomProductDetails();"><i class="mdi mdi-close-box text-secondary"></i></a></div></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {{!-- <div class="card">
+    <div class="card-body">
+      <div class="d-sm-flex justify-content-center justify-content-sm-between">
+        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2024 <a
+            href="https://www.cloudswiftsolutions.com/" target="_blank">Cloudswift</a>. All rights reserved.</span>
+      </div>
+    </div>
+  </div> --}}
+</footer>
+</div>
+</div>
+{{>footerscript}}

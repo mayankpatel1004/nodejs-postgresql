@@ -1,0 +1,2515 @@
+<script src="./../public/assets/vendors/js/vendor.bundle.base.js"></script>
+<script src="./../public/assets/js/off-canvas.js"></script>
+<script src="./../public/assets/js/hoverable-collapse.js"></script>
+<script src="./../public/assets/js/template.js"></script>
+<script src="./../public/assets/js/settings.js"></script>
+<script src="./../public/assets/js/todolist.js"></script>
+<script src="./../public/assets/vendors/sweetalert/sweetalert.min.js"></script>
+<script src="./../public/assets/vendors/select2/select2.min.js"></script>
+<script src="./../public/assets/js/dashboard.js"></script>
+<script type="text/javascript">
+
+  function getDebtorsOutstanding(debtor_id) {
+    $(".wrapper_outstanding").addClass('d-none');
+    if (debtor_id > 0) {
+      let data = { debtor_id: debtor_id }
+      $.ajax({
+        method: "POST",
+        url: "/dataentry/get_debtors_outstanding",
+        data: data
+      })
+        .done(function (response) {
+          $(".wrapper_outstanding").removeClass('d-none');
+          if (parseFloat(response.sales_amt) > 0) {
+            $("#outstanding_sales_amount").html(response.sales_amt);
+            $("#outstanding_amount").html(response.outstanding_amount);
+            let html = '';
+            if (response.arrOutstandingDetails) {
+              let outstanding = response.arrOutstandingDetails;
+              outstanding.map((item, index) => {
+                let outstanding = parseFloat(item.SALES_AMT) - parseFloat(item.COLLECTION_AMT);
+                if (parseFloat(outstanding) > 0) {
+                  html += '<tr>';
+                  html += '<td>' + item.INVOICE_NO + '</td>';
+                  html += '<td>' + item.SALES_DATE + '</td>';
+                  html += '<td>' + item.ACC_NAME + '</td>';
+                  html += '<td>' + outstanding + '</td>';
+                  html += '</tr>';
+                }
+              });
+              $("#arr_outstanding_details").html(html);
+            }
+          } else {
+            $("#outstanding_sales_amount").html(0);
+            $("#outstanding_amount").html(0);
+            $("#arr_outstanding_details").html('<tr><td align="center" colspan="4">No Record Found</td></tr>');
+          }
+        });
+    }
+  }
+
+  function editEnableDamageCheckbox() {
+    if ($(".REPLACE").length > 0) {
+      let allow_check = false;
+      $(".REPLACE").map((index, item) => {
+        if (parseFloat(item.value) > 0) {
+          allow_check = true;
+        }
+      });
+      $(".DAMAGE").map((index, item) => {
+        if (parseFloat(item.value) > 0) {
+          allow_check = true;
+        }
+      });
+      setTimeout(function () {
+        if (allow_check) {
+          $("#is_damage").attr("checked", true);
+          $(".show_hide_damage").show();
+        }
+      }, 1000);
+    }
+  }
+
+  let final_price_calculation = 0;
+  function fhShowHideDamageFields(is_damaged_entries) {
+    if (is_damaged_entries == 'Yes') {
+      $(".show_hide_damage").show();
+    } else {
+      if ($("#is_damage").is(":checked")) {
+        $(".show_hide_damage").show();
+      } else {
+        $(".show_hide_damage").hide();
+      }
+    }
+  }
+
+  function fnUpdateRate(row_id, product_rate) {
+    if (parseFloat(product_rate) > 0) {
+      fnRateChanged(row_id, product_rate);
+    }
+  }
+
+  function getProductQty(qty, row_name, box_kgs = 0) {
+    let creditor_debtor_id = 0;
+    consoleLog("product qty callled");
+    let screen = "";
+    if (typeof $("#SUB_AC_DEBTORS").val() !== 'undefined' && $("#SUB_AC_DEBTORS").val() > 0) {
+      creditor_debtor_id = $("#SUB_AC_DEBTORS").val();
+      screen = "sales";
+    }
+    if (typeof $("#SUPPLIER_ID").val() !== 'undefined' && $("#SUPPLIER_ID").val() > 0) {
+      creditor_debtor_id = $("#SUPPLIER_ID").val();
+      screen = "purchase";
+    }
+    let row_id = document.getElementById(row_name).parentNode.parentNode.id;
+    $("#batch_error").html("");
+    let batch_id = $("#" + row_id + " .batch").val();
+    let data = { qty: qty, batch_id: batch_id, creditor_debtor_id: creditor_debtor_id, "screen": screen }
+    $.ajax({
+      method: "POST",
+      url: "/master/get_combi_product_details",
+      data: data
+    })
+      .done(function (response) {
+        let final_qty = convertKgsToQty(response.SALE_UNIT, response.PUR_UNIT, qty, response.PACK, response.CARTON_PACK, box_kgs, response.PRICE_PER);
+        $("#" + row_id + " .QTY").val(parseInt(final_qty));
+        getProductDetails(final_qty, row_name, box_kgs = 0);
+        console.log("getProductQty");
+      });
+  }
+
+  function convertKgsToQty(sale_unit, purchase_unit, qty, pack, carton_pack, m_qty, price_per) {
+    let final_mqty = 0;
+    if (m_qty > 0 && pack > 0) {
+      final_mqty = parseFloat(m_qty) * parseFloat(pack);
+      final_mqty = final_mqty.toFixed(2);
+    }
+    /*if(sale_unit == 7 && purchase_unit == 10){
+      if(qty > 0){
+        final_mqty = parseFloat(qty) * parseFloat(pack);
+      } else {
+        final_mqty = parseFloat(m_qty) * parseFloat(pack);
+      }
+    }*/
+    return final_mqty;
+  }
+
+  function convertQtyToKgs(sale_unit, purchase_unit, qty, pack, carton_pack, m_qty, price_per) {
+    let final_mqty = 0;
+    if (qty > 0 && pack > 0) {
+      final_mqty = parseFloat(qty) / parseFloat(pack);
+      final_mqty = final_mqty.toFixed(2);
+    }
+    return final_mqty;
+  }
+
+  function getRowProductRate(sale_unit, purchase_unit, qty, pack, sale_rate, purchase_rate, dmg_qty,price_per) {
+    //console.log(sale_unit, purchase_unit, qty, pack, sale_rate, purchase_rate, dmg_qty,price_per);
+    let total_rate = 0;
+    if (parseInt(dmg_qty) > 0) {
+      qty = parseInt(dmg_qty);
+    }
+    if (purchase_rate > 0) {
+      total_rate = (parseFloat(purchase_rate)) * parseFloat(qty);
+    }
+    if (sale_rate > 0) {
+      total_rate = (parseFloat(sale_rate)) * parseFloat(qty);
+    }
+    if (sale_unit == 7 && purchase_unit == 10) {
+      if (purchase_rate > 0) {
+        total_rate = (parseFloat(purchase_rate) / parseFloat(pack)) * parseFloat(qty);
+      }
+      if (sale_rate > 0) {
+        total_rate = (parseFloat(sale_rate)) * parseFloat(qty);
+      }
+    }
+    console.log("total_rate0",total_rate);
+    if(purchase_unit == 10 && !$(".sales_screen").length && !$(".sales_order_screen").length){
+      total_rate = (parseFloat(purchase_rate) / parseFloat(pack)) * parseFloat(qty);
+    }
+    console.log("total_rate",total_rate);
+    if(price_per == 10 && parseFloat(sale_rate) > 0){
+      total_rate = (parseFloat(sale_rate)/parseFloat(pack)) * parseFloat(qty);
+    }
+    return total_rate;
+  }
+
+  function updateDamageQtyRate(row_id, purchase_sales) {
+    let unit = $("#" + row_id + " .PUR_UNIT").val();
+    let pack = $("#" + row_id + " .PACK").val();
+    let damage_qty = $("#" + row_id + " .DAMAGE").val();
+    let tax = $("#" + row_id + " .TAX_PER").html();
+    let textbox_pur_sale_rate = $("#" + row_id + " .PUR_RATE").val();
+
+    if (typeof $("#" + row_id + " .PUR_UNIT").val() == 'undefined') {
+      unit = $("#rw_" + row_id + " .PUR_UNIT").val();
+      pack = $("#rw_" + row_id + " .PACK").val();
+      damage_qty = $("#rw_" + row_id + " .DAMAGE").val();
+      textbox_pur_sale_rate = $("#rw_" + row_id + " .PUR_RATE").val();
+    }
+
+    if (purchase_sales == 'sale') {
+      unit = $("#" + row_id + " .SALE_UNIT").val();
+      textbox_pur_sale_rate = $("#" + row_id + " .SALES_RATE").val();
+
+      if (typeof $("#" + row_id + " .SALE_UNIT").val() == 'undefined') {
+        unit = $("#rw_" + row_id + " .SALE_UNIT").val();
+        pack = $("#rw_" + row_id + " .PACK").val();
+        damage_qty = $("#rw_" + row_id + " .DAMAGE").val();
+      }
+    }
+
+    if (purchase_sales == 'purchase') {
+      row_id = row_id.startsWith("rw_") ? row_id.slice(3) : row_id;
+      unit = $("#" + row_id + " .PUR_UNIT").val();
+      textbox_pur_sale_rate = $("#rw_" + row_id + " .PUR_RATE").val();
+      if (typeof $("#" + row_id + " .PUR_UNIT").val() == 'undefined') {
+        unit = $("#rw_" + row_id + " .PUR_UNIT").val();
+        pack = $("#rw_" + row_id + " .PACK").val();
+        damage_qty = $("#rw_" + row_id + " .DAMAGE").val();
+      }
+    }
+
+    let damage_amt = 0;
+    let damage_pack = parseFloat(damage_qty) / parseFloat(pack);
+    damage_amt = parseFloat(textbox_pur_sale_rate) * parseFloat(damage_qty);
+    let calculate_tax = (parseFloat(damage_amt) * parseInt(tax)) / 100;
+    $("#rw_" + row_id + " .TAX_AMT").val(calculate_tax);
+    $("#rw_" + row_id + " .DAMAGE_AMT").val(damage_amt);
+  }
+
+  function fnRateChanged(row_id, product_rate) {
+    if ($("#PUR_RATE_" + row_id).length > 0) {
+      if (parseInt($("#PUR_RATE_" + row_id).val()) == 0) {
+        $("#SCHEME1_PERCENT_" + row_id).val(0);
+        $("#SCHEME1_AMOUNT_" + row_id).val(0);
+        $("#SCHEME2_PERCENT_" + row_id).val(0);
+        $("#SCHEME2_AMOUNT_" + row_id).val(0);
+        $("#MRP_" + row_id).val(0);
+        //$("#PUR_RATE_"+row_id).val(0);
+        $("#TAX_AMT_" + row_id).val(0);
+      }
+    }
+
+    if ($("#SALES_RATE_" + row_id).length > 0) {
+      if (parseInt($("#SALES_RATE_" + row_id).val()) == 0) {
+        $("#SCHEME1_PERCENT_" + row_id).val(0);
+        $("#SCHEME1_AMOUNT_" + row_id).val(0);
+        $("#SCHEME2_PERCENT_" + row_id).val(0);
+        $("#SCHEME2_AMOUNT_" + row_id).val(0);
+        $("#MQTY_" + row_id).val(0);
+        $("#MRP_" + row_id).val(0);
+        $("#MQTY_" + row_id).val(0);
+        $("#QTY_" + row_id).val(0);
+        $("#MRP_" + row_id).val(0);
+        $("#SALES_RATE_" + row_id).val(0);
+        $("#TAX_AMT_" + row_id).val(0);
+      }
+    }
+
+    if (parseInt($("#QTY_" + row_id).val()) == 0) {
+      $("#SCHEME1_PERCENT_" + row_id).val(0);
+      $("#SCHEME1_AMOUNT_" + row_id).val(0);
+      $("#SCHEME2_PERCENT_" + row_id).val(0);
+      $("#SCHEME2_AMOUNT_" + row_id).val(0);
+      $("#MQTY_" + row_id).val(0);
+      $("#QTY_" + row_id).val(0);
+      $("#MRP_" + row_id).val(0);
+    }
+    
+    if(!(".unique_purchase").length){
+      updateDamageQtyRate((parseInt(row_id) - parseInt(1)), "purchase");
+      console.log("Rate Changed");
+    }
+    
+    getProductDetails($("#QTY_" + row_id).val(), "QTY_" + row_id);
+    let percentage = $("#SCHEME1_PERCENT_" + row_id).val();
+    let row_name = "SCHEME1_PERCENT_" + row_id;
+    getScheme1Amount(percentage, row_name);
+    getScheme2Amount(percentage, row_name);
+    updateFooterPart();
+
+  }
+
+  function updateReverseCalculation(row_id, rate) {
+
+    let SalesReverseCalculation = 0;
+    if ($("#SalesReverseCalculation").val() == 1) {
+      let badge_rate = parseInt(rate);
+      let amount = parseFloat(badge_rate);
+      let quantity = parseFloat($("#QTY_" + row_id).val());
+      if (parseInt($("#DAMAGE_" + row_id).val()) > 0) {
+        quantity = $("#DAMAGE_" + row_id).val();
+      }
+      let percentage_display = $("#TAX_PER_" + row_id).html();
+      let cess_percentage = $("#CESSPER_" + row_id).val();
+      let split_perc = percentage_display.split(' ');
+      let percentage1 = removeNonNumeric(percentage_display);
+      let percentage1_plus_one = ((parseInt(percentage1)) / 100) + parseInt(1);
+      let final_reverse_amount = percentage1_plus_one;
+      if (parseInt(cess_percentage) > 0) {
+        final_reverse_amount = parseFloat(percentage1_plus_one) + (parseFloat(cess_percentage) / 100);
+      }
+
+      let calculated_amount = (parseFloat(rate) / parseFloat(final_reverse_amount.toFixed(4)));
+      let mrp_price = parseFloat(calculated_amount.toFixed(4)) * parseFloat(quantity);
+      let calc_perc = (parseFloat(percentage1) / parseInt(100));
+      let tax_amt = parseFloat(mrp_price) * parseFloat(calc_perc);
+
+      if (parseInt($("#DAMAGE_" + row_id).val()) > 0) {
+        //$("#DMG_MRP_"+row_id).val(calculated_amount.toFixed(2));
+        $("#DAMAGE_AMT_" + row_id).val(mrp_price.toFixed(4));
+        $("#DAMAGE_AMT_" + row_id).val(mrp_price.toFixed(4));
+      } else {
+        $("#MRP_" + row_id).val(mrp_price.toFixed(4));
+        let new_amt = parseFloat(calculated_amount) * parseFloat(quantity);
+        $("#AMT_" + row_id).val(new_amt.toFixed(4));
+      }
+
+      $("#SALES_RATE_" + row_id).val(calculated_amount.toFixed(4));
+      $("#TE_RATE_" + row_id).val(rate);
+      $("#TAX_AMT_" + row_id).val(tax_amt);
+
+      let percentage = $("#SCHEME1_PERCENT_" + row_id).val();
+      let row_name = "SCHEME1_PERCENT_" + row_id;
+      let percentage2 = $("#SCHEME2_PERCENT_" + row_id).val();
+      let row_name2 = "SCHEME2_PERCENT_" + row_id;
+      //if(percentage1 > 0){
+      getScheme1Amount(percentage, row_name);
+      getScheme2Amount(percentage2, row_name2);
+      //}
+    } else {
+      console.log("UpdateReversalCalculateion");
+      getProductDetails($("#QTY_" + row_id).val(), 'QTY_' + row_id);
+    }
+  }
+
+  function getDiscountPrice() {
+    let discount_percentage = $("#DISCOUNT_PERCENT").val();
+    let calculate_discount = parseFloat($("#GROSS_TOTAL").val()) - parseFloat($("#SCHEME1_TOTAL").val()) - parseFloat($("#SCHEME2_TOTAL").val());
+    let discount_amount = parseFloat(calculate_discount) * (parseFloat(discount_percentage) / 100);
+    if(discount_amount > 0){
+      $("#DISCOUNT_AMOUNT").val(discount_amount.toFixed(2));
+    }
+    return discount_amount;
+  }
+
+  function fnCalculateGroupDiscount() {
+    $(".discount-textbox").each(function (index, data) {
+      let group_id = data.id;
+      let group_discount_perc = data.value;
+      consoleLog("group_id", group_id, "group_discount_perc", group_discount_perc);
+    });
+    $("#close-discount-popup-block").click();
+  }
+
+  function fnCalculateDiscount(discount_percentage) {
+    let calculate_discount = parseFloat($("#GROSS_TOTAL").val()) - parseFloat($("#SCHEME1_TOTAL").val()) - parseFloat($("#SCHEME2_TOTAL").val());
+    let discount_amount = parseFloat(calculate_discount) * (parseFloat(discount_percentage) / 100);
+    $("#DISCOUNT_AMOUNT").val(discount_amount.toFixed(2));
+
+    $('#sampleTable > tbody  > tr').each(function (index, tr) {
+      let final_row_tax_amount = 0;
+      let id = tr.id;
+      let is_dmg_calculation = 0;
+      if (typeof id !== undefined && id != "") {
+        let split_id = id.split("_");
+        let row_id = parseInt(split_id[1]) + parseInt(0);
+
+        let insurance_amt = 0;
+        let product_amt = parseFloat($("#rw_" + row_id + " .AMT").val());
+        let scheme1_amount = parseFloat($("#rw_" + row_id + " .SCHEME1_AMOUNT").val());
+        let scheme2_amount = parseFloat($("#rw_" + row_id + " .SCHEME2_AMOUNT").val());
+        let insurance_vat = parseFloat($("#rw_" + row_id + " .PUR_INSURANCE").val());
+        let tax_percent_nonnumeric = $("#rw_" + row_id + " .TAX_PER").html();
+        const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+
+        if(parseInt(insurance_vat) > 0){
+          if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+            insurance_amt = (parseFloat(product_amt) * parseFloat(insurance_vat)) / 100;
+          }
+        }
+        
+        let row_discount = parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount);
+        let row_discount_amt = parseFloat(row_discount) * (discount_percentage/100);
+        $("#rw_" + row_id + " .DISC_PERCENT").val(discount_percentage);
+        $("#rw_" + row_id + " .DISC_AMOUNT").val(row_discount_amt);
+        $("#rw_" + row_id + " .DISC").html(row_discount_amt);
+        
+        if ($(".SALES_INSURANCE").length > 0) {
+          let insurance_vat = $("#rw_" + row_id + " .SALES_INSURANCE").val();
+          if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+            insurance_amt = (parseFloat(product_amt) * parseFloat(insurance_vat)) / 100;
+          }
+        }
+
+        if ($(".PUR_INSURANCE").length > 0) {
+          let insurance_vat = $("#rw_" + row_id + " .PUR_INSURANCE").val();
+          if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+            insurance_amt = (parseFloat(product_amt) * parseFloat(insurance_vat)) / 100;
+          }
+        }
+        
+        let tax_amt = parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount);
+        let row_tax_amount = parseFloat(product_amt) -parseFloat(scheme1_amount) -parseFloat(scheme2_amount) - parseFloat(row_discount_amt);
+        if ($(".unique_purchase").length) {
+          row_tax_amount = parseFloat(product_amt) + parseFloat(insurance_amt) - parseFloat(scheme1_amount) -parseFloat(scheme2_amount) - parseFloat(row_discount_amt);
+        }
+        let row_tax = 0;
+        if(parseFloat(row_tax_amount) > 0 &&  (parseFloat(tax_percent) > 0)){
+          row_tax = parseFloat(row_tax_amount) * (parseFloat(tax_percent) / 100);
+        }
+        $("#rw_" + row_id + " .TAX_AMT").val(row_tax.toFixed(2));
+        console.warn("calculate_tax 2",row_tax);
+
+        if (parseFloat($("#rw_" + row_id + " .DAMAGE").val()) > 0) {
+          if (parseFloat($("#rw_" + row_id + " .DAMAGE_AMT").val()) > 0) {
+            let damage_amt = parseFloat($("#rw_" + row_id + " .DAMAGE_AMT").val())
+            tax_amt = damage_amt;
+            is_dmg_calculation = 1;
+          }
+          
+          if (parseFloat(tax_amt) > 0) {
+            let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+            let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+            $("#rw_" + row_id + " .DISCPER").val(discount_percentage);
+            $("#rw_" + row_id + " .DISCAMT").val(discount_amt.toFixed(2));
+            $("#rw_" + row_id + " .DISC_PERCENT").val(discount_percentage);
+            $("#rw_" + row_id + " .DISC_AMOUNT").val(row_discount_amt.toFixed(2));
+            $("#rw_" + row_id + " .DISC").html(row_discount_amt);
+            if (is_dmg_calculation == 1) {
+              difference = parseFloat(tax_amt);
+              final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+              $("#rw_" + row_id + " .TAX_AMT").val(final_row_tax_amount.toFixed(2));
+              console.warn("calculate_tax 3",final_row_tax_amount);
+              //if (parseFloat($("#rw_" + row_id + " .DAMAGE").val()) > 0) {
+                //$("#rw_" + row_id + " .TAX_AMT").val(0);
+              //}
+            }
+          }
+        }
+      }
+    });
+    updateFooterPart();
+  }
+
+  function calculateCustomRoundoff(value) {
+    showLoader();
+    let final_amount = $("#TEMP_FINAL_AMT").val();
+    let round_off = value;
+    if (parseFloat(round_off) == 0) {
+      $("#FINAL_AMT").val(final_amount);
+      $("#ROUND_OFF").val(0);
+      hideLoader();
+    } else {
+      let calculate_amt = parseFloat(final_amount) - parseFloat(round_off);
+      if (calculate_amt > 0) {
+        $("#FINAL_AMT").val(calculate_amt.toFixed(2));
+        $("#ROUND_OFF").val(value);
+        hideLoader();
+      }
+    }
+  }
+
+  function getTCSTax(data) {
+    var tcs_percentage = $('option:selected', data).attr('tcs-data');
+    $("#TCS_PERCENT").val(tcs_percentage);
+    updateEachRowCalculation();
+  }
+
+  function updateEachRowCalculation() {
+    showLoader();
+    let counter = $('#sampleTable > tbody  > tr').length;
+    $('#sampleTable > tbody  > tr').each(function (index, tr) {
+      let id = tr.id;
+      if (typeof id !== undefined && id != "") {
+        let split_id = id.split("_");
+        let increment_id = parseInt(split_id[1]) + parseInt(1);
+        let percentage = 0;
+        let row_name = "SCHEME1_PERCENT_" + increment_id;
+        if (parseFloat($("#" + id + " #SCHEME1_PERCENT_" + increment_id).val()) > 0) {
+          percentage = $("#" + id + " #SCHEME1_PERCENT_" + increment_id).val();
+          getScheme1Amount(percentage, row_name);
+        } else {
+          getScheme1Amount(0, row_name);
+        }
+      }
+    });
+    calculateRoundOff();
+  }
+
+  function calculateRoundOff() {
+
+    showLoader();
+    $("#ROUND_OFF").val(0);
+    let damage_amount = 0
+    $(".DAMAGE_AMT").each(function (index, item) {
+      if (parseFloat(item.value) > 0) {
+        damage_amount += parseFloat(item.value);
+      }
+    });
+
+    $("#DISCOUNT_AMOUNT").val(0);
+    if (parseFloat($("#DISCOUNT_PERCENT").length) > 0) {
+      let discount_percentage = $("#DISCOUNT_PERCENT").val();
+      let final_gt = parseFloat($("#GROSS_TOTAL").val()) - parseFloat($("#SCHEME1_TOTAL").val()) - parseFloat($("#SCHEME2_TOTAL").val());
+      let discount_amount = parseFloat(final_gt) * parseFloat(discount_percentage) / 100;
+      if (discount_amount > 0) {
+        $("#DISCOUNT_AMOUNT").val(discount_amount.toFixed(2));
+      } else {
+        $("#DISCOUNT_AMOUNT").val(0);
+        $("#DISCOUNT_PERCENT").val(0);
+      }
+    }
+
+    //TCS Tax = GROSS-SCH1-SCH2-DISC+CESS+CESS_ADDL+INSURANCE+APMC+GST
+    let tcs_calc_html = '';
+    let tcs_gross_total = parseFloat($("#GROSS_TOTAL").val() > 0 ? $("#GROSS_TOTAL").val() : 0);
+    let tcs_sch1 = parseFloat($("#SCHEME1_TOTAL").val() > 0 ? $("#SCHEME1_TOTAL").val() : 0);
+    let tcs_sch2 = parseFloat($("#SCHEME2_TOTAL").val() > 0 ? $("#SCHEME2_TOTAL").val() : 0);
+    let tcs_disc = parseFloat($("#DISCOUNT_AMOUNT").val() > 0 ? $("#DISCOUNT_AMOUNT").val() : 0);
+    let tcs_cess_addl = parseFloat($("#CESS_AMT_ADDL").val() > 0 ? $("#CESS_AMT_ADDL").val() : 0);
+    let tcs_insur = parseFloat($("#TAX_AMT_INSURANCE").val() > 0 ? $("#TAX_AMT_INSURANCE").val() : 0);
+
+    let tcs_apmc = parseFloat($("#APMC_TAX_AMT").val() > 0 ? $("#APMC_TAX_AMT").val() : 0);
+    let tcs_tax = parseFloat($("#TAX_AMT").val() > 0 ? $("#TAX_AMT").val() : 0);
+
+    let tcs_before_cess = tcs_gross_total - tcs_sch1 - tcs_sch2 - tcs_disc + tcs_cess_addl + tcs_insur + tcs_apmc + tcs_tax;
+    
+    if ($("#purchase_return_screen").length > 0) {
+      tcs_before_cess += damage_amount;
+    } else {
+      tcs_before_cess -= damage_amount;
+    }
+
+    let cess_amt_sign = "";
+    if ($("#sales_return_screen").length > 0) {
+      tcs_before_cess -= parseFloat($("#CESS_AMT").val());
+      cess_amt_sign = "-";
+    } else {
+      cess_amt_sign = "+";
+      tcs_before_cess += parseFloat($("#CESS_AMT").val());
+    }
+    
+    if (parseInt($("#TCS_PERCENT").length) > 0) {
+      $("#TCS_TAX").val(0);
+      let calculate_tcs_amt = (parseFloat($("#TCS_PERCENT").val()/100)) * (parseFloat(tcs_before_cess));
+      if (parseFloat(calculate_tcs_amt) > 0) {
+        
+         if ($(".unique_sales, .unique_purchase").length) {
+
+          let tcs_calc_html_display = "("+tcs_gross_total+"-"+tcs_sch1+"-"+tcs_sch2+"-"+tcs_disc+""+cess_amt_sign+$("#CESS_AMT").val()+"+"+tcs_cess_addl+"+"+tcs_insur+"+"+tcs_apmc+"+"+tcs_tax+")*("+parseFloat($("#TCS_PERCENT").val())+"/100)";
+          tcs_calc_html += tcs_calc_html_display;
+          $(".htmltcstax").html("TCS : "+tcs_calc_html);
+          $("#TCS_TAX").val(parseFloat(calculate_tcs_amt).toFixed(2));
+        }
+      }
+    }
+
+    let temp_final_amount
+      = parseFloat($("#GROSS_TOTAL").val() > 0 ? $("#GROSS_TOTAL").val() : 0)
+      + parseFloat($("#CESS_AMT_ADDL").val() > 0 ? $("#CESS_AMT_ADDL").val() : 0)
+      + parseFloat($("#TAX_AMT_INSURANCE").val() > 0 ? $("#TAX_AMT_INSURANCE").val() : 0)
+      - parseFloat($("#SCHEME1_TOTAL").val() > 0 ? $("#SCHEME1_TOTAL").val() : 0)
+      - parseFloat($("#SCHEME2_TOTAL").val() > 0 ? $("#SCHEME2_TOTAL").val() : 0)
+      - parseFloat($("#DISCOUNT_AMOUNT").val() > 0 ? $("#DISCOUNT_AMOUNT").val() : 0)
+      + parseFloat($("#TAX_AMT").val())
+      + parseFloat($("#GROSS_REP_AMT").val() > 0 ? $("#GROSS_REP_AMT").val() : 0)
+      + parseFloat($("#APMC_TAX_AMT").val() > 0 ? $("#APMC_TAX_AMT").val() : 0)
+      + parseFloat($("#TCS_TAX").val() > 0 ? $("#TCS_TAX").val() : 0)
+      - parseFloat($("#CREDIT_AMT").val() > 0 ? $("#CREDIT_AMT").val() : 0);
+
+    if ($("#sales_return_screen").length > 0) {
+      temp_final_amount += damage_amount;
+    } else {
+      temp_final_amount -= damage_amount;
+    }
+
+    if ($("#sales_return_screen").length > 0) {
+      temp_final_amount += parseFloat($("#CESS_AMT").val());
+    } else {
+      temp_final_amount += parseFloat($("#CESS_AMT").val());
+    }
+    
+    if (parseFloat($("#ADD_AMT").val()) > 0) {
+      temp_final_amount += parseFloat($("#ADD_AMT").val());
+    }
+    if (parseFloat($("#LESS_AMT").val()) > 0) {
+      temp_final_amount -= parseFloat($("#LESS_AMT").val());
+    }
+    let temp_final_amount_decimal = getDecimalPart(temp_final_amount.toFixed(2));
+    let temp_final_amount_int = parseInt(temp_final_amount);
+    $("#FINAL_AMT").val(0);
+    let signature = "";
+    if (temp_final_amount_decimal == 0) {
+      $("#ROUND_OFF").val(0);
+      $(".cl-Final label span").html(" (" + temp_final_amount.toFixed(2) + ")");
+      $("#FINAL_AMT").val(signature + temp_final_amount.toFixed(2));
+    } else if (temp_final_amount_decimal >= 0.50) {
+      let new_final_amount = temp_final_amount_int + 1;
+      let added_amt = parseFloat(new_final_amount) - parseFloat(temp_final_amount_int) - parseFloat(temp_final_amount_decimal);
+      $("#ROUND_OFF").val("+" + added_amt.toFixed(2));
+      document.getElementById('TEMP_FINAL_AMT').value = temp_final_amount.toFixed(2);
+      $(".cl-Final label span").html(" (" + temp_final_amount.toFixed(2) + ")");
+      $("#FINAL_AMT").val(signature + new_final_amount.toFixed(2));
+    } else {
+      let new_final_amount = temp_final_amount_int;
+      let final_entered_value = '-' + temp_final_amount_decimal.toFixed(2);
+      $("#ROUND_OFF").val(final_entered_value.replace('--', '-'));
+      document.getElementById('TEMP_FINAL_AMT').value = temp_final_amount.toFixed(2);
+      $(".cl-Final label span").html(" (" + temp_final_amount.toFixed(2) + ")");
+      $("#FINAL_AMT").val(signature + temp_final_amount_int.toFixed(2));
+    }
+    hideLoader();
+  }
+
+  function getScheme1Percentage(amt, row_name, reverse_flag = 0) {
+    consoleLog("reverse_flag", reverse_flag);
+    showLoader();
+    let amount = 0;
+    if (parseFloat(amt) > 0) {
+      amount = amt;
+      calculated_amount = amount;
+    }
+    let row_id = document.getElementById(row_name).parentNode.parentNode.id;
+    if ($("#" + row_id + " .QTY").val() == 0) {
+      $("#" + row_id + " .SCHEME1_AMOUNT").val(0);
+    }
+
+    // Below is for reverse calculation start //
+    if (reverse_flag == 1) {
+      let rate = amt;
+      let percentage_display = $("#" + row_id + " .TAX_PER").html();
+      let cess_percentage = $("#" + row_id + " .CESSPER").val();
+      consoleLog("cess_percentage", cess_percentage);
+      let split_perc = percentage_display.split(' ');
+      let percentage1 = removeNonNumeric(percentage_display);
+      let percentage1_plus_one = ((parseInt(percentage1)) / 100) + parseInt(1);
+      let final_reverse_amount = percentage1_plus_one;
+      if (parseInt(cess_percentage) > 0) {
+        final_reverse_amount = parseFloat(percentage1_plus_one) + (parseFloat(cess_percentage) / 100);
+      }
+      let calculated_amount = (parseFloat(rate) / parseFloat(final_reverse_amount.toFixed(4)));
+      $("#" + row_id + " .SCHEME1_AMOUNT").val(calculated_amount.toFixed(4));
+      amount = calculated_amount;
+    }
+
+    // Below is for reverse calculation over //
+    if (calculated_amount) {
+      let product_amt = parseFloat($("#" + row_id + " .AMT").val());
+      let scheme1_percentage = 0;
+      if (parseFloat(amount) > 0 && parseFloat(product_amt) > 0) {
+        scheme1_percentage = parseFloat(amount) / parseFloat(product_amt) * 100;
+      }
+
+      let scheme2_percentage = $("#" + row_id + " .SCHEME2_PERCENT").val();
+      $("#" + row_id + " .SCHEME1_PERCENT").val(scheme1_percentage);
+      updateFooterPart();
+      let product_discount_amount = 0;
+      let product_discount = 0;
+      let scheme1_amount = ((parseFloat(product_amt) * parseFloat(scheme1_percentage)) / 100);
+      if (parseFloat(scheme1_amount) > 0) {
+        $("#" + row_id + " .SCHEME1_AMOUNT").val(scheme1_amount.toFixed(2));
+      } else {
+        if (parseInt(scheme1_percentage) == 0) {
+          $("#" + row_id + " .SCHEME1_AMOUNT").val(0);
+          $("#" + row_id + " .SCHEME1_PERCENT").val(0);
+        }
+      }
+      let scheme2_amount = $("#" + row_id + " .SCHEME2_AMOUNT").val();
+      let discount_percentage = parseFloat($("#DISCOUNT_PERCENT").val());
+      if (discount_percentage > 0) {
+        let prod_calc = parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount);
+        product_discount = $("#DISCOUNT_AMOUNT").val();
+      }
+      tax_amt = product_amt - scheme1_amount - scheme2_amount;
+      
+      if (parseFloat(tax_amt) > 0) {
+        let tax_percent_nonnumeric = $("#" + row_id + " .TAX_PER").html();
+        const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+        let final_row_tax_amount = 0;
+        if (parseFloat(tax_amt) > 0 && parseFloat(tax_percent)) {
+          let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+          let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+          final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+        }
+        console.warn("calculate_tax 4",final_row_tax_amount);
+        $("#" + row_id + " .TAX_AMT").val(final_row_tax_amount.toFixed(2));
+      }
+
+      let row_1_name_split = row_name.split("_");
+      let row_name2 = "SCHEME2_PERCENT_" + row_1_name_split[2];
+      getScheme2Amount(scheme2_percentage, row_name)
+      updateFooterPart();
+    }
+  }
+
+  function getScheme1Amount(perc, row_name) {
+    showLoader();
+    let percentage = 0;
+    if (parseFloat(perc) > 0) {
+      percentage = perc;
+    }
+    let row_id = document.getElementById(row_name).parentNode.parentNode.id;
+    if ($("#" + row_id + " .QTY").val() == 0) {
+      $("#" + row_id + " .SCHEME1_PERCENT").val(0);
+    }
+
+    let product_discount_amount = 0;
+    let product_discount = 0;
+    let product_amt = parseFloat($("#" + row_id + " .AMT").val());
+    let scheme1_amount = ((parseFloat(product_amt) * parseFloat(percentage)) / 100);
+    if (parseFloat(scheme1_amount) > 0) {
+      $("#" + row_id + " .SCHEME1_AMOUNT").val(scheme1_amount.toFixed(2));
+    } else {
+      if (parseInt(percentage) == 0) {
+        $("#" + row_id + " .SCHEME1_AMOUNT").val(0);
+        $("#" + row_id + " .SCHEME1_PERCENT").val(0);
+      }
+    }
+    // To update scheme2 amount      
+    let scheme2_percentage = parseFloat($("#" + row_id + " .SCHEME2_PERCENT").val());
+    if (parseFloat(scheme2_percentage) > 0) {
+      getScheme2Amount(scheme2_percentage, row_name);
+    }
+    updateFooterPart();
+
+    let product_amt_2 = parseFloat($("#" + row_id + " .AMT").val());
+    let scheme2_amount = $("#" + row_id + " .SCHEME2_AMOUNT").val();
+    let scheme1_amount_2 = $("#" + row_id + " .SCHEME1_AMOUNT").val();
+    let discount_percentage = parseFloat($("#DISCOUNT_PERCENT").val());
+    let discount_amount = 0;
+    let damage_amt = 0;
+    if (parseFloat($("#DISCOUNT_AMOUNT").val()) > 0) {
+      discount_amount = parseFloat($("#DISCOUNT_AMOUNT").val());
+    }
+    if ($("#" + row_id + " .DAMAGE_AMT").length > 0) {
+      damage_amt = $("#" + row_id + " .DAMAGE_AMT").val();
+    }
+
+    if (parseFloat(discount_percentage) > 0 || parseFloat(scheme2_amount) > 0) {
+      tax_amt = product_amt_2 - damage_amt - scheme1_amount_2 - scheme2_amount;
+      if (parseFloat(tax_amt) > 0) {
+        let tax_percent_nonnumeric = $("#" + row_id + " .TAX_PER").html();
+        const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+        let final_row_tax_amount = 0;
+
+        if (parseFloat(tax_amt) > 0 && parseFloat(tax_percent)) {
+          /* Introduce insurance part start */
+          if ($(".SALES_INSURANCE").length > 0) {
+            let insurance_vat = $("#" + row_id + " .SALES_INSURANCE").val();
+            let total_rate = $("#" + row_id + " .AMT").val();
+            let calculate_insurance = (parseFloat(total_rate) * parseFloat(insurance_vat)) / 100;
+            let product_insurance_amt = 0;
+            if (parseFloat(calculate_insurance) > 0) {
+              if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+                product_insurance_amt = calculate_insurance;
+                tax_amt = parseFloat(total_rate) + parseFloat(product_insurance_amt);
+              }
+            }
+          }
+          if ($(".PUR_INSURANCE").length > 0) {
+            let insurance_vat = $("#" + row_id + " .PUR_INSURANCE").val();
+            let total_rate = $("#" + row_id + " .AMT").val();
+            let calculate_insurance = (parseFloat(total_rate) * parseFloat(insurance_vat)) / 100;
+            let product_insurance_amt = 0;
+            if (parseFloat(calculate_insurance) > 0) {
+              if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+                product_insurance_amt = calculate_insurance;
+                tax_amt = parseFloat(total_rate) + parseFloat(product_insurance_amt);
+              }
+            }
+          }
+          /* Introduce insurance part over */
+
+          let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+          let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+          final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+          consoleError("final_row_tax_amount", final_row_tax_amount);
+        }
+        console.warn("calculate_tax 5",final_row_tax_amount);
+        console.warn("calculate_tax DAMAGE 5",$("#" + row_id + " .DAMAGE").val());
+        if($("#" + row_id + " .DAMAGE_AMT").val() > 0){
+          let damage_amount = $("#" + row_id + " .DAMAGE_AMT").val();
+          let tax_amt_damage = parseFloat(damage_amount) * (parseFloat(tax_percent) / 100);
+          $("#" + row_id + " .TAX_AMT").val(tax_amt_damage.toFixed(2));
+        }
+        updateFooterPart();
+      }
+    } else {
+      tax_amt = product_amt - damage_amt - scheme1_amount - scheme2_amount;
+      if (parseFloat(tax_amt) >= 0) {
+        let tax_percent_nonnumeric = $("#" + row_id + " .TAX_PER").html();
+        const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+        let final_row_tax_amount = 0;
+        if (parseFloat(tax_amt) > 0 && parseFloat(tax_percent)) {
+
+          /* Introduce insurance part start */
+          if ($(".SALES_INSURANCE").length > 0) {
+            let insurance_vat = $("#" + row_id + " .SALES_INSURANCE").val();
+            let total_rate = $("#" + row_id + " .AMT").val();
+            let calculate_insurance = (parseFloat(total_rate) * parseFloat(insurance_vat)) / 100;
+            let product_insurance_amt = 0;
+            if (parseFloat(calculate_insurance) > 0) {
+              if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+                product_insurance_amt = calculate_insurance;
+                tax_amt = parseFloat(total_rate) + parseFloat(product_insurance_amt);
+              }
+              
+            }
+          }
+          if ($(".PUR_INSURANCE").length > 0) {
+            let insurance_vat = $("#" + row_id + " .PUR_INSURANCE").val();
+            let total_rate = $("#" + row_id + " .AMT").val();
+            let calculate_insurance = (parseFloat(total_rate) * parseFloat(insurance_vat)) / 100;
+            let product_insurance_amt = 0;
+            if (parseFloat(calculate_insurance) > 0) {
+              if ($(".unique_sales, .unique_purchase, .unique_salesreturn").length) {
+                product_insurance_amt = calculate_insurance;
+                tax_amt = parseFloat(total_rate) + parseFloat(product_insurance_amt);
+              }
+            }
+          }
+          /* Introduce insurance part over */
+
+          let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+          let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+          final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+        }
+        console.warn("calculate_tax 6",final_row_tax_amount);
+        $("#" + row_id + " .TAX_AMT").val(final_row_tax_amount.toFixed(2));
+        updateFooterPart();
+      }
+    }
+    hideLoader();
+  }
+
+  function getScheme2Percentage(scheme2_val, row_name) {
+    let scheme2_value = 0;
+    if (parseFloat(scheme2_val) > 0) {
+      scheme2_value = scheme2_val;
+    }
+    let product_amt = 0;
+    let scheme1_amount = 0;
+    let product_discount_amount = 0;
+    let product_discount = 0;
+    let row_id = document.getElementById(row_name).parentNode.parentNode.id;
+    if ($("#" + row_id + " .QTY").val() == 0) {
+      $("#" + row_id + " .SCHEME2_AMOUNT").val(0);
+    }
+    updateFooterPart();
+
+    if (parseFloat($("#" + row_id + " .AMT").val()) > 0) {
+      product_amt = parseFloat($("#" + row_id + " .AMT").val());
+    }
+    if (parseFloat($("#" + row_id + " .SCHEME1_AMOUNT").val()) > 0) {
+      scheme1_amount = parseFloat($("#" + row_id + " .SCHEME1_AMOUNT").val());
+    }
+
+    let step1 = parseFloat(product_amt) - parseFloat(scheme1_amount);
+    let scheme2_percentage = 0;
+    if (parseFloat(scheme2_value) > 0 && parseFloat(step1) > 0) {
+      scheme2_percentage = (parseFloat(scheme2_value) / parseFloat(step1)) * 100;
+    }
+    $("#" + row_id + " .SCHEME2_PERCENT").val(scheme2_percentage);
+
+    let scheme2_amount = (parseFloat(product_amt) - parseFloat(scheme1_amount)) * (parseFloat(scheme2_percentage) / 100);
+
+    let discount_percentage = parseFloat($("#DISCOUNT_PERCENT").val());
+    if (discount_percentage > 0) {
+      let prod_calc = parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount);
+      product_discount = $("#DISCOUNT_AMOUNT").val();
+    }
+    tax_amt = product_amt - scheme1_amount - scheme2_value;
+   
+    if (parseFloat(tax_amt) > 0) {
+      let tax_percent_nonnumeric = $("#" + row_id + " .TAX_PER").html();
+      const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+      let final_row_tax_amount = 0;
+      if (parseFloat(tax_amt) > 0 && parseFloat(tax_percent)) {
+        let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+        let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+        final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+      }
+      console.warn("calculate_tax 7",final_row_tax_amount);
+      $("#" + row_id + " .TAX_AMT").val(final_row_tax_amount.toFixed(2));
+    }
+    if (scheme2_amount == 0) {
+      $("#" + row_id + " .SCHEME2_AMOUNT").val(0);
+    }
+    updateFooterPart();
+  }
+
+  function getScheme2Amount(perc, row_name) {
+    let percentage = 0;
+    if (parseFloat(perc) > 0) {
+      percentage = perc;
+    }
+    let row_id = document.getElementById(row_name).parentNode.parentNode.id;
+    if ($("#" + row_id + " .QTY").val() == 0) {
+      $("#" + row_id + " .SCHEME2_PERCENT").val(0);
+    }
+    let product_discount_amount = 0;
+    let product_discount = 0;
+    let product_amt = parseFloat($("#" + row_id + " .AMT").val());
+    let scheme1_amount = parseFloat($("#" + row_id + " .SCHEME1_AMOUNT").val());
+    let scheme2_percentage = parseFloat($("#" + row_id + " .SCHEME2_PERCENT").val());
+    let scheme2_amount = (parseFloat(product_amt) - parseFloat(scheme1_amount)) * (parseFloat(percentage) / 100);
+    if (parseFloat(scheme2_amount) > 0 && parseFloat(scheme2_percentage) > 0) {
+      $("#" + row_id + " .SCHEME2_AMOUNT").val(scheme2_amount.toFixed(2));
+    } else {
+      $("#" + row_id + " .SCHEME2_AMOUNT").val(0);
+      $("#" + row_id + " .SCHEME2_PERCENT").val(0);
+    }
+    updateFooterPart();
+    let discount_percentage = parseFloat($("#DISCOUNT_PERCENT").val());
+    if (discount_percentage > 0) {
+      let prod_calc = parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount);
+      product_discount = $("#DISCOUNT_AMOUNT").val();
+    }
+    tax_amt = product_amt - scheme1_amount - scheme2_amount;
+    if (parseFloat(tax_amt) > 0) {
+      let tax_percent_nonnumeric = $("#" + row_id + " .TAX_PER").html();
+      const tax_percent = removeNonNumeric(tax_percent_nonnumeric);
+      let final_row_tax_amount = 0;
+      if (parseFloat(tax_amt) > 0 && parseFloat(tax_percent)) {
+        let discount_amt = parseFloat(tax_amt) * (parseFloat(discount_percentage) / 100);
+        let difference = parseFloat(tax_amt) - parseFloat(discount_amt);
+        final_row_tax_amount = parseFloat(difference) * (parseFloat(tax_percent) / 100);
+      }
+      console.warn("calculate_tax 8",final_row_tax_amount);
+      $("#" + row_id + " .TAX_AMT").val(final_row_tax_amount.toFixed(2));
+    }
+    updateFooterPart();
+  }
+
+
+  $(document).on('change', '.form-control-sm-1', function () {
+    $(".BOX_UNIT").attr('readonly', true);
+    //$(".MQTY").attr('readonly',true);
+    $(".MRP").attr('readonly', true);
+    $(".AMT").attr('readonly', true);
+    $(".SCHEME1_TOTAL").attr('readonly', true);
+    $(".SCHEME2_TOTAL").attr('readonly', true);
+    $(".GROSS_TOTAL").attr('readonly', true);
+    $(".WEIGHT_KG_LTR").attr('readonly', true);
+    $(".CESS_AMT").attr('readonly', true);
+    $(".TAX_AMT_INSURANCE").attr('readonly', true);
+    $(".CESS_AMT_ADDL").attr('readonly', true);
+    $(".DISCOUNT_AMOUNT").attr('readonly', true);
+    $(".TAX_AMT").attr('readonly', true);
+    $(".APMC_TAX_AMT").attr('readonly', true);
+    //$(".DMG_MRP").attr('readonly',true);
+    //$(".DAMAGE_AMT").attr('readonly',true);
+    $(".GROSS_DAMAGE_AMT").attr('readonly', true);
+    $(".DISPLAY_AMT").attr('readonly', true);
+    $(".TCS_TAX").attr('readonly', true);
+    $(".FINAL_AMT").attr('readonly', true);
+    $('.dataentrycalcwrapper :input[readonly]').css({ 'background-color': 'lightgray' });
+    $(".bank_entry_amount .AMT").attr('readonly', false);
+  });
+
+  function removeFooterPopup() {
+    $("#product_batch_information").addClass('d-none');
+  }
+
+  $(document).ready(function () {
+
+
+    /*$(".form-control-sm-1").on('focus',function(){
+      if($(this).hasClass('to_remove_bottom_popup')){
+        $("#product_batch_information").addClass('d-none');
+      }
+    });*/
+
+    $("input").focus(function () {
+      let row_id = $(this).closest('tr').attr('id');
+      let batch_id = $("#" + row_id + " .batch").val();
+      let qty = $("#" + row_id + " .QTY").val();
+      let creditor_debtor_id = 0;
+      let screen = "";
+      if (typeof $("#SUB_AC_DEBTORS").val() !== 'undefined') {
+        creditor_debtor_id = $("#SUB_AC_DEBTORS").val();
+        screen = "sales";
+      }
+      if (typeof $("#SUPPLIER_ID").val() !== 'undefined') {
+        creditor_debtor_id = $("#SUPPLIER_ID").val();
+        screen = "purchase";
+      }
+
+      let data = { qty: qty, batch_id: batch_id, creditor_debtor_id: creditor_debtor_id, "screen": screen }
+
+      if (qty > 0) {
+        $.ajax({
+          method: "POST",
+          url: "/master/get_combi_product_details",
+          data: data
+        })
+          .done(function (response) {
+            consoleLog("Response", response);
+          })
+      }
+    });
+
+    if ($(".working_tr").length > 0) {
+      let total_records = $(".working_tr").length;
+      let counter = 0
+      for (let i = total_records; i > 0; i--) {
+        $("#rw_" + counter + " .edit_rows_counter").html(i);
+        counter++;
+      }
+    }
+
+    $(".default_delete").hide();
+    $(".readonly").attr('readonly', true);
+    $(window).keydown(function (event) {
+      if (event.keyCode == 13) {
+        event.preventDefault();
+        return false;
+      }
+    });
+
+    $("input").attr("autocomplete", "off");
+    if ($(".js-example-basic-single").length) {
+      $(".js-example-basic-single").select2();
+    }
+    if ($(".js-example-basic-multiple").length) {
+      $(".js-example-basic-multiple").select2();
+    }
+    consoleLog("localStorage.getItem('id')", localStorage.getItem('id'));
+    if (localStorage.getItem('id') > 1) {
+      $(".company_sidebar").hide();
+      $(".sidebar_settings").hide();
+      //$(".hide-settings").hide();
+    }
+    let display_name = "Welcome " + localStorage.getItem('login_name');
+    $("#localstorage_company_details").html(display_name);
+
+    $(".BATCH_NUMBER,.PUR_RATE,.QTY,.MQTY,.AMT,.MRP,.FREE,.SCHEME1_PERCENT,.SCHEME1_AMOUNT,.SCHEME2_PERCENT,.SCHEME2_AMOUNT,.TAX_AMT,.SALES_RATE,.REPLACE,.DIFFERENCE_AMT,.DAMAGE,.DMG_MRP,.DAMAGE_AMT,.AMT,.ADD_AMT,.LESS_AMT,.CREDIT_AMT").on("input", function (evt) {
+      var self = $(this);
+      self.val(self.val().replace(/[^0-9.]/g, ''));
+      if ((evt.which != 46 || self.val().indexOf('.') != -1) && (evt.which < 48 || evt.which > 57)) {
+        evt.preventDefault();
+      }
+    });
+
+    $(".PUR_RATE,.QTY,.MQTY,.MRP,.AMT,.FREE,.SCHEME1_PERCENT,.SCHEME1_AMOUNT,.SCHEME2_PERCENT,.SCHEME2_AMOUNT,.TAX_AMT,.SALES_RATE,.REPLACE,.DIFFERENCE_AMT,.DAMAGE,.DMG_MRP,.DAMAGE_AMT,.AMT").attr('maxlength', '10');
+    $(".PUR_RATE,.QTY,.MQTY,.MRP,.AMT,.FREE,.SCHEME1_PERCENT,.SCHEME1_AMOUNT,.SCHEME2_PERCENT,.SCHEME2_AMOUNT,.TAX_AMT,.SALES_RATE,.REPLACE,.DIFFERENCE_AMT,.DAMAGE,.DMG_MRP,.DAMAGE_AMT,.AMT").attr('width', '50%');
+  });
+
+  function updateFooterPart() {
+    $(".dataentryhidden").parent().addClass("d-none");
+
+
+    //Check damage verification Start //
+    if ($("#sampleTable .DAMAGE").length > 0) {
+      $("#sampleTable .DAMAGE").each(function () {
+        if (parseFloat(this.value) > 0) {
+          let dmg_row_id = this.id;
+          let split_dmg_id = dmg_row_id.split("_");
+          let sale_rate = $("#SALES_RATE_"+split_dmg_id[1]).val();
+          if(parseFloat(sale_rate) > 0 && this.value > 0){
+            $("#QTY_"+split_dmg_id[1]).val(0);
+            let dmg_rate = parseFloat(sale_rate) * parseFloat(this.value);
+            $("#DAMAGE_AMT_"+split_dmg_id[1]).val(dmg_rate);
+          }
+        }
+      });
+      $("#sampleTable .QTY").each(function () {
+        if (parseFloat(this.value) > 0) {
+          let qty_row_id = this.id;
+          let split_qty_id = qty_row_id.split("_");
+          let damage_qty = $("#DAMAGE_"+split_qty_id[1]).val();
+          if(parseFloat(damage_qty) > 0 && this.value > 0){
+            $("#DAMAGE_"+split_qty_id[1]).val(0);
+            $("#FREE_"+split_qty_id[1]).val(0);
+            $("#DAMAGE_AMT_"+split_qty_id[1]).val(0);
+          }
+        }
+      });
+    }
+    
+    //Check damage verification Over //
+
+    //SALES_AC_AMT Part Calculation start //
+    let mrp_total = 0;
+    let scheme_1_amount_total = 0;
+    let scheme_2_amount_total = 0;
+    let discount_amount_total = $("#DISCOUNT_AMOUNT").val();
+    $(".AMT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        mrp_total += parseFloat(this.value);
+      }
+    });
+    $(".SCHEME1_AMOUNT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        scheme_1_amount_total += parseFloat(this.value);
+      }
+    });
+    $(".SCHEME2_AMOUNT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        scheme_2_amount_total += parseFloat(this.value);
+      }
+    });
+
+    let sales_ac_amt = parseFloat(mrp_total) - parseFloat(scheme_1_amount_total) - parseFloat(scheme_2_amount_total) - parseFloat(discount_amount_total);
+    if (parseFloat(sales_ac_amt) > 0) {
+      $("#SALES_AC_AMT").val(sales_ac_amt.toFixed(2));
+    }
+    //SALES_AC_AMT Part Calculation over //
+
+    let damage_amt = 0;
+    let damage_length = $("#sampleTable .DAMAGE_AMT").length;
+    if (damage_length > 0) {
+      $("#sampleTable .DAMAGE_AMT").each(function () {
+        if (parseFloat(this.value) > 0) {
+          damage_amt += parseFloat(this.value);
+        }
+      });
+      if (parseFloat(damage_amt) > 0) {
+        if ($("#sales_return_screen").length > 0) {
+          $("#GROSS_DAMAGE_AMT").val(damage_amt.toFixed(2));
+        } else {
+          $("#GROSS_DAMAGE_AMT").val("-" + damage_amt.toFixed(2));
+        }
+      } else {
+        $("#GROSS_DAMAGE_AMT").val(0);
+      }
+    }
+
+    let replace_amt = 0;
+    let replace_length = $("#sampleTable .DIFFERENCE_AMT").length;
+    if (replace_length > 0) {
+      $("#sampleTable .DIFFERENCE_AMT").each(function () {
+        if (parseFloat(this.value) > 0) {
+          replace_amt += parseFloat(this.value);
+        }
+      });
+      if (parseFloat(replace_amt) > 0) {
+        $("#GROSS_REP_AMT").val(replace_amt.toFixed(2));
+      } else {
+        $("#GROSS_REP_AMT").val(0);
+      }
+    }
+
+    let total_box_unit = 0;
+    let total_pack = 0;
+    let total_qty = 0;
+    let total_box = 0;
+    let total_pieces = 0;
+    $('#sampleTable .QTY').each(function () {
+      let qty = parseFloat(this.value) || 0;
+      let mqty = parseFloat($(this).closest('tr').find('.MQTY').val()) || 0;
+      let packVal = parseFloat($(this).closest('tr').find('.PACK').val()) || 1;
+      if (qty >= 0) {
+        let boxes = Math.floor(parseInt(qty) / parseInt(packVal));
+        let pieces = qty % packVal;
+        total_box += boxes;
+        total_pieces += pieces;
+      }
+    });
+    
+    if (total_box >= 0) {
+      setTimeout(function(){
+        let box_pcs = parseInt(total_box)+"/"+parseInt(total_pieces);
+        $('#BOX_UNIT').val(box_pcs);
+        $('.BOX_UNIT').html(box_pcs);
+      },200);
+      
+    } else {
+      $('#BOX_UNIT').val(0);
+    }
+
+
+    let total_mrp = 0;
+    let total_apmc = 0;
+    let total_insurance = 0;
+
+    if (parseFloat($("#APMC_TAX_AMT").val()) > 0) {
+      total_apmc = parseFloat($("#APMC_TAX_AMT").val());
+    }
+
+    $("#sampleTable .AMT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        total_mrp += parseFloat(this.value);
+        if ($("#sampleTable .SALES_RATE").length > 0) {
+          let mrp_id = this.id;
+          let split_mrp_id = mrp_id.split("_");
+          let product_insurance = $("#SALES_INSURANCE_" + split_mrp_id[1]).val();
+          let damage_amt = $("#DAMAGE_AMT_" + split_mrp_id[1]).val();
+          if (parseInt(damage_amt) > 0) {
+            total_mrp += parseFloat(damage_amt);
+          }
+          if (parseFloat(product_insurance) > 0) {
+            let multiply_value = ((parseFloat(this.value) * parseFloat(product_insurance)) / 100);
+            total_insurance += parseFloat(multiply_value);
+          }
+        }
+        if ($("#sampleTable .PUR_RATE").length > 0) {
+          let mrp_id = this.id;
+          let split_mrp_id = mrp_id.split("_");
+          let product_insurance = $("#PUR_INSURANCE_" + split_mrp_id[1]).val();
+          if (parseFloat(product_insurance) > 0) {
+            let multiply_value = ((parseFloat(this.value) * parseFloat(product_insurance)) / 100);
+            total_insurance += parseFloat(multiply_value);
+          }
+        }
+      }
+    });
+    if (parseFloat(total_insurance) > 0 && ($(".unique_sales, .unique_purchase").length)) {
+      $("#TAX_AMT_INSURANCE").val(parseFloat(total_insurance).toFixed(2));
+    } else {
+      $("#TAX_AMT_INSURANCE").val(0);
+    }
+    if (parseFloat(total_mrp) > 0) {
+      /*let damage_amount_total = 0;
+      if($("#sampleTable .DAMAGE_AMT").length > 0){
+        $("#sampleTable .DAMAGE_AMT").each(function () {
+          consoleLog(this.value);
+          damage_amount_total += parseFloat(this.value);
+        });
+        if(damage_amount_total > 0){
+          total_mrp += damage_amount_total;
+        }
+      }*/
+
+      $("#GROSS_TOTAL").val(parseFloat(total_mrp).toFixed(2));
+      $(".GROSS_TOTAL").html(parseFloat(total_mrp).toFixed(2));
+    } else {
+      document.getElementById("GROSS_TOTAL").value = 0;
+    }
+
+    let scheme1_amount = 0;
+    $("#sampleTable .SCHEME1_AMOUNT").each(function () {
+      let cess_id = this.id;
+      let split_cess_id = cess_id.split("_");
+      let row_id = split_cess_id[2];
+      if (parseFloat($("#PUR_RATE_" + row_id).val()) >= 0) {
+        if (parseFloat(this.value) >= 0) {
+          scheme1_amount += parseFloat(this.value);
+        }
+      }
+      if (parseFloat($("#SALES_RATE_" + row_id).val()) >= 0) {
+        if (parseFloat(this.value) >= 0) {
+          scheme1_amount += parseFloat(this.value);
+        }
+      }
+    });
+
+    if (parseFloat(scheme1_amount) > 0) {
+      $("#SCHEME1_TOTAL").val(parseFloat(scheme1_amount.toFixed(2)));
+      $(".SCHEME1_TOTAL").html(parseFloat(scheme1_amount.toFixed(2)));
+    } else {
+      document.getElementById("SCHEME1_TOTAL").value = parseFloat(0.0);
+    }
+
+    let scheme2_amount = 0;
+    $("#sampleTable .SCHEME2_AMOUNT").each(function () {
+      let cess_id = this.id;
+      let split_cess_id = cess_id.split("_");
+      let row_id = split_cess_id[2];
+      if (parseFloat($("#PUR_RATE_" + row_id).val()) >= 0) {
+        if (parseFloat(this.value) >= 0) {
+          scheme2_amount += parseFloat(this.value);
+        }
+      }
+      if (parseFloat($("#SALES_RATE_" + row_id).val()) >= 0) {
+        if (parseFloat(this.value) >= 0) {
+          scheme2_amount += parseFloat(this.value);
+        }
+      }
+    });
+    if (parseFloat(scheme2_amount) > 0) {
+      $("#SCHEME2_TOTAL").val(parseFloat(scheme2_amount.toFixed(2)));
+      $(".SCHEME2_TOTAL").html(parseFloat(scheme2_amount).toFixed(2));
+    } else {
+      document.getElementById("SCHEME2_TOTAL").value = parseFloat(0);
+    }
+
+    let tax_amt = 0;
+    let tax_amt_dmg = 0;
+    let tax_amt_prd = 0;
+    $("#sampleTable .TAX_AMT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        let current_id = this.id;
+        let split_id = current_id.split("_");
+        let row_id = split_id[2];
+        let calculate_rate = $("#PUR_RATE_" + row_id).val();
+        if ($("#SALES_RATE_" + row_id).length > 0) {
+          calculate_rate = $("#SALES_RATE_" + row_id).val();
+        }
+        let quantity = $("#QTY_" + row_id).val();
+        let multiply = parseFloat(calculate_rate) * parseFloat(quantity);
+        if (parseFloat($("#DAMAGE_" + row_id).val()) > 0) {
+          if ($("#sales_return_screen").length > 0) {
+            tax_amt += parseFloat(this.value);
+            tax_amt_dmg += parseFloat(this.value);
+          } else {
+            tax_amt -= parseFloat(this.value);
+            tax_amt_prd -= parseFloat(this.value);
+          }
+        } else {
+          if (parseFloat(multiply) > 0) {
+            tax_amt += parseFloat(this.value);
+            tax_amt_prd -= parseFloat(this.value);
+          } else {
+            if (parseFloat($("#TAX_AMT_" + row_id).val()) > 0) { } else { $("#TAX_AMT_" + row_id).val(0); }
+          }
+        }
+
+      }
+    });
+    if (parseFloat(tax_amt) > 0) {
+      $("#TAX_AMT").val(parseFloat(tax_amt).toFixed(2));
+      $(".TAX_AMT").html(parseFloat(tax_amt).toFixed(2));
+    } else {
+      console.warn("calculate_tax 9",tax_amt);
+      document.getElementById("TAX_AMT").value = tax_amt;
+    }
+
+    // APMC Tax Part Start //
+    let htmlapmctax = 0;
+    let total_apmc_tax_amt = 0;
+    let row_amount = 0;
+    let row_discount = 0;
+    let damage_total = 0;
+    let product_row_total = 0;
+    let apmc_tax_damage = 0;
+    let apmc_tax_product = 0;
+    let index = 0;
+    $("#sampleTable .VAT_APMC_CSS").each(function () {
+      if(parseInt(this.value) >= 0){
+        let id = this.id;
+        let split_id = id.split("_");
+        let reverse_array = split_id.reverse();
+        let row_id = reverse_array[0];
+        let discount_percentage = $("#DISCOUNT_PERCENT").val();
+        let product_amt = $("#AMT_" + row_id).val();
+
+        let insurance_vat = 0;
+        let scheme1_amount = $("#SCHEME1_AMOUNT_" + row_id).val();
+        let scheme2_amount = $("#SCHEME2_AMOUNT_" + row_id).val();
+        if($("#TAX_AMT_INSURANCE_" + row_id).length > 0){
+          insurance_vat = $("#TAX_AMT_INSURANCE_" + row_id).val();
+        }
+        if($("#SALES_INSURANCE_" + row_id).length > 0){
+          insurance_vat = $("#SALES_INSURANCE_" + row_id).val();
+        }
+        let damage_amt = 0;
+        if($("#DAMAGE_AMT_"+row_id).length){
+          damage_amt = $("#DAMAGE_AMT_"+row_id).val();
+        }
+        if($("#rw_"+index+" .DAMAGE_AMT").length){
+          damage_amt = $("#rw_"+index+" .DAMAGE_AMT").val();
+        }
+        
+        if(damage_amt > 0){
+          row_discount -= parseFloat(damage_amt);
+          damage_total += parseFloat(damage_amt);
+          let dmg_calc = (parseFloat(damage_amt) * parseFloat(parseFloat(this.value)/100));
+          apmc_tax_damage += dmg_calc;
+          $("#rw_"+index+" .TAX_AMT_APMC").val(dmg_calc);
+          console.log("APMC Row DMG Calc = ",index," INDEXDMG = ",damage_amt,"*",parseFloat(parseFloat(this.value)/100),"dmg calc==>",dmg_calc);
+        }
+        if(product_amt > 0) {
+          let row_discount_amt = ((parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount))) * (discount_percentage/100);
+          
+          let product_row_amt = (parseFloat(product_amt) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount) - parseFloat(row_discount_amt));
+          if ($(".unique_purchase").length) {
+            product_row_amt = (parseFloat(product_amt) + parseFloat(insurance_vat) - parseFloat(scheme1_amount) - parseFloat(scheme2_amount) - parseFloat(row_discount_amt));
+          }
+          //console.log("product_row_amt",product_row_amt);
+          if(product_row_amt > 0){
+            let calc = (parseFloat(product_row_amt) * parseFloat(parseFloat(this.value)/100));
+            console.log("APMC Row Calc = ",index," INDEX = ",product_row_amt,"*",parseFloat(parseFloat(this.value)/100),"calc=",calc);
+            $("#rw_"+index+" .TAX_AMT_APMC").val(calc);
+          apmc_tax_product += calc;
+        }
+      }
+      index++;
+      }
+    });
+    $(".htmlapmctax").html("APMC: PRD="+apmc_tax_product+" DMG="+apmc_tax_damage);
+    let final_apmc_total = parseFloat(apmc_tax_product) - parseFloat(apmc_tax_damage);
+
+    if ($(".unique_purchasereturnscreen, .unique_salesreturn").length) {
+      final_apmc_total = parseFloat(apmc_tax_product) + parseFloat(apmc_tax_damage);
+    }
+    if(parseFloat(final_apmc_total) > 0){
+      $("#APMC_TAX_AMT").val(final_apmc_total.toFixed(2));
+    }
+    // APMC Tax Part Over //
+
+    let weight_amt = 0;
+    let weight_counter = 0;
+    $("#sampleTable .WEIGHT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        weight_amt +=
+          parseFloat(this.value) *
+          parseFloat(
+            document.getElementsByClassName("QTY").item(weight_counter).value
+          );
+      }
+      weight_counter++;
+    });
+
+    if (parseFloat(weight_amt) > 0) {
+      $("#WEIGHT_KG_LTR").val(parseFloat(weight_amt).toFixed(2));
+    } else {
+      document.getElementById("WEIGHT_KG_LTR").value = 0;
+    }
+
+    let cess_amt1 = 0;
+    let rate_counter = 0;
+    let purchase_rate = 0;
+    let cess_amt_add = 0;
+    let cess_amt_minus = 0;
+
+    //**************** Quantity Calculation Start ****************//
+    let cess_html = "";
+    $("#sampleTable .CESSPER").each(function () {
+      if (parseFloat(this.value) > 0) {
+        let cess_id = this.id;
+        let split_cess_id = cess_id.split("_");
+        let row_id = split_cess_id[1];
+        let calc_cess_amt = 0;
+        let final_row_cess_amt = 0;
+        let product_amt = parseFloat($("#AMT_" + row_id).val());
+        let sch1 = parseFloat($("#SCHEME1_AMOUNT_" + row_id).val());
+        let sch2 = parseFloat($("#SCHEME2_AMOUNT_" + row_id).val());
+        let row_disc_amt = parseFloat($("#DISCAMT_" + row_id).val()) > 0 ? parseFloat($("#DISCAMT_" + row_id).val()) : 0;
+        let insurance_amt = parseFloat($("#TAX_AMT_INSURANCE_" + row_id).val()) > 0 ? parseFloat($("#TAX_AMT_INSURANCE_" + row_id).val()) : 0;
+        let calculate_percentage = parseFloat($("#TAX_PER_" + row_id).html()) > 0 ? parseFloat($("#TAX_PER_" + row_id).html()) : 0;
+        let calculate_rate = $("#PUR_RATE_" + row_id).val();
+        if ($("#SALES_RATE_" + row_id).length > 0) {
+          calculate_rate = $("#SALES_RATE_" + row_id).val();
+        }
+        if ($("#DAMAGE_AMT_" + row_id).length > 0 && $("#DAMAGE_AMT_" + row_id).val() > 0) {
+          product_amt = $("#DAMAGE_AMT_" + row_id).val();
+          calc_cess_amt = product_amt - sch1 - sch2 - row_disc_amt;
+          if (parseFloat(calc_cess_amt)) {
+            calc_cess_amt = calc_cess_amt * (parseFloat(this.value) / 100);
+            $("#CESSAMT_" + row_id).val(calc_cess_amt.toFixed(2));
+          }
+        } else {
+          let string_insurance_calc = "";
+          let calc_row_cess_amt = parseFloat(product_amt)-parseFloat(sch1)-parseFloat(sch2)-parseFloat(row_disc_amt);
+          if ($(".unique_purchase").length) {
+            calc_row_cess_amt = parseFloat(product_amt)+parseFloat(insurance_amt)-parseFloat(sch1)-parseFloat(sch2)-parseFloat(row_disc_amt);
+          }
+          
+          row_cess_amt = (parseFloat(calc_row_cess_amt)) * (parseFloat(this.value) / 100);
+          $("#CESSAMT_" + row_id).val(row_cess_amt.toFixed(2));
+          cess_amt_add += row_cess_amt;
+        }
+      }
+    });
+    //**************** Quantity Calculation Over ****************//
+
+
+    //**************** Damage Calculation Start ****************//
+    
+    $("#sampleTable .CESSPER").each(function () {
+      if (parseFloat(this.value) > 0) {
+        let cess_id = this.id;
+        let split_cess_id = cess_id.split("_");
+        let row_id = split_cess_id[1];
+        let final_row_cess_amt = 0;
+        let product_amt = parseFloat($("#AMT_" + row_id).val());
+        let insurance_amt = parseFloat($("#TAX_AMT_INSURANCE_" + row_id).val()) > 0 ? parseFloat($("#TAX_AMT_INSURANCE_" + row_id).val()) : 0;
+        let calculate_percentage = parseFloat($("#TAX_PER_" + row_id).html()) > 0 ? parseFloat($("#TAX_PER_" + row_id).html()) : 0;
+        let damage_amt = parseFloat($("#DAMAGE_AMT_" + row_id).val());
+        let sch1 = parseFloat($("#SCHEME1_AMOUNT_" + row_id).val());
+        let sch2 = parseFloat($("#SCHEME2_AMOUNT_" + row_id).val());
+        if (damage_amt > 0) {
+          let final_damage_amt = parseFloat(damage_amt) * (this.value / 100);
+          cess_amt_minus += final_damage_amt;
+        }
+      }
+    });
+    //**************** Damage Calculation Over ****************//
+
+    if ($("#sales_return_screen").length > 0) {
+      cess_amt1 = parseFloat(cess_amt_add) + parseFloat(cess_amt_minus);
+    } else {
+      cess_amt1 = parseFloat(cess_amt_add) - parseFloat(cess_amt_minus);
+    }
+
+    console.error("cess_amt_add",cess_amt_add);
+    console.error("cess_amt_minus",cess_amt_minus);
+    if ($('.pur_return_screen').length > 0) {
+      cess_amt1 = parseFloat(cess_amt_add) + parseFloat(cess_amt_minus);
+      $("#CESS_AMT").val(parseFloat(Math.abs(cess_amt1)).toFixed(2));
+    } else if ($('.sales_screen').length > 0) {
+      $("#CESS_AMT").val(parseFloat(cess_amt1).toFixed(2));
+    } else {
+      $("#CESS_AMT").val(parseFloat(cess_amt1).toFixed(2));
+    }
+    cess_html += " PRD="+cess_amt_add+" DMG="+cess_amt_minus;
+    cess_html += " = "+cess_amt1;
+    $(".cess123").html("CESS: "+cess_html);
+
+    let add_cess_amt = 0;
+    $("#sampleTable .ADDCESSPER").each(function () {
+      if (parseFloat(this.value) > 0) {
+        let one_row_add_cess_amt = 0;
+        let cess_id = this.id;
+        let split_cess_id = cess_id.split("_");
+        let row_id = split_cess_id[1];
+
+        if (parseFloat($("#PUR_RATE_" + row_id).val()) > -1) {
+          add_cess_amt += parseFloat(this.value) * parseFloat($("#QTY_" + row_id).val());
+          one_row_add_cess_amt = parseFloat(this.value) * parseFloat($("#QTY_" + row_id).val());
+        }
+
+        if (parseFloat($("#SALES_RATE_" + row_id).val()) > 0) {
+          add_cess_amt += parseFloat(this.value) * parseFloat($("#QTY_" + row_id).val());
+          one_row_add_cess_amt = parseFloat(this.value) * parseFloat($("#QTY_" + row_id).val());
+        }
+        $("#ADDCESSAMT_" + row_id).val(one_row_add_cess_amt);
+      }
+    });
+   
+    let dmg_amt_total = 0;
+    $("#sampleTable .DAMAGE_AMT").each(function () {
+      if (parseFloat(this.value) > 0) {
+        dmg_amt_total += parseFloat(this.value);
+      }
+    });
+   
+    if (parseFloat(add_cess_amt) > 0) {
+      $("#CESS_AMT_ADDL").val(parseFloat(Math.abs(add_cess_amt)).toFixed(2));
+    } else {
+      $("#CESS_AMT_ADDL").val(0);
+    }
+
+    let final_amount =
+      parseFloat(replace_amt) +
+      parseFloat(tax_amt) +
+      parseFloat(total_apmc_tax_amt) +
+      parseFloat(total_mrp) -
+      parseFloat(discount_amount_total) -
+      parseFloat(dmg_amt_total) -
+      parseFloat(scheme1_amount) -
+      parseFloat(scheme2_amount);
+    if ($("#sales_return_screen").length > 0) {
+      final_amount =
+        parseFloat(replace_amt) +
+        parseFloat(tax_amt) +
+        parseFloat(total_apmc_tax_amt) +
+        parseFloat(total_mrp) +
+        parseFloat(discount_amount_total) -
+        parseFloat(dmg_amt_total) -
+        parseFloat(scheme1_amount) -
+        parseFloat(scheme2_amount);
+    }
+    $("#FINAL_AMT").val(final_amount.toFixed(2));
+    $(".FINAL_AMT").html(parseFloat(final_amount).toFixed(2));
+    $("#TEMP_FINAL_AMT").val(final_amount.toFixed(2));
+    calculateRoundOff();
+  }
+
+  function fnRedirectEditUrl(id, company_id, url) {
+    if (id > 0 && company_id > 0) {
+      window.location.href = url + '?id=' + id + '&cid=' + company_id;
+    } else {
+      window.location.href = url;
+    }
+  }
+
+  function openSwalSuccess(message, reload_url) {
+    hideLoader();
+    $("#loader").html('Please Wait...');
+    $(".submit-button").hide();
+    swal({
+      title: 'Success',
+      text: message,
+      timer: 500,
+      button: false,
+      icon: 'success',
+    }).then(
+      function () {
+        if (typeof reload_url !== undefined && reload_url != "") {
+          window.location.href = reload_url;
+        } else {
+          location.reload();
+        }
+      },
+      function (dismiss) {
+        if (dismiss === 'timer') {
+          consoleLog('I was closed by the timer');
+        }
+      }
+    )
+  }
+
+  function openSwalSuccessImport(message, reload_url) {
+    hideLoader();
+    $("#loader").html('Please Wait...');
+    $(".submit-button").hide();
+    swal({
+      title: 'Success',
+      text: message,
+      timer: 5000,
+      button: false,
+      icon: 'success',
+    }).then(
+      function () {
+        if (typeof reload_url !== undefined && reload_url != "") {
+          window.location.href = reload_url;
+        } else {
+          location.reload();
+        }
+      },
+      function (dismiss) {
+        if (dismiss === 'timer') {
+          consoleLog('I was closed by the timer');
+        }
+      }
+    )
+  }
+
+  function fnDeleteConfirm(url) {
+    swal({
+      title: 'Confirm Action',
+      text: "Are you sure you wanna delete this record?",
+      buttons: {
+        cancel: {
+          text: "Cancel",
+          value: null,
+          visible: true,
+          className: "btn btn-danger",
+          closeModal: true,
+        },
+        confirm: {
+          text: "OK",
+          value: true,
+          visible: true,
+          className: "btn btn-primary",
+          closeModal: true
+        }
+      }
+    }).then(function (confirm) {
+      if (confirm) { window.location.href = url; }
+    });
+  }
+
+  function isNumberKey(evt) {
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    if (charCode != 46 && charCode > 31
+      && (charCode < 48 || charCode > 57))
+      return false;
+    return true;
+  }
+
+  function isOnlyNumberKey(evt) {
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    if ((charCode < 48 || charCode > 57))
+      return false;
+    return true;
+  }
+
+  function getDecimalPart(number) {
+    return number % 1;
+  }
+
+  function removeNonNumeric(str) {
+    return str.replace(/[^0-9]/g, '');
+  }
+
+  function fnEditScreen() {
+    $("BOX_UNIT").attr('readonly', true);
+    //$(".MQTY").attr('readonly',true);
+    $(".MRP").attr('readonly', true);
+    $(".SCHEME1_TOTAL").attr('readonly', true);
+    $(".SCHEME2_TOTAL").attr('readonly', true);
+    $(".GROSS_TOTAL").attr('readonly', true);
+    $(".WEIGHT_KG_LTR").attr('readonly', true);
+    $(".CESS_AMT").attr('readonly', true);
+    $(".TAX_AMT_INSURANCE").attr('readonly', true);
+    $(".CESS_AMT_ADDL").attr('readonly', true);
+    $(".DISCOUNT_AMOUNT").attr('readonly', true);
+    $(".TAX_AMT").attr('readonly', true);
+    //$(".DMG_MRP").attr('readonly',true);
+    //$(".DAMAGE_AMT").attr('readonly',true);
+    $(".TCS_TAX").attr('readonly', true);
+    $(".FINAL_AMT").attr('readonly', true);
+    $('.dataentrycalcwrapper :input[readonly]').css({ 'background-color': 'lightgray' });
+  }
+
+  function fnDeleteSalesRecord(url, id, cid, table_name, delete_reason) {
+    if (delete_reason == '') {
+      alert("Please select reason");
+      return false;
+    } else {
+      window.location.href = url + "?id=" + id + "&cid=" + cid + '&action=delete&table=' + table_name + '&delete_reason=' + delete_reason;
+    }
+  }
+
+  function fnDeleteRecordRow(index, pk) {
+    $("#rw_" + index+" .QTY").val(0);
+    $("#rw_" + index+" .QTY").change();
+    $("#rw_" + index).hide();
+    updateFooterPart();
+  }
+  function fnHideRow(index, name) {
+    $("#rw_" + index).hide();
+    $("#rw_" + index + " td .PROD_ID").val(0);
+    $("#rw_" + index + " td .PROD_BATCH_ID").val(0);
+    $("#rw_" + index + " td .QTY").val(0);
+    $("#rw_" + index + " td .FREE").val(0);
+    $("#rw_" + index + " td .REPLACE").val(0);
+    $("#rw_" + index + " td .DAMAGE").val(0);
+    getProductDetails(0, name);
+    updateFooterPart();
+  }
+
+  function fnDeleteRecord(url, id, cid, table_name) {
+    swal({
+      title: 'Confirm Action',
+      text: "Are you sure you wanna delete this data record?",
+      buttons: {
+        cancel: {
+          text: "Cancel",
+          value: null,
+          visible: true,
+          className: "btn btn-danger",
+          closeModal: true,
+        },
+        confirm: {
+          text: "OK",
+          value: true,
+          visible: true,
+          className: "btn btn-primary",
+          closeModal: true
+        }
+      }
+    }).then(function (confirm) {
+      if (confirm) {
+        window.location.href = url + "?id=" + id + "&cid=" + cid + '&action=delete&table=' + table_name;
+      }
+    });
+  }
+
+  function fnDeleteExistingRow(index, pk) {
+    swal({
+      title: 'Confirm Action',
+      text: "Are you sure you wanna delete this row?",
+      buttons: {
+        cancel: {
+          text: "Cancel",
+          value: null,
+          visible: true,
+          className: "btn btn-danger",
+          closeModal: true,
+        },
+        confirm: {
+          text: "OK",
+          value: true,
+          visible: true,
+          className: "btn btn-primary",
+          closeModal: true
+        }
+      }
+    }).then(function (confirm) {
+      if (confirm) {
+
+        if ($('.purchase_return_screen').length > 0) {
+
+          let purchase_item_id = pk;
+          let purchase_id = $("#edit_id").val();
+          let prod_batch_id = $("#rw_" + index + " .batch").val();
+          let batch_qty = $("#rw_" + index + " .QTY").val();
+          let free_qty = $("#rw_" + index + " .FREE").val();
+          let replace_qty = $("#rw_" + index + " .REPLACE").val();
+          let damage_qty = 0;
+          let final_qty = 0;
+          if (parseFloat(batch_qty) > 0) {
+            final_qty += parseFloat(batch_qty);
+          }
+          if (parseFloat(free_qty) > 0) {
+            final_qty += parseFloat(free_qty);
+          }
+          if (parseFloat(replace_qty) > 0) {
+            final_qty += parseFloat(replace_qty);
+          }
+          if (parseFloat(damage_qty) > 0) {
+            final_qty += parseFloat(damage_qty);
+          }
+          $("#rw_" + index + " .QTY").val(0);
+          $("#rw_" + index + " .DAMAGE").val(0);
+          $("#rw_" + index + " .REPLACE").val(0);
+          $("#rw_" + index + " .QTY").change();
+          $("#rw_" + index).remove();
+
+          if (prod_batch_id > 0 && final_qty > 0) {
+            $.ajax({
+              method: "POST",
+              url: '/dataentry/restoreQtyToBatchForPurReturn',
+              dataType: "json",
+              data: { prod_batch_id: prod_batch_id, batch_qty: final_qty, purchase_id: purchase_id, purchase_item_id: purchase_item_id }
+            }).done(function (response) {
+              if (response.success == 1) {
+                $("#SUB_AC_DEBTORS").html(response.data);
+                //location.reload();
+                fnCloseBottomProductDetails();
+              } else {
+                alert("Error : " + JSON.stringify(response.query));
+              }
+            });
+          }
+        }
+
+        if ($('.purchasescreen').length > 0) {
+          let purchase_item_id = pk;
+          let purchase_id = $("#edit_id").val();
+          let prod_batch_id = $("#rw_" + index + " .batch").val();
+          let batch_qty = $("#rw_" + index + " .QTY").val();
+          let free_qty = $("#rw_" + index + " .FREE").val();
+          let replace_qty = $("#rw_" + index + " .REPLACE").val();
+          //let damage_qty = $("#rw_"+index+" .DAMAGE").val();
+          let damage_qty = 0;
+          let final_qty = 0;
+          if (parseFloat(batch_qty) > 0) {
+            final_qty += parseFloat(batch_qty);
+          }
+          if (parseFloat(free_qty) > 0) {
+            final_qty += parseFloat(free_qty);
+          }
+          if (parseFloat(replace_qty) > 0) {
+            final_qty += parseFloat(replace_qty);
+          }
+          if (parseFloat(damage_qty) > 0) {
+            final_qty += parseFloat(damage_qty);
+          }
+          $("#rw_" + index + " .QTY").val(0);
+          $("#rw_" + index + " .DAMAGE").val(0);
+          $("#rw_" + index + " .REPLACE").val(0);
+          $("#rw_" + index + " .QTY").change();
+          $("#rw_" + index).remove();
+
+          if (prod_batch_id > 0 && final_qty > 0) {
+            $.ajax({
+              method: "POST",
+              url: '/dataentry/deductQtyFromBatch',
+              dataType: "json",
+              data: { prod_batch_id: prod_batch_id, batch_qty: final_qty, purchase_id: purchase_id, purchase_item_id: purchase_item_id }
+            }).done(function (response) {
+              if (response.success == 1) {
+                $("#SUB_AC_DEBTORS").html(response.data);
+                //location.reload();
+                fnCloseBottomProductDetails();
+              } else {
+                alert("Error : " + JSON.stringify(response.query));
+              }
+            });
+          }
+        }
+
+        if ($('.salesscreen').length > 0 || $("#sales_return_screen").length > 0) {
+          let sales_id = $("#edit_id").val();
+          let sales_item_id = pk;
+          let prod_batch_id = $("#rw_" + index + " .batch").val();
+          let batch_qty = $("#rw_" + index + " .QTY").val();
+          let free_qty = $("#rw_" + index + " .FREE").val();
+          let replace_qty = $("#rw_" + index + " .REPLACE").val();
+          //let damage_qty = $("#rw_"+index+" .DAMAGE").val();
+          let damage_qty = 0;
+          let final_qty = 0;
+          if (parseFloat(batch_qty) > 0) {
+            final_qty += parseFloat(batch_qty);
+          }
+          if (parseFloat(free_qty) > 0) {
+            final_qty += parseFloat(free_qty);
+          }
+          if (parseFloat(replace_qty) > 0) {
+            final_qty += parseFloat(replace_qty);
+          }
+          if (parseFloat(damage_qty) > 0) {
+            final_qty += parseFloat(damage_qty);
+          }
+          $("#rw_" + index + " .QTY").val(0);
+          $("#rw_" + index + " .DAMAGE").val(0);
+          $("#rw_" + index + " .REPLACE").val(0);
+          $("#rw_" + index + " .QTY").change();
+          $("#rw_" + index).remove();
+          if (prod_batch_id > 0 && final_qty > 0) {
+            $.ajax({
+              method: "POST",
+              url: '/dataentry/restoreQtyToBatch',
+              dataType: "json",
+              data: { prod_batch_id: prod_batch_id, batch_qty: final_qty, sales_id: sales_id, sales_item_id: sales_item_id }
+            }).done(function (response) {
+              if (response.success == 1) {
+                //location.reload();
+                //$("#SUB_AC_DEBTORS").html(response.data);
+                setTimeout(function () {
+                  fnCloseBottomProductDetails();
+                }, 1000);
+              } else {
+                alert("Error : " + JSON.stringify(response.query));
+              }
+            });
+          }
+        }
+
+
+      }
+    });
+  }
+
+  function getFilterData(reset_option) {
+    let keyword = document.getElementById('keyword').value;
+    let start_date = document.getElementById('start_date').value;
+    let end_date = document.getElementById('end_date').value;
+    let page_number = document.getElementById('current_page_no').value;
+    if (reset_option == 1) {
+      page_number = 1;
+    }
+    window.location.href = "{{listLink}}?keyword=" + keyword + "&start_date=" + start_date + "&end_date=" + end_date + "&page_no=" + page_number;
+  }
+
+  function showLoader() {
+    $("#loader").html('Please Wait...');
+    $(".loader").html('Please Wait...');
+    $(".submit-button").hide();
+  }
+  function hideLoader() {
+    $("#loader").html('');
+    $(".loader").html('');
+    $(".submit-button").show();
+  }
+
+  function getCustomerBySelectedArea(area_id) {
+    if (area_id > 0) {
+      $.ajax({
+        method: "POST",
+        url: '/dataentry/getCustomerBySelectedArea',
+        dataType: "json",
+        data: { area_id: area_id }
+      }).done(function (response) {
+        if (response.success == 1) {
+          $("#SUB_AC_DEBTORS").html(response.data);
+        } else {
+          alert("Error : " + JSON.stringify(response.query));
+        }
+      });
+    }
+  }
+
+  function fnGetAccountInvoice1(sac_id, row_id, screen = 'cash') {
+    if (sac_id > 0) {
+      let src_entry = $("#SRC_ENTRY").val();
+      let html = '';
+      let data = { id: sac_id, src_entry: src_entry }
+      $.ajax({
+        method: "GET",
+        url: "/dataentry/get_store_invoice",
+        data: data
+      }).done(function (response) {
+        $("#INV_ARR_" + row_id).val('');
+        $("#INV_IDS_" + row_id).val('');
+        //$("#AMT_"+row_id).val(0);
+        let mac_data = response.mac_result;
+        let data = response.data;
+        let mac_id = 10;
+        if (mac_data && mac_data[0].MAC_ID == 5) {
+          mac_id = 9;
+          $("#SRC_ENTRY").val(mac_id);
+        } else {
+          $("#SRC_ENTRY").val(mac_id);
+        }
+
+        let purchase_or_sale = "Sale";
+        if(response.mac_result[0].MAC_ID == 11){
+          purchase_or_sale = "Purchase";
+        }
+        $("#PUR_OR_SALE_" + row_id).val(purchase_or_sale);
+
+        fnGetAccountInvoiceCash(sac_id, row_id, screen, mac_id);
+        /* if(response && response.data !== false){
+          for (let i = 0; i < data.length; i++) {
+
+
+            let paid_amt = 0;
+            let return_amt = 0;
+            let balance_amount = 0;
+            console.log("data",data[i]);
+            if(parseFloat(data[i].PAID_AMT) > 0){paid_amt = data[i].PAID_AMT;}
+            if(parseFloat(data[i].RETURN_AMT) > 0){return_amt = data[i].RETURN_AMT;}
+            if(parseFloat(data[i].FINAL_AMT) > 0){
+              balance_amount = parseFloat(data[i].FINAL_AMT) - parseFloat(paid_amt) - parseFloat(return_amt);
+            }
+            if(parseFloat(data[i].FINAL_AMT) > paid_amt){
+              let prefix = "000";
+              if(response.sales_or_purchase == 'purchase'){
+                prefix = '';
+              }
+              html += '<tr><td class="inv'+data[i].ID+'">'+prefix+data[i].INVOICE_SEQ+'</td><td>'+data[i].SALES_DATE+'</td><td class="famt'+data[i].ID+'">'+data[i].FINAL_AMT+'</td><td class="pamt'+data[i].ID+'">'+paid_amt+'</td><td><input type="text" id="'+data[i].ID+'" class="enter'+data[i].ID+' paidamt form-control-sm w-50" onkeypress="return isNumberKey(event)" onchange="fnUpdateSalesValue(this.value,'+data[i].ID+')" value="" /></td><td class="res'+data[i].ID+'">'+balance_amount+'</td></tr>';
+            }
+          }
+        }
+        setTimeout(function(){
+          $("#invoice_response").html(html);
+        },1000);*/
+      });
+    } else {
+      $("#invoice_response").html('<tr><td colspan="6">No Record Found</td></tr>');
+    }
+  }
+
+  function fnGetAccountInvoiceCash(sac_id, row_id, screen, mac_id) {
+    if (sac_id > 0) {
+      let src_entry = $("#SRC_ENTRY").val();
+      let html = '';
+      let data = { id: sac_id, src_entry: src_entry }
+      $.ajax({
+        method: "GET",
+        url: "/dataentry/get_store_invoice",
+        data: data
+      }).done(function (response) {
+        $("#INV_ARR_" + row_id).val('');
+        $("#INV_IDS_" + row_id).val('');
+        $("#AMT_" + row_id).val('');
+        let mac_data = response.mac_result;
+        let data = response.data;
+        if (screen == 'cash') {
+          if (mac_data && mac_data[0].MAC_ID == 5) {
+            $("#SRC_ENTRY").val(9);
+          } else {
+            $("#SRC_ENTRY").val(10);
+          }
+        }
+        var selectedText = $('#ACC_TO_' + row_id + ' option:selected').text();
+        $("#store_name").html(selectedText);
+        if (response && response.data !== false) {
+          for (let i = 0; i < data.length; i++) {
+            let paid_amt = 0;
+            let return_amt = 0;
+            let balance_amount = 0;
+            if (parseFloat(data[i].PAID_AMT) > 0) { paid_amt = data[i].PAID_AMT; }
+            if (parseFloat(data[i].RETURN_AMT) > 0) { return_amt = data[i].RETURN_AMT; }
+            if (parseFloat(data[i].FINAL_AMT) > 0) {
+              balance_amount = parseFloat(data[i].FINAL_AMT) - parseFloat(paid_amt) - parseFloat(return_amt);
+            }
+
+            if (parseFloat(data[i].FINAL_AMT) > paid_amt) {
+              let prefix = "000";
+              if (response.sales_or_purchase == 'purchase') {
+                prefix = '';
+              }
+
+              let final_amt = data[i].FINAL_AMT;
+              if (data[i].RETURN_AMT && parseFloat(data[i].RETURN_AMT) > 0) {
+                //final_amt -= parseFloat(data[i].RETURN_AMT);
+              }
+              if (data[i].CASH && parseFloat(data[i].CASH) > 0) {
+                //final_amt -= parseFloat(data[i].CASH);
+              }
+
+              let html_new = `<tr class="popup_${data[i].ID}">`;
+              html_new += `<td class="inv${data[i].ID}">${data[i].INVOICE_NO}</td>`;
+              html_new += `<td>${data[i].SALES_DATE}</td>`;
+              html_new += `<td class="famt${data[i].ID}" id="${data[i].ID}">${data[i].FINAL_AMT}</td>`;
+              html_new += `<td class="res${data[i].ID}">${balance_amount}
+                      <span class="pamt${data[i].ID} d-none" id="${data[i].ID}">${paid_amt}</span>
+                    </td>`;
+              html_new += `<td><input type="text" onkeyup="fnUpdateBankEntryBalance(this.value,${balance_amount},${data[i].ID})" onchange="fnVerifyMaxNo(this.value,${data[i].ID},${balance_amount})" id="${data[i].ID}" class="enter${data[i].ID} paidamt form-control-sm w-50" onkeypress="return isNumberKey(event)" onchange="fnUpdateSalesValue(this.value,${data[i].ID})" value="" /></td>`;
+              html_new += `<td class="res${data[i].ID}" id="balance_update_${data[i].ID}">${balance_amount}</td>`;
+              html_new += `</tr>`;
+              html_new += `<tr class="popupblank_${data[i].ID}">`;
+              html_new += `<td colspan="5" class="html_error text-danger"></td>`;
+              html_new += `</tr>`;
+
+              html += html_new;
+            }
+          }
+        }
+        setTimeout(function () {
+          $("#invoice_response").html(html);
+        }, 1000);
+      });
+    } else {
+      $("#invoice_response").html('<tr><td colspan="6">No Record Found</td></tr>');
+    }
+  }
+
+  function openClosePopup(id, value) {
+    if (value == 0) {
+      togglePopup(id, 'open');
+    }
+  }
+
+  function fnGetAccountInvoice(sac_id, row_id, screen = 'cash') {
+    if (sac_id > 0) {
+      let src_entry = $("#SRC_ENTRY").val();
+      let html = '';
+      let data = { id: sac_id, row_id: row_id, src_entry: src_entry }
+      $.ajax({
+        method: "GET",
+        url: "/dataentry/get_store_invoice",
+        data: data
+      })
+        .done(function (response) {
+          //console.log("fnGetAccountInvoice MACID", response.mac_result[0].MAC_ID);
+          $("#INV_ARR_" + row_id).val('');
+          $("#INV_IDS_" + row_id).val('');
+          let purchase_or_sale = "Sale";
+          if(response.mac_result[0].MAC_ID == 11){
+            purchase_or_sale = "Purchase";
+          }
+          $("#PUR_OR_SALE_" + row_id).val(purchase_or_sale);
+          
+          //$("#AMT_"+row_id).val(0);
+          $("#AMT_" + row_id).removeAttr('readonly');
+          let mac_data = response.mac_result;
+          let data = response.data;
+          var selectedText = $('#ACC_TO_' + row_id + ' option:selected').text();
+          $("#store_name").html(selectedText);
+          if (response && response.data !== false) {
+            for (let i = 0; i < data.length; i++) {
+
+              let paid_amt = 0;
+              let return_amt = 0;
+              let balance_amount = 0;
+              if (parseFloat(data[i].PAID_AMT) > 0) { paid_amt = data[i].PAID_AMT; }
+              if (parseFloat(data[i].RETURN_AMT) > 0) { return_amt = data[i].RETURN_AMT; }
+              if (parseFloat(data[i].FINAL_AMT) > 0) {
+                balance_amount = parseFloat(data[i].FINAL_AMT) - parseFloat(paid_amt) - parseFloat(return_amt);
+              }
+              if (parseFloat(data[i].FINAL_AMT) > paid_amt) {
+                let prefix = "000";
+                if (response.sales_or_purchase == 'purchase') {
+                  prefix = '';
+                }
+
+                let html_new = `<tr class="popup_${data[i].ID}">`;
+                html_new += `<td class="inv${data[i].ID}">${data[i].INVOICE_NO}</td><td>${data[i].SALES_DATE}</td><td class="famt${data[i].ID}" id="${data[i].ID}">${data[i].FINAL_AMT}</td>`;
+                html_new += `<td class="res${data[i].ID}">${balance_amount}<span class="pamt${data[i].ID} d-none" id="${data[i].ID}">${paid_amt}</span></td>`;
+                html_new += `<td><input onkeyup="fnUpdateBankEntryBalance(this.value,${balance_amount},${data[i].ID})" onchange="fnVerifyMaxNo(this.value,${data[i].ID},${balance_amount})" type="text" id="${data[i].ID}" class="enter${data[i].ID} paidamt form-control-sm w-50" onkeypress="return isNumberKey(event)" onchange="fnUpdateSalesValue(this.value,${data[i].ID})" value="" /></td>`;
+                html_new += `<td class="res${data[i].ID}" id="balance_update_${data[i].ID}">${balance_amount}</td>`;
+                html_new += `</tr>`;
+                html_new += `<tr class="popupblank_${data[i].ID}"><td colspan="5" class="html_error text-danger"></td>`;
+                html_new += `</tr>`;
+
+                html += html_new;
+              }
+
+              if (response.total_bank_details == 1) {
+                if ($("#SRC_ENTRY").val() == 14) {
+                  $("#rw_" + row_id + " #DRAWEE_BANK_NAME_" + row_id).val("UPI");
+                  $("#rw_" + row_id + " #DRAWEE_BANK_BRANCH_" + row_id).val("");
+                } else {
+                  $("#rw_" + row_id + " #DRAWEE_BANK_NAME_" + row_id).val(response.bank_details[0].DRAWEE_BANK_NAME);
+                  $("#rw_" + row_id + " #DRAWEE_BANK_BRANCH_" + row_id).val(response.bank_details[0].DRAWEE_BANK_BRANCH);
+                }
+              } else {
+                $("#rw_" + row_id + " #DRAWEE_BANK_NAME_" + row_id).val("");
+                $("#rw_" + row_id + " #DRAWEE_BANK_BRANCH_" + row_id).val("");
+              }
+            }
+          }
+
+          setTimeout(function () {
+            $("#invoice_response").html(html);
+          }, 1000);
+        });
+    } else {
+      $("#invoice_response").html('<tr><td colspan="6">No Record Found</td></tr>');
+    }
+  }
+
+  function fnUpdateBankEntryBalance(amt, max_allowed_amt, id) {
+    let calculate_amt = parseFloat(max_allowed_amt) - parseFloat(amt);
+    if (calculate_amt > 0) {
+      $("#balance_update_" + id).html(calculate_amt);
+    }
+  }
+
+  function verifyBatch(column_name, value, row_id) {
+    let batch_id = $("#PROD_BATCH_ID_" + row_id).val();
+    if (batch_id == "") {
+      $("#" + column_name + "_" + row_id).val(0);
+    }
+  }
+
+  function fnVerifyMaxNo(amount, row_id, allow_max_amount) {
+    $(".html_error").html("");
+    if (parseFloat(amount) > parseFloat(allow_max_amount)) {
+      $(".popupblank_" + row_id + " .html_error").html("Max amount allowed is " + allow_max_amount);
+      $(".continue_button").hide();
+    } else {
+      $(".continue_button").show();
+    }
+
+  }
+  function fnDeletePlainRow(row_id) {
+    if(confirm("Are you sure to delete this row?")){
+      $("#rw_" + row_id).remove();
+      //$(".addbutton").show();
+      setTimeout(function () { updateFooterPart(); }, 300);
+    } else {
+      return false;
+    }
+  }
+
+  function getDebtorsAddress(debtor_id) {
+    $.ajax({
+      method: "GET",
+      url: "/dataentry/get_debtors_address?debtor_id=" + debtor_id
+    })
+      .done(function (response) {
+        if (response && response.data.length > 0) {
+          let address = response.data[0].S_ADD1 + " " + response.data[0].S_ADD2 + " " + response.data[0].CITY;
+          let gst_no = response.data[0].GST_NO;
+          let fssai_no = response.data[0].FOOD_LICENSE_NO;
+          let full_response = address + " " + gst_no + " " + fssai_no;
+          let final_response = "<span class='ml-2'><b class='text-info'>Address : </b>" + address + "</span>";
+          if (gst_no != "") {
+            final_response += "<span class='ml-2'><b class='text-info'>GST : </b>" + gst_no + "</span>";
+          }
+          if (fssai_no != "") {
+            final_response += "<span class='ml-2'><b class='text-info'>FSSAI : </b>" + fssai_no + "</span>";
+          }
+          $("#ACC_ADDRESS").val(full_response);
+          $("#debtors_address").html(final_response);
+        } else {
+          $("#debtors_address").html("");
+        }
+      });
+  }
+
+  function getSalesOrderList(customer_id) {
+    let data = { customer_id: customer_id }
+    $.ajax({
+      method: "POST",
+      url: "/master/get_custmer_sales_order",
+      data: data
+    })
+      .done(function (response) {
+        $("#SALES_ORDER").html(response.data);
+      })
+  }
+
+  function fnCancel(reload_url) {
+    swal({
+      title: 'Confirm Action',
+      text: "Are you sure you wanna reset/cancel?",
+      buttons: {
+        cancel: {
+          text: "No",
+          value: null,
+          visible: true,
+          className: "btn btn-danger",
+          closeModal: true,
+        },
+        confirm: {
+          text: "Yes",
+          value: true,
+          visible: true,
+          className: "btn btn-primary",
+          closeModal: true
+        }
+      }
+    }).then(function (confirm) {
+      if (confirm) { window.location.href = reload_url; }
+    });
+  }
+
+  function javascriptDateFormat(date1) {
+    if (date1 != "") {
+      const date = new Date(date1);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+      const year = date.getFullYear();
+      const formattedDate = `${day}/${month}/${year}`;
+      return formattedDate;
+    } else {
+      return "";
+    }
+  }
+
+  function fnCloseBottomProductDetails() {
+    $("#product_batch_information").addClass('d-none');
+  }
+
+  function fnGetSeries(ID, inv_type, company_id) {
+    if (ID != "") {
+      let data = {
+        ID: ID,
+        inv_type: inv_type,
+        inv_no: $("#INVOICE_NO").val(),
+        company_id: company_id
+      }
+      $.ajax({
+        method: "POST",
+        url: "/dataentry/get_sales_series_no",
+        data: data
+      })
+        .done(function (response) {
+          $("#INVOICE_NO").val(response.invoice_no);
+        })
+    }
+  }
+
+
+  function upDownKeyBatchPopup() {
+    const table = document.getElementById("batch_popup_table");
+    const rows = table.querySelectorAll("tbody tr");
+    let currentIndex = -1;
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        if (currentIndex >= 0) {
+          rows[currentIndex].classList.remove("highlighted");
+          rows[currentIndex].classList.add("normal");
+        }
+        currentIndex = Math.min(currentIndex + 1, rows.length - 1);
+        rows[currentIndex].classList.remove("normal");
+        rows[currentIndex].classList.add("highlighted");
+      } else if (event.key === "ArrowUp") {
+        if (currentIndex >= 0) {
+          rows[currentIndex].classList.remove("highlighted");
+          rows[currentIndex].classList.add("normal");
+        }
+        currentIndex = Math.max(currentIndex - 1, 0);
+        rows[currentIndex].classList.remove("normal");
+        rows[currentIndex].classList.add("highlighted");
+      } else if (event.key === "Enter" && currentIndex >= 0) {
+        const selectedRow = rows[currentIndex];
+        if (parseInt(selectedRow.id) > 0) {
+          let split_prod_id = selectedRow.getAttribute("rn").split("_");
+          let row_no = split_prod_id[2];
+          let qty = $("#QTY_" + row_no).val();
+          let damage = $("#DAMAGE_" + row_no).val();
+          let replace = $("#REPLACE_" + row_no).val();
+          if (qty == 0 || damage == '' || replace == '') {
+            fnSetBatch(selectedRow.id, selectedRow.getAttribute("rn"));
+          }
+        }
+      }
+    });
+  }
+
+  function generateUnique8DigitNumber() {
+    // Generate a random number between 10000000 and 99999999
+    const min = 10000000;
+    const max = 99999999;
+    const uniqueNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    return uniqueNumber;
+  }
+
+  /*function boxToPcs(pur_sale_qty,box_size){
+    let total_box = 0;
+    let total_pcs = 0;
+    let overall_box = pur_sale_qty;
+    if(overall_box){
+        let box_size = box_size;
+        const numberString = overall_box.toString();
+        const parts = numberString.split('.');
+        const total_box = parts[0];
+        const total_pcs = parseInt(parseFloat(parts[1])*parseFloat(box_size)/100) || 0;
+        return {total_box,total_pcs}
+    }
+  }*/
+
+  function fnPrintMultipleInvoices(tab_name) {
+    consoleLog("tab_name", tab_name);
+    let error = "";
+    $(".selection_error").html("");
+    let selected_tab = $("#selected_tab").val();
+    let invoice_ids = $("#invoice_ids").val();
+    let company_id = $("#company_id").val();
+    let start_date = $("#start_date").val();
+    let end_date = $("#end_date").val();
+    let start_date_so  = $("#start_date_so").val();
+    let end_date_so    = $("#end_date_so").val();
+
+    let start_date_ret = $("#start_date_ret").val();
+    let end_date_ret   = $("#end_date_ret").val();
+
+    let start_date_sc  = $("#start_date_sc").val();
+    let end_date_sc    = $("#end_date_sc").val();
+
+    let start_date_pur = $("#start_date_pur").val();
+    let end_date_pur   = $("#end_date_pur").val();
+
+    let start_date_pr  = $("#start_date_pr").val();
+    let end_date_pr    = $("#end_date_pr").val();
+
+    let start_date_po  = $("#start_date_po").val();
+    let end_date_po    = $("#end_date_po").val();
+
+    let selected_template = $("." + tab_name + " .selected_template_class").val();
+    if (selected_template == '' || typeof selected_template === 'undefined') {
+      error = "Please select invoice template";
+    }
+    if (invoice_ids == '') {
+      error = "Invoice not found";
+    }
+    if (error != "") {
+      $(".selection_error").html(error);
+    }
+    if (error == '') {
+      showLoader();
+      let data = {
+        company_id: company_id,
+        invoice_ids: invoice_ids,
+        template: selected_template,
+        start_date: start_date,
+        end_date: end_date,
+        start_date_so: start_date_so,
+        end_date_so: end_date_so,
+        start_date_ret: start_date_ret,
+        end_date_ret: end_date_ret,
+        start_date_sc: start_date_sc,
+        end_date_sc: end_date_sc,
+        start_date_pur: start_date_pur,
+        end_date_pur: end_date_pur,
+        start_date_pr: start_date_pr,
+        end_date_pr: end_date_pr,
+        start_date_po: start_date_po,
+        end_date_po: end_date_po,
+        selected_tab: $("#selected_tab").val(),
+        action: "print_invoice"
+      };
+
+      $.ajax({
+        method: "POST",
+        url: '/report/invoice_printing_report',
+        data: data
+      }).done(function (response) {
+        //$('.selected_template_class').val('');
+        setTimeout(function () {
+          hideLoader();
+          if(response.url.length > 1){
+            let all_urls = response.url;
+            let counter = 0;
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            for (const url of all_urls) {
+              console.log("url",url,"filename",response.filename[counter]);
+              downloadPDF(url, response.filename[counter]);
+              counter++;
+              sleep(2500);
+            }
+          } else {
+            downloadPDF(response.url, response.filename);
+          }
+          
+        }, 2000);
+      });
+    }
+  }
+  function downloadPDF(url, fileName) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || 'document.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  $(document).on('focus', '.select2.select2-container', function (e) {
+    if (e.originalEvent && $(this).find('.select2-selection--single').length > 0) { // Ensure it's an original event and a single select
+      $(this).siblings('select:enabled').select2('open'); // Open the dropdown
+    }
+  });
+
+  function consoleWarn(text) {
+    console.warn(text);
+  }
+  function consoleLog(text) {
+    console.log(text);
+  }
+  function consoleError(text) {
+    console.error(text);
+  }
+
+
+  function formatDecimal(number, decimalPlaces = 2) {
+    const num = Number(number);
+    if (isNaN(num)) {
+      return 0;
+    }
+    const rounded = num.toFixed(decimalPlaces);
+    return parseFloat(rounded).toString();
+  }
+
+  function manuallyUpdateFooter() {
+    setTimeout(function () {
+      updateFooterPart();
+    }, 1000);
+  }
+
+  function updateStockByDate(pur_sale_date, company_id) {
+    $.ajax({
+      method: "POST",
+      url: '/report/update_closing_stock',
+      data: {
+        pur_sale_date: pur_sale_date,
+        company_id: company_id
+      }
+    }).done(function (response) {
+      console.log("update_closing_stock Response Time ", response);
+    });
+  }
+
+  $(document).on('focus', 'input[type="text"]', function() {
+      var currentRow = $(this).closest('tr');
+      let row_id = currentRow.attr('id');
+      //$(".to_be_delete").removeClass('d-none');
+      //$(".to_be_add").addClass('d-none');
+      //$("#"+row_id+" .default_delete").addClass('d-none');
+      //$("#"+row_id+" .default_add").removeClass('d-none');
+  });
+
+  function displayDeleteButton(row_no){
+    //$("#rw_"+row_no+" .default_delete").removeClass('d-none');
+    //$("#rw_"+row_no+" .default_add").addClass('d-none');
+    //$(".to_be_delete").removeClass('d-none');
+    //$(".to_be_add").addClass('d-none');
+  }
+
+  
+</script>

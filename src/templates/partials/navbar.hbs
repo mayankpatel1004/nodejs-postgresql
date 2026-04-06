@@ -1,0 +1,29 @@
+<nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-left navbar-brand-wrapper d-flex align-items-center justify-content-between">
+        <a class="navbar-brand brand-logo" href="/"><img src="./../public/assets/images/emandi_logo.png" alt="logo"/></a>
+        <a class="navbar-brand brand-logo-mini" href="/"><img src="./../public/assets/images/emandi_logo.png" alt="logo"/></a> 
+        <button class="navbar-toggler align-self-center" type="button" data-toggle="minimize">
+        <span class="mdi mdi-menu"></span>
+        </button>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+        <ul class="navbar-nav">
+          <li class="nav-item  dropdown d-none align-items-center d-lg-flex d-none">
+            <a class="navbar-brand brand-logo" href="/"><img src="./../public/assets/images/emandi_logo.png" class="w-25" alt="logo"/></a>
+          </li>
+        </ul>
+        <ul class="navbar-nav navbar-nav-right">
+          <li class="nav-item nav-user-icon">
+            <a href="javascript:void(0)"><label id="localstorage_company_details" class="pt-2 text-primary">Welcome Administrator</label></a>
+          </li>
+          <li class="nav-item nav-user-icon float-left text-left margin-0 padding-0">
+            <a class="text-primary" onclick="window.location.href='/logout'" href="javascript:void(0)">
+              <i class="mdi mdi-logout-variant mdi-24px"></i>
+            </a>
+          </li>
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+        <span class="mdi mdi-menu"></span>
+        </button>
+      </div>
+    </nav>

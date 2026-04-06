@@ -1,0 +1,1478 @@
+  <script src="./../public/assets/vendors/js/vendor.bundle.base.js"></script>
+  <script src="./../public/assets/js/off-canvas.js"></script>
+  <script src="./../public/assets/js/hoverable-collapse.js"></script>
+  <script src="./../public/assets/js/template.js"></script>
+  <script src="./../public/assets/js/settings.js"></script>
+  <script src="./../public/assets/js/todolist.js"></script>
+  <script src="./../public/assets/vendors/sweetalert/sweetalert.min.js"></script>
+  <script src="./../public/assets/vendors/select2/select2.min.js"></script>
+  <script src="./../public/assets/js/dashboard.js"></script>
+  
+  <script type="text/javascript">
+    function convertToMySQLDate(dateString) {
+      const parts = dateString.split('/');
+      const month = parts[1];
+      const day = parts[0];
+      const year = parts[2];
+      const mysqlDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      return mysqlDate;
+  }
+  function fnPurchaseSummaryExport(){
+    let arrCheckboxIds = [];
+
+    let purchase_ids = $("#str_purchase_id").val();
+    let start_date = convertToMySQLDate($(".s_ps_start_date").html());
+    let end_date = convertToMySQLDate($(".s_ps_end_date").html());
+    let ps_selected_invoice = $("#ps_selected_invoice option:selected").text();
+    let ps_selected_supplier = $("#ps_selected_supplier option:selected").text();
+    let ps_selected_groups = $("#ps_selected_groups option:selected").text();
+
+    let data = {
+      purchase_id:purchase_ids,
+      start_date:start_date,
+      end_date:end_date,
+      ps_selected_invoice: ps_selected_invoice,
+      ps_selected_supplier: ps_selected_supplier,
+      ps_selected_groups: ps_selected_groups,
+      action:"export"
+    }
+    $.ajax({
+      method: "POST",
+      url: "/report/get_purchase_summary_products",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnPurchaseRegisterExport(){
+    let arrCheckboxIds = [];
+    let start_date = convertToMySQLDate($(".s_pr_start_date").html());
+    let end_date = convertToMySQLDate($(".s_pr_end_date").html());
+    let pr_selected_invoice = $("#pr_selected_invoice option:selected").text();
+    let pr_selected_supplier = $("#pr_selected_supplier option:selected").text();
+    let purchase_ids = $("#str_purchase_register_id").val();
+    let data = {
+      purchase_id:purchase_ids,
+      action:"export",
+      start_date:start_date,
+      end_date:end_date,
+      pr_selected_invoice: pr_selected_invoice,
+      pr_selected_supplier: pr_selected_supplier
+    }
+    $.ajax({
+      method: "POST",
+      url: "/report/get_purchase_register_products",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function separatePatterns(inputString) {
+    const pattern = /(S\d+)/g;
+    const matches = inputString.match(pattern);
+    console.log("matches",matches);
+    if (!matches) {
+        return [];
+    }
+    
+    return matches;
+}
+
+  function fnSalesSummaryExport(){
+    let sales_ids = $("#str_sales_summary_id").val();
+    let start_date = convertToMySQLDate($(".s_ss_start_date").html());
+    let end_date = convertToMySQLDate($(".s_ss_end_date").html());
+    let ss_selected_invoice = separatePatterns($("#ss_selected_invoice option:selected").text()).join(' / ');
+    let ss_selected_customer = separatePatterns($("#ss_selected_customer option:selected").text()).join(' / ');
+    let ss_selected_van = separatePatterns($("#ss_selected_van option:selected").text()).join(' / ');
+    let ss_selected_product = separatePatterns($("#ss_selected_product option:selected").text()).join(' / ');
+    let ss_selected_areas = separatePatterns($("#ss_selected_areas option:selected").text()).join(' / ');
+    let ss_selected_salesman = separatePatterns($("#ss_selected_salesman option:selected").text()).join(' / ');
+    let ss_selected_group = separatePatterns($("#ss_selected_group option:selected").text()).join(' / ');
+    let ss_selected_product_ids = $("#ss_selected_product").val().join(',');
+    let ss_selected_group_ids = $("#ss_selected_group").val().join(',');
+    
+    let all_areas = $("#all_areas").html();
+    let all_products = $("#all_products").html();
+    let all_customers = $("#all_customers").html();
+    let all_van = $("#all_van").html();
+    let all_salesman = $("#all_salesman").html();
+    let all_group = $("#all_group").html();
+    let all_invoice = $("#all_invoice").html();
+
+    if(ss_selected_invoice == ''){ss_selected_invoice = all_invoice;}
+    if(ss_selected_product == ''){ss_selected_product = all_products.replace('Products : ','');}
+    if(ss_selected_customer == ''){ss_selected_customer = all_customers.replace('Customers : ', '');}
+    if(ss_selected_van == ''){ss_selected_van = all_van.replace('Van : ','');}
+    if(ss_selected_salesman == ''){ss_selected_salesman = all_salesman.replace('Sales Man : ','');}
+    if(ss_selected_group == ''){ss_selected_group = all_group.replace('Group : ','');}
+    if(ss_selected_areas == ''){ss_selected_areas = all_areas.replace('Area : ','');}
+    
+    
+    let data = {
+      sales_id:sales_ids,
+      start_date:start_date,
+      end_date:end_date,
+      ss_selected_invoice: ss_selected_invoice,
+      ss_selected_customer: ss_selected_customer,
+      ss_selected_van: ss_selected_van,
+      ss_selected_product: ss_selected_product,
+      ss_selected_product_ids: ss_selected_product_ids,
+      ss_selected_group_ids: ss_selected_group_ids,
+      ss_selected_areas: ss_selected_areas,
+      ss_selected_salesman: ss_selected_salesman,
+      ss_selected_group: ss_selected_group,
+      all_areas: all_areas,
+      all_products:all_products,
+      all_customers: all_customers,
+      all_van: all_van,
+      all_salesman: all_salesman,
+      all_group: all_group,
+      all_invoice: all_invoice,
+      action:"export"
+    }
+    console.log(data);
+    $.ajax({
+      method: "POST",
+      url: "/report/get_sales_summary_products",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSalesRegisterExport(){
+    let sales_ids = $("#str_sales_register_id").val();
+    let start_date = convertToMySQLDate($(".s_sr_start_date").html());
+    let end_date = convertToMySQLDate($(".s_sr_end_date").html());
+    let sr_selected_invoice = separatePatterns($("#sr_selected_invoice option:selected").text()).join(' / ');
+    let sr_selected_customer = separatePatterns($("#sr_selected_customer option:selected").text()).join(' / ');
+    let sr_selected_van = separatePatterns($("#sr_selected_van option:selected").text()).join(' / ');
+    let sr_selected_product = separatePatterns($("#sr_selected_product option:selected").text()).join(' / ');
+    let sr_selected_areas = separatePatterns($("#sr_selected_areas option:selected").text()).join(' / ');
+    let sr_selected_salesman = separatePatterns($("#sr_selected_salesman option:selected").text()).join(' / ');
+    let sr_selected_group = separatePatterns($("#sr_selected_group option:selected").text()).join(' / ');
+    let sr_show_collection = separatePatterns($("#sr_show_collection").val()).join(' / ');
+    let sr_show_dmg_repl = separatePatterns($("#sr_show_dmg_repl").val()).join(' / ');
+    let sr_with_less_unit = separatePatterns($("#sr_with_less_unit").val()).join(' / ');
+
+    let all_areas = $("#all_areas_r").html();
+    let all_customers = $("#all_customers_r").html();
+    let all_van = $("#all_van_r").html();
+    let all_salesman = $("#all_salesman_r").html();
+    let all_invoice = $("#all_invoice_r").html();
+
+    if(sr_selected_invoice == ''){sr_selected_invoice = all_invoice;}
+    if(sr_selected_customer == ''){sr_selected_customer = all_customers.replace('Customers : ', '');}
+    if(sr_selected_van == ''){sr_selected_van = all_van.replace('Van : ','');}
+    if(sr_selected_salesman == ''){sr_selected_salesman = all_salesman.replace('Sales Man : ','');}
+    if(sr_selected_areas == ''){sr_selected_areas = all_areas.replace('Area : ','');}
+
+    let data = {
+      sales_id:sales_ids,
+      start_date:start_date,
+      end_date:end_date,
+      sr_selected_invoice: sr_selected_invoice,
+      sr_selected_customer: sr_selected_customer,
+      sr_selected_van: sr_selected_van,
+      sr_selected_product: sr_selected_product,
+      sr_selected_areas: sr_selected_areas,
+      sr_selected_salesman: sr_selected_salesman,
+      sr_selected_group: sr_selected_group,
+      sr_show_collection: sr_show_collection,
+      sr_show_dmg_repl: sr_show_dmg_repl,
+      sr_with_less_unit: sr_with_less_unit,
+      action:"export"
+    }
+    $.ajax({
+      method: "POST",
+      url: "/report/get_sales_register_products",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnAreaWiseSummaryExport(){
+    let data = {
+      action:"export",
+      export_action:"area_wise_summary",
+      tab:"area_wise_summary",
+      aws_area_id:$("#aws_area_id").val(),
+      aws_start_date:$("#aws_start_date").val(),
+      aws_end_date:$("#aws_end_date").val(),
+      exp_area_id:$("#aws_area_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/sales_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+  function fnParyInvoiceSummaryExport(){
+    let data = {
+      action:"export",
+      export_action:"party_invoice_summary",
+      tab:"party_invoice_summary",
+      pis_start_date:$("#pis_start_date").val(),
+      pis_end_date:$("#pis_end_date").val(),
+      pis_customer_id: $("#pis_customer_id").val(),
+      pis_print_preference: $("#pis_print_preference").val(),
+      pis_area_id: $("#pis_area_id").val(),
+      pis_product_id:$("#pis_product_id").val(),
+      pis_product_groups:$("#pis_product_groups").val(),
+      pis_product_subgroups:$("#pis_product_subgroups").val(),
+      pis_sman_id:$("#pis_sman_id").val(),
+
+      exp_customer_id: $("#pis_customer_id option:selected").text(),
+      exp_area_id: $("#pis_area_id option:selected").text(),
+      exp_product_id:$("#pis_product_id option:selected").text(),
+      exp_product_groups:$("#pis_product_groups option:selected").text(),
+      exp_sman_id:$("#pis_sman_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/sales_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+  function fnSalesmanWiseSummaryExport(){
+    let data = {
+      action:"export",
+      export_action:"salesman_wise_summary",
+      tab:"salesman_wise_summary",
+      sws_sman_id:$("#sws_sman_id").val(),
+      sws_start_date:$("#sws_start_date").val(),
+      sws_end_date:$("#sws_end_date").val(),
+      exp_sman_id:$("#sws_sman_id option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/sales_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+  function fnGroupSubgroupWiseExport(){
+    let data = {
+      action:"export",
+      export_action:"group_sub_group_wise",
+      tab:"group_sub_group_wise",
+      gsw_start_date:$("#gsw_start_date").val(),
+      gsw_end_date: $("#gsw_end_date").val(),
+      gsw_product_groups: $("#gsw_product_groups").val(),
+      gsw_product_subgroups: $("#gsw_product_subgroups").val(),
+
+      exp_product_groups: $("#gsw_product_groups option:selected").text(),
+      exp_product_subgroups: $("#gsw_product_subgroups option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/sales_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+  function fnGroupSubgroupWiseSummaryExport(){
+    let data = {
+      action:"export",
+      export_action:"group_sub_group_wise_summary",
+      tab:"group_sub_group_wise_summary",
+      gsws_start_date:$("#gsws_start_date").val(),
+      gsws_end_date: $("#gsws_end_date").val(),
+      gsws_product_groups: $("#gsws_product_groups").val(),
+      gsws_product_subgroups:$("#gsws_product_subgroups").val(),
+      gsws_with_gst: $("#gsws_with_gst").val(),
+
+      exp_product_groups: $("#gsws_product_groups option:selected").text(),
+      exp_product_subgroups: $("#gsws_product_subgroups option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/sales_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnCreditSummaryExport(){
+    let data = {
+      action:"export",
+      sales_id: $("#str_sales_id").val(),
+      start_date: convertToMySQLDate($(".s_cn_start_date").html()),
+      end_date: convertToMySQLDate($(".s_cn_end_date").html()),
+      cn_selected_invoice: $("#cn_selected_invoice option:selected").text(),
+      cn_selected_customer_id: $("#cn_selected_customer_id option:selected").text()
+    }
+    $.ajax({
+      method: "POST",
+      url: "/report/get_credit_note_summary",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDebitSummaryExport(){
+    let data = {
+      action:"export",
+      start_date: convertToMySQLDate($(".s_dn_start_date").html()),
+      end_date: convertToMySQLDate($(".s_cn_end_date").html()),
+      purchase_id:$("#str_purchase_id").val(),
+      dn_selected_invoice: $("#dn_selected_invoice option:selected").text(),
+      dn_selected_supplier_id: $("#dn_selected_supplier_id option:selected").text()
+    }
+    $.ajax({
+      method: "POST",
+      url: "/report/get_debit_note_summary",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnExportStockReport(){
+        $(".export_button").html("Please Wait....");
+        $(".export_button").removeClass('btn btn-primary').addClass("btn btn-danger");
+        
+        let query_string = "action=export";
+        query_string += "&start_date="+$("#start_date").val();
+        query_string += "&page_no="+$("#page_no").val();
+        query_string += "&end_date="+$("#end_date").val();
+        query_string += "&selected_value="+$("#selected_value").val();
+        query_string += "&selected_gst="+$("#selected_gst").val();
+        query_string += "&selected_product="+$("#selected_product").val();
+        query_string += "&selected_group="+$("#selected_group").val();
+        query_string += "&selected_subgroup="+$("#selected_subgroup").val();
+        query_string += "&selected_report_type="+$("#selected_report_type").val();
+        query_string += "&selected_other_product_group="+$("#selected_other_product_group").val();
+        query_string += "&selected_group_by_product="+$('#selected_group_by_product').val();
+        query_string += "&selected_zero_stock="+$('#selected_zero_stock').val();
+        query_string += "&exp_selected_product="+$('#selected_product option:selected').text();
+        query_string += "&exp_selected_value="+$('#selected_report_type option:selected').text();
+        query_string += "&exp_selected_gst="+$('#selected_gst option:selected').text();
+        query_string += "&exp_selected_group="+$('#selected_group option:selected').text();        
+        
+        $.ajax({
+            method: "POST",
+            url: "{{search_routes}}?"+query_string
+        }).done(function( response ) {
+            window.open(response.url);
+            $(".export_button").html("Export");
+        });
+  }
+
+  function fnExportPayableReport(){
+    let sales_ids = "";
+    let data = {
+      action:"export",
+      action_type:"payable_report",
+      report_type:"payable",
+      p_start_date:$("#p_start_date").val(),
+      p_end_date: $("#p_end_date").val(),
+      p_party_id:$("#p_party_id").val(),
+      p_group_id:$("#p_group_id").val(),
+
+      exp_party_id:$("#p_party_id option:selected").text(),
+      exp_selected_group:$("#p_group_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/receivable_payable_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnExportReceivableReport(){
+    let sales_ids = "";
+    let data = {
+      action:"export",
+      action_type:"receivable_report",
+      report_type:"receivable",
+      r_start_date:$("#r_start_date").val(),
+      r_end_date:$("#r_end_date").val(),
+      r_print_preference:$("#r_print_preference").val(),
+      r_group:$("#r_group").val(),
+      r_invoice_series:$("#r_invoice_series").val(),
+      r_line_separator:$("#r_line_separator").val(),
+      r_pdf_export:$("#r_pdf_export").val(),
+      exp_print_preference:$("#r_print_preference option:selected").text(),
+      exp_selected_group:$("#r_group option:selected").text(),
+      exp_invoice_series:$("#r_invoice_series option:selected").text(),
+      r_selected_invoice: $("#selected_invoice").val(),
+      r_exp_selected_account: $('#selected_account').val(),
+      r_exp_selected_area : $("#selected_area").val(),
+      r_exp_selected_salesman : $("#selected_salesman").val(),
+      r_exp_selected_van : $("#selected_van").val()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/receivable_payable_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportPurchaseGST(){
+    let data = {
+      action:"export",
+      action_type:"purchase_gst",
+      report_type:"purchasegst",
+      pgst_start_date:$("#pgst_start_date").val(),
+      pgst_end_date:$("#pgst_end_date").val(),
+      pgst_selected_supplier_id:$("#pgst_selected_supplier_id").val(),
+
+      exp_selected_supplier_id:$("#pgst_selected_supplier_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportSalesGST(){
+    let data = {
+      action:"export",
+      action_type:"sales_gst",
+      report_type:"salesgst",
+      sgst_start_date:$("#sgst_start_date").val(),
+      sgst_end_date:$("#sgst_end_date").val(),
+      sgst_selected_customer_id:$("#sgst_selected_customer_id").val(),
+
+      exp_selected_customer_id:$("#sgst_selected_customer_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportB2B(){
+    let data = {
+      action:"export",
+      action_type:"b2b",
+      report_type:"b2b",
+      b2b_start_date:$("#b2b_start_date").val(),
+      b2b_end_date:$("#b2b_end_date").val(),
+      b2b_selected_customer_id:$("#b2b_selected_customer_id").val(),
+      b2b_party_gstin_type:$("#b2b_party_gstin_type").val(),
+
+      exp_selected_customer_id:$("#b2b_selected_customer_id option:selected").text(),
+      exp_party_gstin_type:$("#b2b_party_gstin_type option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportB2C(){
+    let data = {
+      action:"export",
+      action_type:"b2c",
+      report_type:"b2c",
+      b2c_start_date:$("#b2c_start_date").val(),
+      b2c_end_date:$("#b2c_end_date").val(),
+      b2c_customer_id:$("#b2c_customer_id").val(),
+
+      exp_customer_id:$("#b2c_customer_id option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportHSN(){
+    let data = {
+      action:"export",
+      action_type:"hsn",
+      report_type:"hsn",
+      hsn_start_date:$("#hsn_start_date").val(),
+      hsn_end_date:$("#hsn_end_date").val(),
+      hsn_selected_customer_id:$("#hsn_selected_customer_id").val(),
+      hsn_selected_type:$("#hsn_selected_type").val(),
+      hsn_gst_type: $("#hsn_gst_type").val(),
+      exp_selected_customer_id:$("#hsn_selected_customer_id option:selected").text(),
+      exp_selected_type:$("#hsn_selected_type option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportGSTR1(){
+    let data = {
+      action:"export",
+      action_type:"gstr1",
+      report_type:"gstr1",
+      gstr1_start_date:$("#gstr1_start_date").val(),
+      gstr1_end_date:$("#gstr1_end_date").val(),
+      gstr1_selected_supplier_id:$("#gstr1_selected_supplier_id").val(),
+      gstr1_selected_type:$("#gstr1_selected_type").val(),
+      gstr1_selected_sales_return:$("#gstr1_selected_sales_return").val(),
+      exp_selected_supplier_id:$("#gstr1_selected_supplier_id option:selected").text(),
+      exp_selected_type:$("#gstr1_selected_type option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportGSTR2(){
+    let data = {
+      action:"export",
+      action_type:"gstr2",
+      report_type:"gstr2",
+      gstr2_start_date:$("#gstr2_start_date").val(),
+      gstr2_end_date:$("#gstr2_end_date").val(),
+      gstr2_customer_id:$("#gstr2_customer_id").val(),
+      gstr2_selected_sales_return:$("#gstr2_selected_sales_return").val(),
+
+      exp_customer_id:$("#gstr2_customer_id option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportPurMonthlyGST(){
+    let data = {
+      action:"export",
+      action_type:"purchase_monthly_gst",
+      report_type:"purmonthlygst",
+      p_monthlygst_start_date:$("#p_monthlygst_start_date").val(),
+      p_monthlygst_end_date:$('#p_monthlygst_end_date').val(),
+      p_monthlygst_selected_purchase_return:$("#p_monthlygst_selected_purchase_return").val(),
+      p_monthlygst_selected_datewiseselection:$("#p_monthlygst_selected_datewiseselection").val()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnGSTReportSalesMonthlyGST(){
+    let data = {
+      action:"export",
+      action_type:"sales_monthly_gst",
+      report_type:"salesmonthlygst",
+      s_monthlygst_selected_start_date:$("#s_monthlygst_selected_start_date").val(),
+      s_monthlygst_selected_end_date:$("#s_monthlygst_selected_end_date").val(),
+      s_monthlygst_selected_sales_return:$("#s_monthlygst_selected_sales_return").val(),
+      s_monthlygst_selected_datewiseselection:$("#s_monthlygst_selected_datewiseselection").val()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnPurchaseGSTReturnExport(){
+    let data = {
+      action:"export",
+      action_type:"purchase_gst_return",
+      report_type:"purchasegstreturn",
+      pgst_return_start_date:$("#pgst_return_start_date").val(),
+      pgst_return_end_date:$("#pgst_return_end_date").val(),
+      pgst_return_supplier_id:$("#pgst_return_supplier_id").val(),
+
+      exp_return_supplier_id:$("#pgst_return_supplier_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_return_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSalesGSTReturnExport(){
+    let data = {
+      action:"export",
+      action_type:"sales_gst_return",
+      report_type:"salesgstreturn",
+      sgst_return_start_date:$("#sgst_return_start_date").val(),
+      sgst_return_end_date:$("#sgst_return_end_date").val(),
+      sgst_return_customer_id:$("#sgst_return_customer_id").val(),
+
+      exp_return_customer_id:$("#sgst_return_customer_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/gst_return_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function schemeReportExport(){
+    let data = {
+      action:"export",
+      action_type:"scheme",
+      report_type:"schemereport",
+      sch_start_date:$("#sch_start_date").val(),
+      sch_end_date:$("#sch_end_date").val(),
+      sch_selected_party:$("#sch_selected_party").val(),
+      sch_selected_product:$("#sch_selected_product").val(),
+      sch_selected_group:$("#sch_selected_group").val(),
+      exp_selected_party:$("#sch_selected_party option:selected").text(),
+      exp_selected_product:$("#sch_selected_product option:selected").text(),
+      exp_selected_group:$("#sch_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSchemeAndFreeExport(){
+    let data = {
+      action:"export",
+      action_type:"schemeandfree",
+      report_type:"schemeandfreereport",
+      schfree_start_date:$("#schfree_start_date").val(),
+      schfree_end_date:$("#schfree_end_date").val(),
+      schfree_selected_party:$("#schfree_selected_party").val(),
+      schfree_selected_area:$("#schfree_selected_area").val(),
+      schfree_selected_salesman:$("#schfree_selected_salesman").val(),
+      schfree_selected_product:$("#schfree_selected_product").val(),
+      schfree_selected_group:$("#schfree_selected_group").val(),
+      schfree_selected_subgroup:$("#schfree_selected_subgroup").val(),
+      schfree_selected_reporttype:$("#schfree_selected_reporttype").val(),
+      schandfree_with_gst:$("#schandfree_with_gst").val(),
+      schfree_selected_withgst:$("#schfree_selected_withgst").val(),
+      exp_selected_party:$("#schfree_selected_party option:selected").text(),
+      exp_selected_area:$("#schfree_selected_area option:selected").text(),
+      exp_selected_salesman:$("#schfree_selected_salesman option:selected").text(),
+      exp_selected_product:$("#schfree_selected_product option:selected").text(),
+      exp_selected_group:$("#schfree_selected_group option:selected").text(),
+      exp_selected_subgroup:$("#schfree_selected_subgroup option:selected").text(),
+      exp_selected_kg_wise:$("#schfree_selected_withgst option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDiscountExport(){
+    let data = {
+      action:"export",
+      action_type:"discount",
+      report_type:"discount",
+      dis_start_date:$("#dis_start_date").val(),
+      dis_end_date:$("#dis_end_date").val(),
+      dis_selected_party:$("#dis_selected_party").val(),
+      dis_selected_group:$("#dis_selected_group").val(),
+      dis_selected_subgroup:$("#dis_selected_subgroup").val(),
+      exp_selected_party:$("#dis_selected_party option:selected").text(),
+      exp_selected_group:$("#dis_selected_group option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSchemeAddExport(){
+    let data = {
+      action:"export",
+      action_type:"add",
+      report_type:"add",
+      add_start_date:$("#add_start_date").val(),
+      add_end_date:$("#add_end_date").val(),
+      add_selected_party:$("#add_selected_party").val(),
+      add_selected_group:$("#add_selected_group").val(),
+      add_selected_subgroup:$("#add_selected_subgroup").val(),
+      exp_selected_party:$("#add_selected_party option:selected").text(),
+      exp_selected_group:$("#add_selected_group option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSchemeLessExport(){
+    let data = {
+      action:"export",
+      action_type:"less",
+      report_type:"less",
+      less_start_date:$("#less_start_date").val(),
+      less_end_date:$("#less_end_date").val(),
+      less_selected_party:$("#less_selected_party").val(),
+      less_selected_group:$("#less_selected_group").val(),
+      exp_selected_party:$("#less_selected_party option:selected").text(),
+      exp_selected_group:$("#less_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnSchemeGroupWiseFreeExport(){
+    let data = {
+      action:"export",
+      action_type:"groupwisefree",
+      report_type:"groupwisefree",
+      gwf_start_date:$("#gwf_start_date").val(),
+      gwf_end_date:$("#gwf_end_date").val(),
+      gwf_selected_group:$("#gwf_selected_group").val(),
+
+      exp_selected_group:$("#gwf_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnProductWiseDiscountExport(){
+    let data = {
+      action:"export",
+      action_type:"productwisediscount",
+      report_type:"productwisediscount",
+      pwd_start_date:$("#pwd_start_date").val(),
+      pwd_end_date:$("#pwd_end_date").val(),
+      pwd_selected_party:$("#pwd_selected_party").val(),
+      pwd_selected_product:$("#pwd_selected_product").val(),
+      pwd_selected_group:$("#pwd_selected_group").val(),
+
+      exp_selected_party:$("#pwd_selected_party option:selected").text(),
+      exp_selected_product:$("#pwd_selected_product option:selected").text(),
+      exp_selected_group:$("#pwd_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/scheme_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnChallanPurchaseSummary(){
+    let arrCheckboxIds = [];
+    let arr_purchase_id = [];
+    $('.purchase_summary_list_checkbox').each(function (index, obj) {
+      if (this.checked === true) {
+          let id = this.id;
+          let split_id = id.split("chk_");
+          let purchase_id = split_id[1];
+          arr_purchase_id.push(purchase_id);
+      }
+    });
+    if(arr_purchase_id.length > 0){
+      let str_purchase_id = arr_purchase_id.toString();
+      let data = {
+        start_date : convertToMySQLDate($(".s_ps_start_date").html()),
+        end_date : convertToMySQLDate($(".s_ps_end_date").html()),
+        ps_supplier_id: $("#ps_supplier_id option:selected").text(),
+        purchase_id:str_purchase_id,
+        action:"export"
+      }
+      $.ajax({
+        method: "POST",
+        url: "/report/get_purchase_challan_summary_products",
+        data: data
+      }).done(function( response ) {
+        window.open(response.url);
+      });
+    }
+  }
+
+  function fnChallanSalesSummary(){
+    let arrCheckboxIds = [];
+    let arr_sales_id = [];
+    $('.sales_summary_list_checkbox').each(function (index, obj) {
+      if (this.checked === true) {
+          let id = this.id;
+          let split_id = id.split("chk_");
+          let sales_id = split_id[1];
+          arr_sales_id.push(sales_id);
+      }
+    });
+    if(arr_sales_id.length > 0){
+      let str_sales_id = arr_sales_id.toString();
+      let data = {
+        start_date: convertToMySQLDate($(".s_ss_start_date").html()),
+        end_date: convertToMySQLDate($(".s_ss_end_date").html()),
+        ss_customer_id: $("#ss_customer_id option:selected").text(),
+        sales_id:str_sales_id,
+        action:"export"
+      }
+      $.ajax({
+        method: "POST",
+        url: "/report/get_sales_challan_summary_products",
+        data: data
+      }).done(function( response ) {
+        window.open(response.url);
+      });
+    }
+  }
+
+  function fnChallanSalesRegisterExport(){
+    let data = {
+      action:"export",
+      report_type:"sales_register",
+      sr_start_date:$("#sr_start_date").val(),
+      sr_end_date:$("#sr_end_date").val(),
+      sr_customer_id:$("#sr_customer_id").val(),
+      exp_customer_id:$("#sr_customer_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/challan_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnChallanPurchaseRegisterExport(){
+    let data = {
+      action:"export",
+      report_type:"purchase_register",
+      pr_start_date:$("#pr_start_date").val(),
+      pr_end_date:$("#pr_end_date").val(),
+      pr_customer_id:$("#pr_customer_id").val(),
+      exp_customer_id:$("#pr_customer_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/challan_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnPartyWiseSalesExport(){
+    let data = {
+      action:"export",
+      report_type:"party_wise_sales",
+      pws_start_date:$("#pws_start_date").val(),
+      pws_end_date:$("#pws_end_date").val(),
+      pws_selected_party_id:$("#pws_selected_party_id").val(),
+      pws_selected_area_id:$("#pws_selected_area_id").val(),
+      pws_selected_salesman_id:$("#pws_selected_salesman_id").val(),
+      pws_selected_product_id:$("#pws_selected_product_id").val(),
+      pws_selected_product_group:$("#pws_selected_product_group").val(),
+      pws_selected_quality_return:$("#pws_selected_quality_return").val(),
+      pws_selected_sales_return:$("#pws_selected_sales_return").val(),
+
+      exp_selected_party_id:$("#pws_selected_party_id option:selected").text(),
+      exp_selected_area_id:$("#pws_selected_area_id option:selected").text(),
+      exp_selected_salesman_id:$("#pws_selected_salesman_id option:selected").text(),
+      exp_selected_product_id:$("#pws_selected_product_id option:selected").text(),
+      exp_selected_product_group:$("#pws_selected_product_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/party_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+  
+  function fnPartyListExport(){
+    let data = {
+      action:"export",
+      report_type:"party_list",
+      pl_selected_main_acc_id:$("#pl_selected_main_acc_id").val(),
+      pl_selected_area_id:$("#pl_selected_area_id").val().join(','),
+      pl_selected_gstin_number:$("#pl_selected_gstin_number").val().join(','),
+      pl_selected_fssai_number:$("#pl_selected_fssai_number").val().join(','),
+      exp_selected_area_id:$("#pl_selected_area_id option:selected").text(),
+      exp_selected_gstin_number:$("#pl_selected_gstin_number").val().join(' / '),
+      exp_selected_fssai_number:$("#pl_selected_fssai_number").val().join(' / '),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/party_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnPartyWisePurchaseExport(){
+    let data = {
+      action:"export",
+      report_type:"party_wise_purchase",
+      pwp_start_date:$("#pwp_start_date").val(),
+      pwp_end_date:$("#pwp_end_date").val(),
+      pwp_selected_party_id:$("#pwp_selected_party_id").val(),
+      pwp_selected_product_id:$("#pwp_selected_product_id").val(),
+      pwp_selected_product_group_id:$("#pwp_selected_product_group_id").val(),pwp_selected_purchase_return:$("#pwp_selected_purchase_return").val(),
+      exp_selected_party_id:$("#pwp_selected_party_id option:selected").text(),
+      exp_selected_product_id:$("#pwp_selected_product_id option:selected").text(),
+      exp_selected_product_group_id:$("#pwp_selected_product_group_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/party_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnTopPartyExport(){
+    let data = {
+      action:"export",
+      report_type:"top_party_list",
+      tpl_start_date:$("#tpl_start_date").val(),
+      tpl_end_date:$("#tpl_end_date").val(),
+      tpl_selected_product_id:$("#tpl_selected_product_id").val(),
+      tpl_selected_product_group_id:$("#tpl_selected_product_group_id").val(),tpl_selected_product_subgroup_id:$("#tpl_selected_product_subgroup_id").val(),tpl_selected_no_of_party:$("#tpl_selected_no_of_party").val(),
+      exp_selected_product_id:$("#tpl_selected_product_id option:selected").text(),
+      exp_selected_product_group_id:$("#tpl_selected_product_group_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/party_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnHsnWiseProductExport(){
+    let data = {
+      action:"export",
+      report_type:"hsn_wise",
+      hwp_selected_group_id:$("#hwp_selected_group_id").val(),
+      hwp_selected_subgroup_id:$("#hwp_selected_subgroup_id").val(),
+      exp_selected_group_id :  $("#hwp_selected_group_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/product_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnRateDifferenceProductExport(){
+
+    let data = {
+      action:"export",
+      report_type:"rate_diff",
+      rd_start_date:$("#rd_start_date").val(),
+      rd_end_date:$("#rd_end_date").val(),
+      rd_selected_party_id:$("#rd_selected_party_id").val(),
+      rd_selected_group_id:$("#rd_selected_group_id").val(),
+      rd_selected_with_gst:$("#rd_selected_with_gst").val(),
+      exp_selected_party_id:$("#rd_selected_party_id option:selected").text(),
+      exp_selected_group_id:$("#rd_selected_group_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/product_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnReplacementProductExport(){
+    let data = {
+      action:"export",
+      report_type:"replacement",
+      rep_start_date:$("#rep_start_date").val(),
+      rep_end_date:$("#rep_end_date").val(),
+      rep_selected_party_id:$("#rep_selected_party_id").val(),
+      rep_selected_group_id:$("#rep_selected_group_id").val(),
+      rep_selected_subgroup_id:$("#rep_selected_subgroup_id").val(),
+      rep_selected_van_id:$("#rep_selected_van_id").val(),
+      rep_selected_area_id:$("#rep_selected_area_id").val(),
+      rep_selected_salesman_id:$("#rep_selected_salesman_id").val(),
+      exp_selected_party_id:$("#rep_selected_party_id option:selected").text(),
+      exp_selected_group_id:$("#rep_selected_group_id option:selected").text(),
+      exp_selected_area_id:$("#rep_selected_area_id option:selected").text(),
+      exp_selected_salesman_id:$("#rep_selected_salesman_id option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/product_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnOrderSheetProductExport(){
+    let data = {
+      action:"export",
+      report_type:"order_sheet",
+      os_start_date:$("#os_start_date").val(),
+      os_end_date:$("#os_end_date").val(),
+      os_selected_invoice:$("#os_selected_invoice").val(),
+      os_selected_customer_id:$("#os_selected_customer_id").val(),
+      os_selected_van_id:$("#os_selected_van_id").val(),
+      os_selected_product_id:$("#os_selected_product_id").val(),
+      os_selected_area_id:$("#os_selected_area_id").val(),
+      os_selected_salesman_id:$("#os_selected_salesman_id").val(),
+      os_selected_group_id:$("#os_selected_group_id").val(),
+      os_selected_subgroup_id:$("#os_selected_subgroup_id").val(),
+      os_selected_pending_delivery:$("#os_selected_pending_delivery").val(),
+      exp_selected_invoice:$("#os_selected_invoice option:selected").text(),
+      exp_selected_customer_id:$("#os_selected_customer_id option:selected").text(),
+      exp_selected_product_id:$("#os_selected_product_id option:selected").text(),
+      exp_selected_area_id:$("#os_selected_area_id option:selected").text(),
+      exp_selected_salesman_id:$("#os_selected_salesman_id option:selected").text(),
+      exp_selected_group_id:$("#os_selected_group_id option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/product_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnBankReportExport(){
+    let data = {
+      action:"export",
+      report_type:"bankreport",
+      start_date:$("#start_date").val(),
+      end_date:$("#end_date").val(),
+      selected_party_id:$("#selected_party_id").val(),
+      selected_bank:$("#selected_bank").val(),
+      selected_group_by_chq_no:$("#selected_group_by_chq_no").val(),
+      exp_selected_party_id:$("#selected_party_id option:selected").text(),
+      exp_selected_bank:$("#selected_bank option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/bank_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnLaunchReviewReport(){
+    let data = {
+      action:"export",
+      report_type:"launch_review",
+      start_date:$("#start_date").val(),
+      end_date:$("#end_date").val(),
+      selected_party:$("#selected_party").val(),
+      selected_party_type:$("#selected_party_type").val(),
+      selected_account:$("#selected_account").val(),
+      selected_list2:$("#selected_list2").val(),
+      selected_product:$("#selected_product").val(),
+      selected_salesman: $("#selected_salesman").val(),
+      selected_area: $("#selected_area").val(),
+      selected_with_gst:$("#selected_with_gst").val(),
+      weight_or_amount:$("#weight_or_amount").val(),
+      selected_from_weight:$("#selected_from_weight").val(),
+      selected_to_weight:$("#selected_to_weight").val(),
+      selected_weight:$("#selected_weight").val(),
+      selected_from_account:$("#selected_from_account").val(),
+      selected_to_account:$("#selected_to_account").val(),
+      selected_amount:$("#selected_amount").val(),
+      exp_products : $("#selected_product option:selected").text(),
+      exp_area : $("#selected_area option:selected").text(),
+      exp_invoice : $("#selected_invoice option:selected").text(),
+      exp_salesman : $("#selected_salesman option:selected").text(),
+      exp_party : $("#selected_account option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/launch_review_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnProductWiseExport(){
+    let data = {
+      action:"export",
+      report_type:"product_wise",
+      pw_start_date:$("#pw_start_date").val(),
+      pw_end_date:$("#pw_end_date").val(),
+      pw_selected_product:$("#pw_selected_product").val(),
+      pw_selected_group:$("#pw_selected_group").val(),
+      pw_selected_with_gst:$("#pw_selected_with_gst").val(),
+      pw_selected_master_rate:$("#pw_selected_master_rate").val(),
+      exp_selected_product:$("#pw_selected_product option:selected").text(),
+      exp_selected_group:$("#pw_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/profit_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnInvoiceWiseExport(){
+    let data = {
+      action:"export",
+      report_type:"invoice_wise",
+      iw_start_date:$("#iw_start_date").val(),
+      iw_end_date:$("#iw_end_date").val(),
+      iw_selected_party:$("#iw_selected_party").val(),
+      iw_selected_with_gst:$("#iw_selected_with_gst").val(),
+      exp_selected_party:$("#iw_selected_party option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/profit_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnCollectionReport(){
+    let data = {
+      action:"export",
+      report_type:"collection",
+      start_date:$("#start_date").val(),
+      end_date:$("#end_date").val(),
+      selected_invoice:$("#selected_invoice").val(),
+      selected_customer:$("#selected_customer").val(),
+      selected_van:$("#selected_van").val(),
+      selected_area:$("#selected_area").val(),
+      selected_salesman:$("#selected_salesman").val(),
+      selected_pay_by_date:$("#selected_pay_by_date").val(),
+      exp_invoice : $("#selected_invoice option:selected").text(),
+      exp_customer : $("#selected_customer option:selected").text(),
+      exp_van : $("#selected_van option:selected").text(),
+      exp_area : $("#selected_area option:selected").text(),
+      exp_salesman : $("#selected_salesman option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/collection_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnCancelBillSummary(){
+    let data = {action:"export",report_type:"cancel_bill_summary",cbs_start_date:$("#cbs_start_date").val(),cbs_end_date:$("#cbs_end_date").val(),cbs_selected_invoice:$("#cbs_selected_invoice").val(),cbs_selected_customer:$("#cbs_selected_customer").val(),cbs_selected_van:$("#cbs_selected_van").val(),cbs_selected_areas:$("#cbs_selected_areas").val(),cbs_selected_salesman:$("#cbs_selected_salesman").val(),cbs_selected_maingroup:$("#cbs_selected_maingroup").val(),cbs_selected_subgroup:$("#cbs_selected_subgroup").val()}
+    $.ajax({
+      method: "GET",
+      url: "/report/cancel_bill_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnCancelBillRegister(){
+    let data = {
+      action:"export",
+      report_type:"cancel_bill_register",
+      cbr_start_date:$("#cbr_start_date").val(),
+      cbr_end_date:$("#cbr_end_date").val(),
+      cbr_selected_invoice:$("#cbr_selected_invoice").val(),
+      cbr_selected_customer:$("#cbr_selected_customer").val(),
+      cbr_selected_areas:$("#cbr_selected_areas").val(),
+      cbr_selected_salesman:$("#cbr_selected_salesman").val(),
+      exp_selected_invoice:$("#cbr_selected_invoice option:selected").text(),
+      exp_selected_customer:$("#cbr_selected_customer option:selected").text(),
+      exp_selected_areas:$("#cbr_selected_areas option:selected").text(),
+      exp_selected_salesman:$("#cbr_selected_salesman option:selected").text(),
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/cancel_bill_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnProductiveReport(){
+    let data = {action:"export",report_type:"productive",p_start_date:$("#p_start_date").val(),p_end_date:$("#p_end_date").val(),p_selected_party:$("#p_selected_party").val(),p_selected_area:$("#p_selected_area").val(),p_selected_salesman:$("#p_selected_salesman").val(),p_selected_group:$("#p_selected_group").val()}
+    $.ajax({
+      method: "GET",
+      url: "/report/outlet_details_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnNonProductiveReport(){
+    let data = {action:"export",report_type:"non_productive",np_start_date:$("#np_start_date").val(),np_end_date:$("#np_end_date").val(),np_selected_party:$("#np_selected_party").val(),np_selected_area:$("#np_selected_area").val(),np_selected_group:$("#np_selected_group").val()}
+    $.ajax({
+      method: "GET",
+      url: "/report/outlet_details_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDamageDetails(){
+    let data = {
+      action:"export",
+      action_type:"damage_details",
+      report_type:"damage_details",
+      dad_start_date:$("#dad_start_date").val(),
+      dad_end_date:$("#dad_end_date").val(),
+      dad_selected_party:$("#dad_selected_party").val(),
+      dad_selected_group:$("#dad_selected_group").val(),
+      dad_selected_van:$("#dad_selected_van").val(),
+      dad_selected_areas:$("#dad_selected_areas").val(),
+      dad_selected_salesman:$("#dad_selected_salesman").val(),
+      dad_selected_sales_return:$("#dad_selected_sales_return").val(),
+
+      exp_selected_party:$("#dad_selected_party option:selected").text(),
+      exp_selected_group:$("#dad_selected_group option:selected").text(),
+      exp_selected_van:$("#dad_selected_van option:selected").text(),
+      exp_selected_areas:$("#dad_selected_areas option:selected").text(),
+      exp_selected_salesman:$("#dad_selected_salesman option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/damage_display_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDamageSummary(){
+    let data = {
+      action:"export",
+      action_type:"damage_summary",
+      report_type:"damage_summary",
+      das_start_date:$("#das_start_date").val(),
+      das_end_date:$("#das_end_date").val(),
+      das_selected_party:$("#das_selected_party").val(),
+      das_selected_group:$("#das_selected_group").val(),
+      das_selected_sales_return:$("#das_selected_sales_return").val(),
+
+      exp_selected_party:$("#das_selected_party option:selected").text(),
+      exp_selected_group:$("#das_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/damage_display_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDisplayDetails(){
+    let data = {action:"export",action_type:"display_details",report_type:"display_details",did_start_date:$("#did_start_date").val(),did_end_date:$("#did_end_date").val(),did_selected_party:$("#did_selected_party").val(),did_selected_displaycode:$("#did_selected_displaycode").val()}
+    $.ajax({
+      method: "GET",
+      url: "/report/damage_display_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnDisplaySummary(){
+    let data = {action:"export",action_type:"display_summary",report_type:"display_summary",dis_start_date:$("#dis_start_date").val(),dis_end_date:$("#dis_end_date").val(),dis_selected_party:$("#dis_selected_party").val(),dis_selected_displaycode:$("#dis_selected_displaycode").val()}
+    $.ajax({
+      method: "GET",
+      url: "/report/damage_display_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnReplaceSummary(){
+    let data = {
+      action:"export",
+      action_type:"repl_summary",
+      report_type:"repl_summary",
+      repl_start_date:$("#repl_start_date").val(),
+      repl_end_date:$("#repl_end_date").val(),
+      repl_selected_party:$("#repl_selected_party").val(),
+      repl_selected_group:$("#repl_selected_group").val(),
+      
+      exp_selected_party:$("#repl_selected_party option:selected").text(),
+      exp_selected_group:$("#repl_selected_group option:selected").text()
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/damage_display_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function fnLedgerExport(){
+    let data = {
+      action:"export",
+      action_type:"ledger",
+      report_type:"ledger",
+      start_date:$("#start_date").val(),
+      end_date:$("#end_date").val(),
+      selected_account_id:$("#selected_account_id").val(),
+      exp_account_id:$("#selected_account_id option:selected").text(),
+      mac_id: $('#selected_account_id option:selected').data('macid')
+    }
+    $.ajax({
+      method: "GET",
+      url: "/report/ledger_report",
+      data: data
+    }).done(function( response ) {
+      window.open(response.url);
+    });
+  }
+
+  function boxToPcs(pur_sale_qty,box_size){
+    let total_box = 0;
+    let total_pcs = 0;
+    let overall_box = pur_sale_qty;
+    if(overall_box){
+        const numberString = overall_box.toString();
+        const parts = numberString.split('.');
+        const total_box = parts[0];
+        const total_pcs = parseInt(parseFloat(parts[1])*parseFloat(box_size)/100) || 0;
+        let return_box = 0;
+        let return_pcs = 0;
+        if(parseInt(total_box) > 0){
+          return_box = parseInt(total_box);
+        }
+        if(parseInt(total_pcs) > 0){
+          return_pcs = parseInt(total_pcs);
+        }
+        console.log("return_box",return_box);
+        console.log("return_pcs",return_pcs);
+        let final = return_box+"/"+return_pcs;
+        return final;
+    }
+  }
+
+  /*function boxAndPcs(pur_sale_qty,box_size){
+    let total_boxes = parseInt(parseFloat(pur_sale_qty)/parseFloat(box_size));
+    let total_boxes_qty = parseFloat(total_boxes)*parseFloat(box_size);
+    let quantity = parseFloat(pur_sale_qty)-parseFloat(total_boxes_qty);
+    return parseInt(total_boxes)+"/"+parseInt(quantity);
+  }*/
+
+  function fnGetDateRangeInvoices(start_date,end_date,company_id,response_id,response_id2){  
+    let data = {start_date: start_date,end_date:end_date,company_id: company_id}
+    $.ajax({
+        method: "POST",
+        url: "/report/get_date_range_invoices",
+        data: data
+    }).done(function( response ) {
+        let items = response.invoices;
+        let html = "<option value=''>Invoice</option>";
+        $.each(items, function(index, item) {
+            html += '<option value="'+item.INVOICE_NO+'">'+item.INVOICE_NO+'</option>';
+        });
+        $("#"+response_id).html(html);
+
+        $.ajax({
+            method: "POST",
+            url: "/report/get_date_range_customers",
+            data: data
+        }).done(function( response ) {
+            let items = response.customers;
+            let html = "<option value=''>Customers</option>";
+            $.each(items, function(index, item) {
+                html += '<option value="'+item.ID+'">'+item.ACC_NAME+'</option>';
+            });
+            console.log(response_id2);
+            $("#"+response_id2).html(html);
+        }); 
+
+    });
+  }
+
+  function fnGetDateRangeCustomers(start_date,end_date,company_id,response_id){  
+    let data = {start_date: start_date,end_date:end_date,company_id: company_id}
+    $.ajax({
+            method: "POST",
+            url: "/report/get_date_range_customers",
+            data: data
+        }).done(function( response ) {
+            let items = response.customers;
+            let html = "<option value=''>Customers</option>";
+            $.each(items, function(index, item) {
+                html += '<option value="'+item.ID+'">'+item.ACC_NAME+'</option>';
+            });
+            console.log(response_id);
+            $("#"+response_id).html(html);
+        }); 
+  }
+  </script>
