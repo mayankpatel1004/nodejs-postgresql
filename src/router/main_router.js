@@ -10,42 +10,19 @@ const query = util.promisify(db.query).bind(db);
 const queries = require('../db/queries');
 const fs = require('node:fs');
 const { defaultSEO } = require('../helpers/seo');
-
-router.get('/', async (req, res) => {
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-    if (!req.cookies.jwt) {
-      res.redirect('/login');
-    } else {
-      if(decoded && decoded.web_or_app == 'Web'){
-        res.render("index",{
-            data : decoded,
-            ...defaultSEO,
-            partialsDir: [
-                path.join(__dirname, 'views/partials')
-            ]
-        });
-      } else {
-        res.send({
-          success:1,
-          message:"Welcome to the API. Router is working.",
-          data: decoded
-        });
-      }
-    }
-});
-
+const functions = require("../helpers/functions");
+const logToFile = require('../helpers/logger');
 
 router.get('/login', (req, res) => {
     res.render("login",{
         data : [],
-        partialsDir: [
-            path.join(__dirname, 'views/partials')
-        ]
+        partialsDir: [path.join(__dirname, 'views/partials')]
     });
 });
 
 router.post('/login', async (req, res) => {
   let password = req.body.password;
+  logToFile(JSON.stringify(req.body), 'success', 'login');
   let allow_login = 0;
   try {
     let sqlCheckLogin = `SELECT * FROM users WHERE (user_email = '${req.body.user_name}' OR user_name = '${req.body.user_name}') AND DELETED_STATUS = 'N'`;
@@ -65,6 +42,7 @@ router.post('/login', async (req, res) => {
         });
       }
     }
+
     if(results[0].active_status == 'N'){
       res.send({
           success: 0,
@@ -92,9 +70,11 @@ router.post('/login', async (req, res) => {
           expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
           httpOnly: true
         };
+    
         if (token) {
           res.cookie('jwt', token, cookieOptions);
         }
+    
         res.send({
           success: 1,
           user_id: id,
@@ -116,13 +96,11 @@ router.post('/login', async (req, res) => {
       }
     }
   } catch (error) {
-    //catch_error += JSON.stringify(error);
     console.error("Login Error",error);
     logToFile(JSON.stringify(error), 'fail', 'login');
     res.send({ success: 0, message: error });
   }
 });
-
 
 router.get('/logout', async (req, res) => {
   res.cookie('jwt', 'logout', {
@@ -134,77 +112,76 @@ router.get('/logout', async (req, res) => {
   });
 });
 
-function logToFile(message, flag, url = '') {
-  if (flag == 'success') {
-    const logStream = fs.createWriteStream('src/logs_success.txt', { flags: 'a' });
-    logStream.write(`${message}\n`);
-    logStream.end();
-  } else if (flag == 'request') {
-    const logStream0 = fs.createWriteStream('src/logs_request.json', { flags: 'a' });
-    let print_url = { url: url };
-    logStream0.write(`${JSON.stringify(print_url)}\n`);
-    logStream0.write(`${JSON.stringify(message)}\n`);
-    logStream0.end();
-  } else {
-    const logStream1 = fs.createWriteStream('src/logs_fail.json', { flags: 'a' });
-    logStream1.write(`${message}\n`);
-    logStream1.end();
-  }
-}
+router.get('/', async (req, res) => {
+    try {
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      if (!req.cookies.jwt) {
+        res.redirect('/login');
+      } else {
+        let responseData = {
+          success:1,
+          message:"Welcome to the API. Router is working.",
+          ...defaultSEO,
+          data : decoded,
+          partialsDir: [path.join(__dirname, 'views/partials')]
+        };
+        functions.renderData(req,res,responseData,"index",decoded);
+      }  
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    } 
+});
 
 router.get('/databases', async (req, res) => {
   try {
-    let table_name = '';
-    let primary_key_column = '';
-    let selected_sort_by = '';
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-    let selectedTableRows = [];
-    let selectedTableStructure = [];
-    let total_columns = 0;
-    const database_tables_result = await query(queries.getAllTables());
-    
-    if(req.query && req.query.tableName){
-      table_name = req.query.tableName;
-      primary_key_column = req.query.pk;
-      selected_sort_by = req.query.sort_by;
-      let primary_key_value = req.query.pk_id;
-      let filter_string = ` AND deleted_status = 'N'`;
-      if(primary_key_column && primary_key_value){
-        filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
-      }
-      const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
-      selectedTableRows = resultColumns.rows;
-      
-      const resultStructure = await query(queries.getTableStructure(table_name));
-      selectedTableStructure = resultStructure.rows;
-      total_columns = selectedTableStructure.length;
-    }
-    if(decoded && decoded.web_or_app == 'Web'){
-      res.render("databases",{
-        selected_table_name: table_name,
-        selected_primary_key : primary_key_column,
-        selected_sort_by : selected_sort_by,
-        total_database_tables: database_tables_result.rows.length,
-        database_tables:database_tables_result.rows,
-        selected_table_rows: selectedTableRows,
-        selectedTableRowstructure: selectedTableStructure,
-        total_columns: total_columns,
-        partialsDir: [
-            path.join(__dirname, 'views/partials')
-        ]
-    });
+    if (!req.cookies.jwt) {
+      res.redirect('/login');
     } else {
-      res.send({
-        selected_table_name: table_name,
-        total_database_tables: database_tables_result.rows.length,
-        database_tables:database_tables_result.rows,
-        selected_table_rows: selectedTableRows
-      });  
-    }
+        const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+        let table_name = '';
+        let primary_key_column = '';
+        let selected_sort_by = '';
+        let selectedTableRows = [];
+        let selectedTableStructure = [];
+        let total_columns = 0;
+        const database_tables_result = await query(queries.getAllTables());
     
+        if(req.query && req.query.tableName){
+        table_name = req.query.tableName;
+        primary_key_column = req.query.pk;
+        selected_sort_by = req.query.sort_by;
+        let primary_key_value = req.query.pk_id;
+        let filter_string = ` AND deleted_status = 'N'`;
+        if(primary_key_column && primary_key_value){
+            filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
+        }
+        const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
+        selectedTableRows = resultColumns.rows;
+        
+        const resultStructure = await query(queries.getTableStructure(table_name));
+        selectedTableStructure = resultStructure.rows;
+        total_columns = selectedTableStructure.length;
+        }
+
+        let responseData = {
+            selected_table_name: table_name,
+            selected_primary_key : primary_key_column,
+            selected_sort_by : selected_sort_by,
+            total_database_tables: database_tables_result.rows.length,
+            database_tables:database_tables_result.rows,
+            selected_table_rows: selectedTableRows,
+            selectedTableRowstructure: selectedTableStructure,
+            total_columns: total_columns,
+            partialsDir: [path.join(__dirname, 'views/partials')]
+        };
+        functions.renderData(req,res,responseData,"databases",decoded);
+    }    
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+
 
 module.exports = router;
