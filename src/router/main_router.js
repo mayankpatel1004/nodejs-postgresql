@@ -147,20 +147,20 @@ router.get('/databases', async (req, res) => {
         const database_tables_result = await query(queries.getAllTables());
     
         if(req.query && req.query.tableName){
-        table_name = req.query.tableName;
-        primary_key_column = req.query.pk;
-        selected_sort_by = req.query.sort_by;
-        let primary_key_value = req.query.pk_id;
-        let filter_string = ` AND deleted_status = 'N'`;
-        if(primary_key_column && primary_key_value){
-            filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
-        }
-        const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
-        selectedTableRows = resultColumns.rows;
-        
-        const resultStructure = await query(queries.getTableStructure(table_name));
-        selectedTableStructure = resultStructure.rows;
-        total_columns = selectedTableStructure.length;
+          table_name = req.query.tableName;
+          primary_key_column = req.query.pk;
+          selected_sort_by = req.query.sort_by;
+          let primary_key_value = req.query.pk_id;
+          let filter_string = ` AND deleted_status = 'N'`;
+          if(primary_key_column && primary_key_value){
+              filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
+          }
+          const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
+          selectedTableRows = resultColumns.rows;
+          
+          const resultStructure = await query(queries.getTableStructure(table_name));
+          selectedTableStructure = resultStructure.rows;
+          total_columns = selectedTableStructure.length;
         }
 
         let responseData = {

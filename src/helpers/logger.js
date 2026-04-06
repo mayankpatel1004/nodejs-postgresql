@@ -21,4 +21,28 @@ function logToFile(message, flag, url = '') {
   }
 }
 
+function loginDetails(req) {
+    try {
+      let token = req.cookies?.jwt;
+      const authHeader = req.headers.authorization;
+      if (authHeader && !authHeader.startsWith('Bearer ')) {
+        token = req.headers.authorization;
+      }
+      if (!token) return null;
+
+      const decoded = promisify(jwt.verify)(
+        token,
+        process.env.JWT_SECRET,
+      );
+      if (authHeader && !authHeader.startsWith('Bearer ')) {
+        
+      }
+      decoded.is_api = is_api;
+      console.log("Decoded Login Details:", decoded);
+      return decoded?.data || null;
+    } catch (err) {
+      return null;
+    }
+  }
+
 module.exports = logToFile;
