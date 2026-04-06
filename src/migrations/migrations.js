@@ -253,6 +253,7 @@ async function migrate() {
           created_by INT NOT NULL DEFAULT 0,
           created_by_name VARCHAR(255) DEFAULT NULL,
           created_by_role INT NOT NULL DEFAULT 0,
+          web_or_app VARCHAR(4) NOT NULL DEFAULT 'App',
           active_status VARCHAR(25) NOT NULL DEFAULT 'N',
           display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
           deleted_status VARCHAR(4) NOT NULL DEFAULT 'N',
