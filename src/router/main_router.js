@@ -115,6 +115,12 @@ router.get('/logout', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
       const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      const sidebarMenu = await functions.getSidebarMenu(req,decoded.user_role_id);
+      const meta_details = await functions.getMetaDetails(req, req.originalUrl);
+      
+      const roleAccess = await functions.getRoleAccess(req,decoded.user_role_id,meta_details[0].meta_id);
+      console.log("Role Access Details:", roleAccess);
+
       if (!req.cookies.jwt) {
         res.redirect('/login');
       } else {
