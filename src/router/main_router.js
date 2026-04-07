@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const { defaultSEO } = require('../helpers/seo');
 const functions = require("../helpers/functions");
 const logToFile = require('../helpers/logger');
+const { attachCommonData } = require("../middleware/auth");
 
 router.get('/login', (req, res) => {
     res.render("login",{
@@ -112,22 +113,16 @@ router.get('/logout', async (req, res) => {
   });
 });
 
-router.get('/', async (req, res) => {
+router.get('/',attachCommonData, async (req, res) => {
     try {
       const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-      const sidebarMenu = await functions.getSidebarMenu(req,decoded.user_role_id);
-      const meta_details = await functions.getMetaDetails(req, req.originalUrl);
-      
-      const roleAccess = await functions.getRoleAccess(req,decoded.user_role_id,meta_details[0].meta_id);
-      console.log("Role Access Details:", roleAccess);
-
       if (!req.cookies.jwt) {
         res.redirect('/login');
       } else {
         let responseData = {
           success:1,
           message:"Welcome to the API. Router is working.",
-          ...defaultSEO,
+          ...req.commonData,
           data : decoded,
           partialsDir: [path.join(__dirname, 'views/partials')]
         };
@@ -138,12 +133,16 @@ router.get('/', async (req, res) => {
     } 
 });
 
-router.get('/databases', async (req, res) => {
+router.get('/database_table', async (req, res) => {
   try {
     if (!req.cookies.jwt) {
       res.redirect('/login');
     } else {
         const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+        const sidebarMenu = await functions.getSidebarMenu(req,decoded.user_role_id);
+        const meta_details = await functions.getMetaDetails(req, req.originalUrl);
+        const roleAccess = await functions.getRoleAccess(req,decoded.user_role_id,meta_details[0].meta_id);
+
         let table_name = '';
         let primary_key_column = '';
         let selected_sort_by = '';
@@ -170,6 +169,13 @@ router.get('/databases', async (req, res) => {
         }
 
         let responseData = {
+            sidebarMenu: sidebarMenu,
+            roleAccess: roleAccess,
+            page_title: meta_details[0].page_title,
+            meta_title: meta_details[0].meta_title,
+            meta_description: meta_details[0].meta_description,
+            login_id: decoded.user_id,
+            role_id: decoded.user_role_id,
             selected_table_name: table_name,
             selected_primary_key : primary_key_column,
             selected_sort_by : selected_sort_by,
@@ -180,7 +186,7 @@ router.get('/databases', async (req, res) => {
             total_columns: total_columns,
             partialsDir: [path.join(__dirname, 'views/partials')]
         };
-        functions.renderData(req,res,responseData,"databases",decoded);
+        functions.renderData(req,res,responseData,"database_table",decoded);
     }    
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -88,7 +88,7 @@
                   </div>
                   {{/if}}
                 </div>
-                <div class="text-info small font-weight-bold">http://localhost:3900/databases?tableName=item_section&pk=item_section_id&pk_id=1</div>
+                <div class="text-info small font-weight-bold">http://localhost:3900/database_table?tableName=item_section&pk=item_section_id&pk_id=1</div>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@
         let table_name = document.getElementById("table_name").value;
         let primary_key = document.getElementById("primary_key").value;
         let sort_by = document.getElementById("sort_by").value;
-        window.location.href = `/databases?tableName=${table_name}&pk=${primary_key}&sort_by=${sort_by}`;
+        window.location.href = `/database_table?tableName=${table_name}&pk=${primary_key}&sort_by=${sort_by}`;
       }
     </script>
   </div>

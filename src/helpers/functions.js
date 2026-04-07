@@ -1,6 +1,14 @@
 const db = require('../db/connection');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
+const {
+    ACTION_MESSAGES,
+    CONSTANTS,
+    LABELS,
+    DBTABLES,
+    CONFIG,
+    DATE_FORMAT
+} = require("./constants");
 
 module.exports = {
     renderData(req, res, responseData, route_name,decoded) {
@@ -49,7 +57,6 @@ module.exports = {
   async getMetaDetails(req,end_points) {
     try {
       
-      const query = util.promisify(db.query).bind(db);
       end_points = end_points.replace("&api=1", "");
       let sqlPreQuery = `
         SELECT * 
@@ -59,6 +66,7 @@ module.exports = {
         `;
       const sqlQuery = this.removeEditIdFromQuery(sqlPreQuery);
       let result = await query(sqlQuery, [end_points]);
+      
       const resultRows = result.rows;
       if (resultRows.length === 0) {
         if (
@@ -70,7 +78,7 @@ module.exports = {
           const sqlInsert = `
             INSERT INTO meta_details
             (end_points, page_title, meta_title, meta_description)
-            VALUES (?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4)
             `;
           await query(sqlInsert, [
             end_points,
@@ -86,16 +94,16 @@ module.exports = {
           {
             meta_id: result[0].meta_id,
             page_title: result[0].page_title,
-            meta_title: `${result[0].meta_title} - Demonstration`,
+            meta_title: `${result[0].meta_title} - ${CONSTANTS.DEFAULT_META_TITLE}`,
             meta_description: result[0].meta_description,
           },
         ];
       }
       return [
         {
-          page_title: "Demonstration",
-          meta_title: "Demonstration",
-          meta_description: "Demonstration",
+          page_title: CONSTANTS.DEFAULT_TITLE,
+          meta_title: CONSTANTS.DEFAULT_META_TITLE,
+          meta_description: CONSTANTS.DEFAULT_META_DESCRIPTION,
         },
       ];
     } catch (err) {

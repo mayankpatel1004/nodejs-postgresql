@@ -1,22 +1,26 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
-  <ul class="nav">
-    <li class="nav-item">
-      <a class="nav-link" href="/">
-        <i class="mdi mdi-home menu-icon"></i>
-        <span class="menu-title">Dashboard</span>
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="/databases">
-        <i class="mdi mdi mdi-account-card-details menu-icon"></i>
-        <span class="menu-title">Database</span>
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="/logout">
-        <i class="mdi mdi-logout menu-icon"></i>
-        <span class="menu-title">Logout</span>
-      </a>
-    </li>
-  </ul>
+    <ul class="nav">
+        {{#if sidebarMenu}}
+            {{#each sidebarMenu}}
+                {{#ifEquals parent_id 0}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{end_points}}">
+                            <i class="mdi {{sidebar_icon}} menu-icon"></i>
+                            <span class="menu-title">{{sidebar_title}}</span>
+                        </a>
+                    </li>
+                {{else}}
+                    <li class="nav-item">
+                        {{#ifEquals parent_id -1}}
+                        <a class="nav-link" data-toggle="collapse" href="#{{sidebar_icon}}" aria-expanded="false" aria-controls="{{sidebar_icon}}">
+                            <i class="mdi mdi-account-box menu-icon"></i>
+                            <span class="menu-title">{{sidebar_title}}</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        {{/ifEquals}}
+                    </li>
+                {{/ifEquals}}
+            {{/each}}
+        {{/if}}
+    </ul>
 </nav>
