@@ -1,7 +1,10 @@
 exports.CONSTANTS = {
+    SUCCESS_FLAG: 1,
+    FAIL_FLAG : 0,
     TOP_BG_COLOR: "#273F8B",
     LOGO_URL_EMAIL: "https://www.cloudswiftsolutions.com/theme/default/images/logo.png",
     FOOTER_TEXT_COLOR: "#FFF",
+    
     COMPANY_NAME: "Demonstration Company",
     COMPANY_ADDRESS : "123 main street,",
     COMPANY_ADDRESS2 : " second addrss",
@@ -12,30 +15,14 @@ exports.CONSTANTS = {
     COMPANY_EMAIL : "mayank.patel104@gmail.com",
     COMPANY_WEBSITE : "www.cloudswiftsolutions.com",
     COMPANY_CONTACT : "+91 9191919191",
+    
     DEFAULT_TITLE : "Demonstration Company",
     DEFAULT_META_TITLE : "Demonstration Company",
     DEFAULT_META_DESCRIPTION : "Demonstration Company Description",
-    USER_EMAIL_UNIQUE : "N"
-}
-
-exports.DBTABLES = {
-    USERS : "users",
-    ROLES: "role",
-    ROLE_ACCESS: "role_access",
-    CHANGEPASSWORD_SUBJECT : "Change Password ",
-    PASSWORDUPDATED_SUBJECT : "Password Updated",
-    SITE_CONFIG : "site_config",
-    SITE_CONFIG_PARENT : "site_config_parent",
-    ITEM_SECTION : "item_section",
-    ITEMS: "items",
-    META_DETAILS : "meta_details"
-}
-
-exports.ACTION_MESSAGES = {
-    SUCCESS_FLAG: 1,
-    FAIL_FLAG : 0,
+    USER_EMAIL_UNIQUE : "N",
     ACCOUNT_SUCCESSFULLY_CREATED: "Account Successfully Created",
     WELCOME_SUBJECT_PREFIX: "Welcome to",
+    WELCOME_TO_API : "Welcome to the API. Router is working.",
     PASSWORD_CHANGED_SUCCESSFULLY: "Password Changed Successfully",
     ALLOW_AUTOLOGIN: "N",
     DEFAULT_MESSAGE : "API Is Working",
@@ -45,6 +32,7 @@ exports.ACTION_MESSAGES = {
     INVALID_TOKEN : "Invalid Token",
     INACTIVE_ACCOUNT : "Your Account Is Inactive",
     DELETED_ACCOUNT: "Your Account Is Deleted",
+    FILE_DELETED: "File Is Successfully Deleted",
     REQUEST_SUCCESS: "Your Request Successfully Executed",
     DATA_NOT_FOUND: "Data Not Found",
     REQUEST_FAIL: "Error In Executing Request",
@@ -52,20 +40,22 @@ exports.ACTION_MESSAGES = {
     EMAIL_SUCCESS_SENT: "Email Successfully Sent",
     EMAIL_FAIL_SENT : "Email Sending Failed",
     PASSWORD_CHANGED : "Your Password Successfully Changed",
-    EMAIL_EXISTS: "Email address Already Exists"
-};
-
-exports.LABELS = {
+    EMAIL_EXISTS: "Email address Already Exists",
     FORGOTPASSWORD_SUBJECT : "Forgot Password ",
     CHANGEPASSWORD_SUBJECT : "Change Password ",
-    PASSWORDUPDATED_SUBJECT : "Password Updated"
-}
-
-exports.DATE_FORMAT = {
-    MYSQL_FETCH_FORMAT: "%d/%m/%y"
-}
-
-exports.CONFIG = {
+    PASSWORDUPDATED_SUBJECT : "Password Updated",
+    
+    MYSQL_FETCH_FORMAT: "%d/%m/%y",
     RECORDS_PER_PAGE : 20,
-    MAST_PWD: "asd@12345"
+
+    MASTER_PWD: "asd@12345",
+
+    DB_USERS : "users",
+    DB_ROLES: "role",
+    DB_ROLE_ACCESS: "role_access",
+    DB_SITE_CONFIG : "site_config",
+    DB_SITE_CONFIG_PARENT : "site_config_parent",
+    DB_ITEM_SECTION : "item_section",
+    DB_ITEMS: "items",
+    DB_META_DETAILS : "meta_details"
 }

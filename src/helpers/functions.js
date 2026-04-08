@@ -3,14 +3,7 @@ const util = require("util");
 const path = require("path");
 var fs = require("fs");
 const query = util.promisify(db.query).bind(db);
-const {
-    ACTION_MESSAGES,
-    CONSTANTS,
-    LABELS,
-    DBTABLES,
-    CONFIG,
-    DATE_FORMAT
-} = require("./constants");
+const { CONSTANTS } = require("./constants");
 
 module.exports = {
     getHostUrl(req) {
@@ -30,6 +23,22 @@ module.exports = {
         } else {
             return res.send(responseData);
         } 
+    },
+    printQuery: (sql, params) => {
+      let index = 0;
+      const formattedQuery = sql.replace(/\?/g, () => {
+        if (index >= params.length) return "?";
+        const val = params[index++];
+        if (val === null || val === undefined) return "NULL";
+        if (typeof val === "number") return val;
+        if (val instanceof Date)
+          return `'${val.toISOString().slice(0, 19).replace("T", " ")}'`;
+        return `'${val.toString().replace(/'/g, "''")}'`;
+      });
+      return formattedQuery;
+    },
+    sanitize(str) {
+      return (str || "").replace(/'/g, "''"); // Double up single quotes
     },
     getSidebarMenu: async function (req, userRoleId) {
     try {
@@ -142,6 +151,20 @@ module.exports = {
         throw error;
     }
 },
+addUserDataToRequest: async (headers, data) => {
+    const token = headers.split(" ")[1];
+    const decoded = jwt.decode(token);
+    if (decoded && typeof decoded.data !== "undefined") {
+      return {
+        ...data,
+        created_by: decoded.data.user_id,
+        created_by_name:
+          decoded.data.user_firstname + " " + decoded.data.user_lastname,
+        created_by_role: decoded.data.user_role_id,
+      };
+    }
+    return data;
+},
 exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     let first_line = report_name + " Details Report\n";
     let csvContent = first_line + "\n";
@@ -167,11 +190,11 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
             console.error("Error deleting file:", err);
             return;
           }
-          console.warn("File deleted successfully");
+          console.warn(CONSTANTS.FILE_DELETED);
         });
       }, 2000);
       res.send({
-        success: ACTION_MESSAGES.SUCCESS_FLAG,
+        success: CONSTANTS.SUCCESS_FLAG,
         data: [],
         arrTotalPages: 0,
         url: url,

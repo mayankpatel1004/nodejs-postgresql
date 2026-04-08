@@ -76,3 +76,21 @@ hbs.registerHelper('incremented', function (index) {
   index++;
   return index;
 });
+hbs.registerHelper("userFriendlyTitle", function (path) {
+  if(path == '/'){
+    return "Dashboard";
+  } else {
+    return path
+      .replace(/^\/|\/$/g, '') // Remove leading/trailing slashes
+      .replace(/[-_]/g, ' ')   // Replace dashes and underscores with spaces
+      .split(' ')              // Split into words
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize
+      .join(' '); 
+  }
+});
+
+hbs.registerHelper('splitString', function(str, delimiter, options) {
+  return str.split(delimiter).map(function(item) {
+    return options.fn(item);
+  }).join('');
+});

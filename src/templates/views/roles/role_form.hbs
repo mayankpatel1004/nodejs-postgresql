@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{>head}}
+</head>
+
+<body>
+    <div class="container-scroller">
+        {{>header}}
+        <div class="container-fluid page-body-wrapper">
+            {{>sidebar}}
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <div class="col-12 grid-margin stretch-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex flex-wrap justify-content-between">
+                                        <h4 class="card-title text-primary">{{page_title}}</h4>
+                                    </div>
+                                    <form id="userForm" method="POST" enctype="multipart/form-data">
+                                        <div class="row">
+                                            {{#each fields}}
+                                            <div class="col-md-3 {{#ifEquals type "hidden"}}d-none{{/ifEquals}}">
+                                                {{#ifEquals type "select"}}
+                                                <label for="{{nm}}" class="text-primary small">{{lbl}} {{#ifEquals req "Y"}}<span class="text-danger">*</span>{{/ifEquals}}</label>
+                                                <select class="{{cls}}" {{#ifEquals is_multiple "Y"}}multiple{{/ifEquals}} name="{{nm}}" id="{{nm}}" {{#ifEquals req "Y"
+                                                    }}required{{/ifEquals}} {{#if onchange}}onchange="{{onchange}}"
+                                                    {{/if}}>
+                                                    {{#if options}}
+                                                    {{#each options}}
+                                                    <option value="{{ID}}" {{#ifEquals ../val
+                                                        ID}}selected{{else}}{{/ifEquals}}>{{#if NAME}}{{NAME}}{{/if}}
+                                                    </option>
+                                                    {{/each}}
+                                                    {{/if}}
+                                                </select>
+                                                {{else}}
+                                                {{#ifEquals type "checkbox"}}
+                                                <label for="{{nm}}" class="text-primary small">{{lbl}} {{#ifEquals req "Y"}}<span class="text-danger">*</span>{{/ifEquals}}</label>
+                                                <input type="checkbox" id="{{nm}}" class="formfields" name="{{nm}}"
+                                                    {{#ifEquals req "Y" }}required{{/ifEquals}}>
+                                                {{else}}
+                                                {{#ifEquals type "hidden"}}{{else}}
+                                                <label for="{{nm}}" class="text-primary small">{{lbl}} {{#ifEquals req "Y"}}<span class="text-danger">*</span>{{/ifEquals}}</label>
+                                                {{/ifEquals}}
+                                                <input class="{{cls}}" type="{{type}}" name="{{nm}}" id="{{nm}}"
+                                                    value="{{val}}" placeholder="{{lbl}}" {{#ifEquals req "Y"
+                                                    }}required{{/ifEquals}} />
+                                                {{/ifEquals}}
+
+                                                {{#ifEquals type "file"}}
+                                                {{#if val}}
+                                                <a href="/public/uploads/{{val}}" target="_blank"
+                                                    class="small text-secondary">View File</a>
+                                                {{/if}}
+                                                {{/ifEquals}}
+                                                {{/ifEquals}}
+                                            </div>
+                                            {{/each}}
+                                        </div>
+                                        <br />
+                                        {{#if modules}}
+                                        <div class="h5 text-primary">Modules List</div>
+                                        <table class="table text-primary table-striped">
+                                            <thead>
+                                                <tr class="bg-primary text-white text-center">
+                                                    <th>ID</th>
+                                                    <th>Module</th>
+                                                    <th>View</th>
+                                                    <th>Add</th>
+                                                    <th>Edit</th>
+                                                    <th>Delete</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>#</td>
+                                                    <td><span class="text-primary">Check All / None</span></td>
+                                                    <td><input type="checkbox" onchange="checkAll(this,'viewcolumn')" name="chk[]" class="form-control" /></td>
+                                                    <td><input type="checkbox" onchange="checkAll(this,'addcolumn')" class="form-control" /></td>
+                                                    <td><input type="checkbox" onchange="checkAll(this,'editcolumn')" class="form-control" /></td>
+                                                    <td><input type="checkbox" onchange="checkAll(this,'deletecolumn')" class="form-control" /></td>
+                                                </tr>
+                                                {{#each modules}}
+                                                <tr>
+                                                    <td>{{meta_id}}</td>
+                                                    <td>{{page_title}}<input type="hidden" name="module_id" value="{{meta_id}}" class="form-control formfields" /></td>
+                                                    <td><input type="checkbox" id="{{meta_id}}_view"
+                                                            name="view" accept="viewcolumn" class="form-control formfields" /></td>
+                                                    <td><input type="checkbox" id="{{meta_id}}_add"
+                                                            name="add" accept="addcolumn" class="form-control formfields" /></td>
+                                                    <td><input type="checkbox" id="{{meta_id}}_edit"
+                                                            name="edit" accept="editcolumn" class="form-control formfields" /></td>
+                                                    <td><input type="checkbox" id="{{meta_id}}_delete"
+                                                            name="delete" accept="deletecolumn" class="form-control formfields" /></td>
+                                                </tr>
+                                                {{/each}}
+                                            </tbody>
+                                            
+                                        </table>
+                                        {{/if}}
+                                        <div class="row mt-3">
+                                            <div class="col-md-12">
+                                                <span id="loading-button" class="small text-primary"
+                                                    style="display: none;">Please Wait....</span>
+                                                <button type="submit" onclick="return validateForm(event);"
+                                                    class="btn btn-primary form-submit-button">Save</button>
+                                                <a href="{{listUrl}}"
+                                                    class="btn btn-primary form-submit-button">Back</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{>footer}}
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    function validateForm(event){
+        let is_error = 0;
+        $('[required]').each(function(index, element) {
+            if(element.value == ''){
+                $("#form_error").html(element.title+" should not blank.");
+                is_error = 1;
+            }
+        });
+        if(is_error == 0){
+            submitAdminForm(event);
+        }
+    }
+    </script>
+    {{>footerscript}}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            setTimeout(function () {
+                {{#each role_access }}
+                if ('{{grant_add}}' == 'Y') {
+                    $("#{{module_id}}_add").prop('checked', true);
+                }
+                if ('{{grant_edit}}' == 'Y') {
+                    $("#{{module_id}}_edit").prop('checked', true);
+                }
+                if ('{{grant_delete}}' == 'Y') {
+                    $("#{{module_id}}_delete").prop('checked', true);
+                }
+                if ('{{grant_view}}' == 'Y') {
+                    $("#{{module_id}}_view").prop('checked', true);
+                }
+                {{/each }}
+            }, 1000);
+        });
+        function checkAll(ele, alt) {
+          var checkboxes = document.getElementsByTagName('input');
+          if (ele.checked) {
+            for (var i = 0; i < checkboxes.length; i++) {
+              if (checkboxes[i].type == 'checkbox' && checkboxes[i].accept == alt) {
+                checkboxes[i].checked = true;
+              }
+            }
+          } else {
+            for (var i = 0; i < checkboxes.length; i++) {
+              if (checkboxes[i].type == 'checkbox' && checkboxes[i].accept == alt) {
+                checkboxes[i].checked = false;
+              }
+            }
+          }
+        }
+    </script>
+</body>
+
+</html>
