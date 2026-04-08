@@ -186,10 +186,6 @@
     border:1px solid #EAEAEA;
   }
   
-  .table td, .jsgrid .jsgrid-table td{
-    padding:0.125rem;
-  }
-
   #order-listing tr td{
     padding: 0.525rem;
   }
@@ -962,4 +958,11 @@ tr.highlighted {
 
 @keyframes spin {
   100% { transform: rotate(360deg); }
+}
+
+.items-listing .main-panel{
+  padding:20px;
+}
+.items-listing .listing-row {
+  margin-bottom: 10px;
 }

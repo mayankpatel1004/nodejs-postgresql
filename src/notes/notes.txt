@@ -12,3 +12,5 @@ http://localhost:3900/databases?tableName=item_section&pk=item_section_id&pk_id=
 
 clear && node src/migrations/migrations.js
 clear && node src/migrations/seeders.js
+
+git add . && git commit -m "Updates" && git push origin main

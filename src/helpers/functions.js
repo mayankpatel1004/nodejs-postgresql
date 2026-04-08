@@ -1,5 +1,7 @@
 const db = require('../db/connection');
 const util = require("util");
+const path = require("path");
+var fs = require("fs");
 const query = util.promisify(db.query).bind(db);
 const {
     ACTION_MESSAGES,
@@ -11,6 +13,13 @@ const {
 } = require("./constants");
 
 module.exports = {
+    getHostUrl(req) {
+      if (process.env.IS_LIVE == 1) {
+        return req.protocol + "s://" + req.get("host");
+      } else {
+        return req.protocol + "://" + req.get("host");
+      }
+    },
     renderData(req, res, responseData, route_name,decoded) {
         let routename = route_name.replace(/\//g, "");
         if (route_name.length > 30) {
@@ -133,6 +142,42 @@ module.exports = {
         throw error;
     }
 },
+exportToCSV(req, res, exportItems, report_name, csvStringifier) {
+    let first_line = report_name + " Details Report\n";
+    let csvContent = first_line + "\n";
+    csvContent += csvStringifier.getHeaderString();
+    csvContent += csvStringifier.stringifyRecords(exportItems);
+    let filename = new Date().getTime() + "_" + report_name + ".csv";
+    let full_path = path.resolve(__dirname, "../../public/export/" + filename);
+    fs.writeFile(full_path, csvContent, (err) => {
+      if (err) throw err;
+      let url =
+        new URL(req.protocol + "s://" + req.get("host")) +
+        "public/export/" +
+        filename;
+      if (process.env.IS_LIVE == 0) {
+        url =
+          new URL(req.protocol + "://" + req.get("host")) +
+          "public/export/" +
+          filename;
+      }
+      setTimeout(() => {
+        fs.unlink(full_path, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+            return;
+          }
+          console.warn("File deleted successfully");
+        });
+      }, 2000);
+      res.send({
+        success: ACTION_MESSAGES.SUCCESS_FLAG,
+        data: [],
+        arrTotalPages: 0,
+        url: url,
+      });
+    });
+  },
   removeEditIdFromQuery(sql) {
     let updatedSql = sql.replace(/edit_id=\d+(&)?/g, "");
     updatedSql = updatedSql.replace(

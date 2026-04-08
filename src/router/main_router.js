@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const { defaultSEO } = require('../helpers/seo');
 const functions = require("../helpers/functions");
 const logToFile = require('../helpers/logger');
+const { createObjectCsvStringifier } = require("csv-writer");
 const { attachCommonData } = require("../middleware/auth");
 
 router.get('/login', (req, res) => {
@@ -193,7 +194,238 @@ router.get('/database_table', async (req, res) => {
   }
 });
 
+router.get("/items",attachCommonData, async (req, res) => {
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  let item_type = "page";
+  if (req.query && typeof req.query.item_type !== "undefined") {
+    item_type = req.query.item_type;
+  }
+  
+  let viewDirectory = path.join(__dirname, "../") + "templates/views/items/items";
+  const responseData = {
+    ...req.commonData,
+    item_type: item_type,
+    user_email: decoded.user_email,
+    listUrl: functions.getHostUrl(req) + "/items?item_type=" + item_type,
+    formUrl: functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
+    partialsDir: [path.join(__dirname, "views/partials")],
+  };
+  functions.renderData(req,res,responseData,viewDirectory,decoded);
+});
 
+router.post("/items", attachCommonData, async (req, res) => {
+  let token_details = [];
+  let start = 1;
+  let searchKeywordString = "";
+  let orderByString = "ORDER BY item_id DESC";
+  let page_no = 1;
+  let data = req.body;
+  
+  if (req && data.page_no !== undefined && data.page_no != "/") {
+    page_no = data.page_no;
+  }
+  
+  let rpp = 10;
+  start = (parseInt(page_no) - 1) * parseInt(rpp);
+  let limitString = " LIMIT " + rpp + " OFFSET " + start; // PostgreSQL uses LIMIT and OFFSET
+  
+  if (data.item_type) {
+    searchKeywordString += ` AND i.item_type IN ('${data.item_type}')`;
+  }
+  
+  if (token_details.user_role_id > 2) {
+    searchKeywordString += ` AND i.created_by IN ('${token_details.user_id}')`;
+  }
+  
+  if (
+    data &&
+    data.search_keyword !== undefined &&
+    data.search_keyword != ""
+  ) {
+    searchKeywordString +=
+      " AND ( i.item_title LIKE '%" +
+      data.search_keyword +
+      "%' OR i.item_description LIKE '%" +
+      data.search_keyword +
+      "%' OR i.item_alias LIKE '%" +
+      data.search_keyword +
+      "%') ";
+  }
+  
+  if (
+    data.action == "update_status" &&
+    ["Y", "N", "T"].includes(data.status)
+  ) {
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")
+    ) {
+      data = await functions.addUserDataToRequest(
+        req.headers.authorization,
+        data,
+      );
+    }
+    
+    let sqlUpdateStatus = ``;
+    if (data.status == "T") {
+      // PostgreSQL uses NOW() instead of MySQL's NOW()
+      sqlUpdateStatus = `UPDATE items
+              SET deleted_status = 'Y',
+              deleted_by = '${data.created_by}',
+              deleted_by_name = '${data.created_by_name}',
+              deleted_time = NOW()
+              WHERE item_id IN (${data.pk_ids})`;
+    } else {
+      sqlUpdateStatus = `UPDATE items 
+              SET display_status = '${data.status}'
+              WHERE item_id IN (${data.pk_ids})`;
+    }
+    
+    let results = await query(sqlUpdateStatus);
+    res.send({
+      success: ACTION_MESSAGES.SUCCESS_FLAG,
+      message: ACTION_MESSAGES.REQUEST_SUCCESS,
+      data: results,
+    });
+  } else {
+    if (data.pk_ids) {
+      searchKeywordString += ` AND i.item_id IN (${data.pk_ids})`;
+    }
+    
+    // PostgreSQL uses STRING_TO_ARRAY and ARRAY_TO_STRING instead of FIND_IN_SET and GROUP_CONCAT
+    let sqlTotalRecords = `SELECT 
+          i.item_id,
+          i.item_title,
+          i.item_alias,
+          STRING_AGG(isect.section_title, ',') as section_details,
+          i.item_parent,
+          i.item_type,
+          i.item_sections_id,
+          i.item_description,
+          i.attachment1,
+          i.item_shortdescription,
+          i.user_id,
+          i.published_at,
+          i.published_end_at,
+          i.meta_title,
+          i.meta_description,
+          i.display_order,
+          CASE WHEN i.display_status = 'Y' THEN 'Yes' ELSE 'No' END AS display_status,
+          CASE WHEN i.deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
+          TO_CHAR(i.created_at, 'DD/MM/YY') AS created_at,
+          TO_CHAR(i.updated_at, 'DD/MM/YY') AS updated_at 
+      FROM items i
+      LEFT JOIN item_section isect ON isect.item_section_id = ANY(
+        SELECT unnest(string_to_array(REPLACE(REPLACE(i.item_sections_id, '[', ''), ']', ''), ','))::int
+      )
+      WHERE 1=1 ${searchKeywordString} AND i.deleted_status = 'N' 
+      GROUP BY i.item_id
+      ${orderByString}`;
+
+    let sqlList = `${sqlTotalRecords} ${limitString}`;
+
+    let totalRecords1 = await query(sqlTotalRecords);
+    let totalRecords = totalRecords1.rows;
+    let results1 = await query(sqlList);
+    let results = results1.rows;
+    
+    if (["EA", "ES"].includes(data.status)) {
+      const exportItems = [];
+      let total_records = 0;
+      if (results && results.length > 0) {
+        results.map((item, index) => {
+          index++;
+          exportItems.push(item);
+          total_records = index;
+        });
+        
+        const csvStringifier = createObjectCsvStringifier({
+          header: [
+            {
+              id: "item_title",
+              title: "Title",
+            },
+            {
+              id: "item_alias",
+              title: "Alias",
+            },
+            {
+              id: "item_type",
+              title: "Type",
+            },
+            {
+              id: "item_sections_id",
+              title: "Category",
+            },
+            {
+              id: "item_description",
+              title: "Description",
+            },
+            {
+              id: "attachment1",
+              title: "File",
+            },
+            {
+              id: "item_shortdescription",
+              title: "Short Description",
+            },
+            {
+              id: "display_status",
+              title: "Display Status",
+            },
+            {
+              id: "created_at",
+              title: "Created",
+            },
+          ],
+        });
+        
+        let obj1 = {
+          item_title: "",
+          item_alias: "",
+        };
+        let obj2 = {
+          item_title: "Total Records",
+          item_alias: total_records,
+        };
+        exportItems.push(obj1);
+        exportItems.push(obj2);
+        
+        functions.exportToCSV(
+          req,
+          res,
+          exportItems,
+          req.path.slice(1),
+          csvStringifier,
+        );
+      }
+    } else {
+      if (results && results.length > 0) {
+        let totalPages = Math.ceil(totalRecords.length / rpp);
+
+        var end = totalPages;
+        var arrTotalRecordResults = [];
+        while (start < end + 1) {
+          arrTotalRecordResults.push(start++);
+        }
+        res.send({
+          success: 1,
+          message: "success",
+          data: results,
+          arrTotalPages: arrTotalRecordResults,
+          current_page_no: page_no,
+        });
+      } else {
+        res.send({
+          success: 0,
+          message: "fail",
+          data: [],
+          totalRecords: 0,
+        });
+      }
+    }
+  }
+});
 
 
 module.exports = router;
