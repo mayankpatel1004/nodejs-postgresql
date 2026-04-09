@@ -920,26 +920,11 @@ router.post("/configurations", attachCommonData, async (req, res) => {
     if (data && typeof data === "object") {
       const entries = Object.entries(data);
 
-      // Option 1: Prepare multiple queries (current approach)
       for (const [config_name, rawValue] of entries) {
         const sanitizedValue = functions.sanitize(rawValue);
-        //const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
         let sqlUpdate = updateQueries.updateConfigurations();
         await query(sqlUpdate, [sanitizedValue, config_name]);
       }
-
-      // Option 2: Use a single query with CASE statements for better performance
-      // if (entries.length > 0) {
-      //   const caseStatements = entries.map((_, i) =>
-      //     `WHEN config_name = $${i * 2 + 1} THEN $${i * 2 + 2}`
-      //   ).join(' ');
-      //   const configNames = entries.flatMap(([name, value]) => [name, functions.sanitize(value)]);
-      //   const sqlUpdate = `UPDATE site_config 
-      //     SET config_value = CASE ${caseStatements} ELSE config_value END
-      //     WHERE config_name IN (${entries.map((_, i) => `$${i * 2 + 1}`).join(', ')})
-      //   `;
-      //   await query(sqlUpdate, configNames);
-      // }
     }
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
@@ -1026,11 +1011,10 @@ router.post("/change-password", attachCommonData, async (req, res) => {
     const escapedUserId = user_id.replace(/'/g, "''");
     const escapedEmail = user_email.replace(/'/g, "''");
 
-    const sqlUpdate = `UPDATE users SET user_password = '${escapedPassword}' WHERE user_id = '${escapedUserId}' AND user_email = '${escapedEmail}'`;
+    let sqlUpdate = updateQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
     logToFile(functions.printQuery(sqlUpdate, []));
     const result = await query(sqlUpdate);
 
-    // Check result for affected rows
     const rowCount = result.rowCount || result.affectedRows || (result.rows ? result.rows.length : 0);
 
     if (rowCount === 0) {

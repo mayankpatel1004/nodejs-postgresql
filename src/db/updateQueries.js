@@ -81,6 +81,10 @@ const queries = {
     updateConfigurations: () => {
         const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
         return sqlUpdate;
+    },
+    updateChangePassword : (escapedPassword,escapedUserId,escapedEmail) => {
+        const sqlUpdate = `UPDATE users SET user_password = '${escapedPassword}' WHERE user_id = '${escapedUserId}' AND user_email = '${escapedEmail}'`;
+        return sqlUpdate;
     }
 };
 
