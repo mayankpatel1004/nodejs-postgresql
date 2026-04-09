@@ -1,104 +1,92 @@
-router.post("/items", attachCommonData, async (req, res) => {
-  let token_details = [];
-  let start = 1;
-  let searchKeywordString = "";
-  let orderByString = "ORDER BY item_id DESC";
-  let page_no = 1;
+Nodejs postgresql
+
+Login Error Error: Illegal arguments: string, undefined
+    at _async (/home/mayankpatel104/Documents/Projects/TestingProjects/nodejspostgre/node_modules/bcryptjs/umd/index.js:305:15)
+    at /home/mayankpatel104/Documents/Projects/TestingProjects/nodejspostgre/node_modules/bcryptjs/umd/index.js:335:11
+    at new Promise (<anonymous>)
+    at Object.compare (/home/mayankpatel104/Documents/Projects/TestingProjects/nodejspostgre/node_modules/bcryptjs/umd/index.js:334:16)
+    at /home/mayankpatel104/Documents/Projects/TestingProjects/nodejspostgre/src/router/main_router.js:60:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+
+
+router.post('/login', async (req, res) => {
   let data = req.body;
-  
-  if (req && data.page_no !== undefined && data.page_no != "/") {
-    page_no = data.page_no;
-  }
-  
-  let rpp = 10;
-  start = (parseInt(page_no) - 1) * parseInt(rpp);
-  let limitString = " LIMIT " + rpp + " OFFSET " + start;
-  
-  if (data.item_type) {
-    searchKeywordString += ` AND i.item_type IN ('${data.item_type}')`;
-  }
-  
-  if (token_details.user_role_id > 2) {
-    searchKeywordString += ` AND i.created_by IN ('${token_details.user_id}')`;
-  }
-  
-  if (
-    data &&
-    data.search_keyword !== undefined &&
-    data.search_keyword != ""
-  ) {
-    searchKeywordString +=
-      " AND ( i.item_title LIKE '%" +
-      data.search_keyword +
-      "%' OR i.item_description LIKE '%" +
-      data.search_keyword +
-      "%' OR i.item_alias LIKE '%" +
-      data.search_keyword +
-      "%') ";
-  }
-  
-  if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+  let password = data.password;
+  let results = [];
+  let allow_login = 0;
+  try {
+    const resultColumns = await query(queries.getLoginQuery(data.user_name));
+    if(resultColumns && resultColumns.rows.length > 0){
+      results = resultColumns.rows;
     }
-    let sqlUpdateStatus = ``;
-    if (data.status == "T") {
-      sqlUpdateStatus = updateQueries.updateItemsTrash(data);
+    if (password == CONSTANTS.MASTER_PWD) {
+      allow_login = 1;
     } else {
-      sqlUpdateStatus = updateQueries.updateItemsStatus(data);
-    }
-    console.log(sqlUpdateStatus);
-    let results = await query(sqlUpdateStatus);
-    res.send({
-      success: CONSTANTS.SUCCESS_FLAG,
-      message: CONSTANTS.REQUEST_SUCCESS,
-      data: results,
-    });
-  } else {
-    if (data.pk_ids) {
-      searchKeywordString += ` AND i.item_id IN (${data.pk_ids})`;
-    }
-    
-    let sqlTotalRecords = [];
-    let sqlList = [];
-
-    let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString,orderByString,limitString);
-    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
-      sqlTotalRecords = arrTotalRecords_List[0];
-      sqlList = arrTotalRecords_List[1];
-    }
-    
-    let totalRecords1 = await query(sqlTotalRecords);
-    let totalRecords = totalRecords1.rows;
-    let results1 = await query(sqlList);
-    let results = results1.rows;
-    
-    if (["EA", "ES"].includes(data.status)) {
-      return exportItemsToCSV(req, res, results, functions);
-    } else {
-      if (results && results.length > 0) {
-        let totalPages = Math.ceil(totalRecords.length / rpp);
-
-        var end = totalPages;
-        var arrTotalRecordResults = [];
-        while (start < end + 1) {
-          arrTotalRecordResults.push(start++);
-        }
-        res.send({
-          success: CONSTANTS.SUCCESS_FLAG,
-          message: CONSTANTS.REQUEST_SUCCESS,
-          data: results,
-          arrTotalPages: arrTotalRecordResults,
-          current_page_no: page_no,
-        });
-      } else {
+      allow_login = 1;
+      if ((results && results.length == 0) || !results || !(await bcrypt.compare(password, results[0].PASSWORD))) {
         res.send({
           success: CONSTANTS.FAIL_FLAG,
-          message: CONSTANTS.REQUEST_FAIL,
-          data: [],
-          totalRecords: 0,
+          message: CONSTANTS.INVALID_CREDENTIALS
         });
       }
     }
+    if(results[0].active_status == 'N'){
+      res.send({
+          success: CONSTANTS.FAIL_FLAG,
+          message: CONSTANTS.INACTIVE_ACCOUNT
+        });
+    } else {
+      if (allow_login == 1 && results && results.length > 0) {
+        const id = results[0].user_id;
+        const token = jwt.sign(
+          {
+            user_id: id,
+            site_id: results[0].site_id,
+            site_db: results[0].site_db,
+            login_name: results[0].user_firstname+" "+results[0].user_lastname,
+            user_name: results[0].user_name,
+            user_email: results[0].user_email,
+            user_role_id: results[0].user_role_id,
+            is_developer_account: results[0].is_developer_account,
+            web_or_app : results[0].web_or_app,
+            active_status: results[0].active_status
+          },
+          process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRES_IN}
+        );
+        const cookieOptions = {
+          expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
+          httpOnly: true
+        };
+    
+        if (token) {
+          res.cookie('jwt', token, cookieOptions);
+        }
+    
+        res.send({
+          success: 1,
+          user_id: id,
+          site_id: results[0].site_id,
+          site_db: results[0].site_db,
+          login_name: results[0].user_firstname+" "+results[0].user_lastname,
+          user_name: results[0].user_name,
+          user_email: results[0].user_email,
+          user_role_id: results[0].user_role_id,
+          is_developer_account: results[0].is_developer_account,
+          web_or_app : results[0].web_or_app,
+          active_status: results[0].active_status,
+          token: token
+        });
+      } else {
+        res.send({
+          success: 0,
+          message: CONSTANTS.INVALID_CREDENTIALS
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Login Error",error);
+    logToFile(JSON.stringify(error), 'fail', 'login');
+    res.send({ success: 0, message: error });
   }
 });

@@ -45,7 +45,6 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   let data = req.body;
   let password = data.password;
-  
   let results = [];
   let allow_login = 0;
   try {
@@ -57,7 +56,7 @@ router.post('/login', async (req, res) => {
       allow_login = 1;
     } else {
       allow_login = 1;
-      if ((results && results.length == 0) || !results || !(await bcrypt.compare(password, results[0].PASSWORD))) {
+      if ((results && results.length == 0) || !results || !(await bcrypt.compare(password, results[0].user_password))) {
         res.send({
           success: CONSTANTS.FAIL_FLAG,
           message: CONSTANTS.INVALID_CREDENTIALS
