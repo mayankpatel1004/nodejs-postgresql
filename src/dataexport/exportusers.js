@@ -1,13 +1,15 @@
-if (["EA", "ES"].includes(req.body.status)) {
+const { createObjectCsvStringifier } = require("csv-writer");
+
+const exportUsersToCSV = async (req, res, results, functions) => {
   const exportItems = [];
   let total_records = 0;
+
   if (results && results.length > 0) {
-    results.map((item, index) => {
-      index++;
+    results.forEach((item, index) => {
       exportItems.push(item);
-      total_records = index;
+      total_records = index + 1;
     });
-    
+
     const csvStringifier = createObjectCsvStringifier({
       header: [
         { id: "user_firstname", title: "First Name" },
@@ -18,7 +20,8 @@ if (["EA", "ES"].includes(req.body.status)) {
         { id: "created_at", title: "Created" },
       ],
     });
-    
+
+    // Summary rows
     let obj1 = {
       user_firstname: "",
       user_lastname: "",
@@ -38,4 +41,9 @@ if (["EA", "ES"].includes(req.body.status)) {
       csvStringifier,
     );
   }
-}
+};
+
+
+module.exports = {
+  exportUsersToCSV,
+};

@@ -1,48 +1,26 @@
 const fs = require('fs');
 const path = require('path');
 
-function logToFile(message, flag, url = '') {
-  let filePath = '';
 
-  if (flag === 'success') {
-    filePath = path.join(__dirname, '../../src/logs/logs_success.txt');
-    fs.appendFileSync(filePath, `${message}\n`);
-
-  } else if (flag === 'request') {
-    filePath = path.join(__dirname, '../../src/logs/logs_request.json');
-    const print_url = { url: url };
-
-    fs.appendFileSync(filePath, JSON.stringify(print_url) + '\n');
-    fs.appendFileSync(filePath, JSON.stringify(message) + '\n');
-
-  } else {
-    filePath = path.join(__dirname, '../../src/logs/logs_fail.json');
-    fs.appendFileSync(filePath, `${message}\n`);
+function consoleLog(message) {
+  if(process.env.ENABLE_CONSOLE_LOGS == 'Y'){
+    console.log(message);
+  }
+  if(process.env.ENABLE_LOGS == "Y"){
+    const currentdate = new Date(); 
+    const log_name = 
+      currentdate.getDate() + "" + 
+      (currentdate.getMonth()+1) + "" + 
+      currentdate.getFullYear() + "@" + 
+      currentdate.getHours() + "" + 
+      (currentdate.getMinutes() < 10 ? '0' : '') + currentdate.getMinutes() + "" +
+      (currentdate.getSeconds() < 10 ? '0' : '') + currentdate.getSeconds();
+    
+    const logfile_path = path.join(__dirname, '../logs/' + log_name + ".sql");
+    const logStream1 = fs.createWriteStream(logfile_path, { flags: 'a' });
+    logStream1.write(`${message}\n\n`);
+    logStream1.end();
   }
 }
 
-function loginDetails(req) {
-    try {
-      let token = req.cookies?.jwt;
-      const authHeader = req.headers.authorization;
-      if (authHeader && !authHeader.startsWith('Bearer ')) {
-        token = req.headers.authorization;
-      }
-      if (!token) return null;
-
-      const decoded = promisify(jwt.verify)(
-        token,
-        process.env.JWT_SECRET,
-      );
-      if (authHeader && !authHeader.startsWith('Bearer ')) {
-        
-      }
-      decoded.is_api = is_api;
-      console.log("Decoded Login Details:", decoded);
-      return decoded?.data || null;
-    } catch (err) {
-      return null;
-    }
-  }
-
-module.exports = logToFile;
+module.exports = consoleLog;

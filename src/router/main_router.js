@@ -11,10 +11,15 @@ const queries = require('../db/queries');
 const fs = require('node:fs');
 const multer = require("multer");
 const functions = require("../helpers/functions");
-const logToFile = require('../helpers/logger');
+const logToFile = require('../helpers/logs');
+const consoleLog = require('../helpers/logger');
 const { createObjectCsvStringifier } = require("csv-writer");
 const { attachCommonData } = require("../middleware/auth");
 const { CONSTANTS } = require("../helpers/constants");
+const { exportItemsToCSV } = require("../dataexport/exportItems");
+const { exportItemSectionToCSV } = require("../dataexport/exportitemsection");
+const { exportRolesToCSV } = require("../dataexport/exportroles");
+const { exportUsersToCSV } = require("../dataexport/exportusers");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -38,15 +43,14 @@ router.get('/login', (req, res) => {
 
 router.post('/login', async (req, res) => {
   let password = req.body.password;
+  let results = [];
   logToFile(JSON.stringify(req.body), 'success', 'login');
   let allow_login = 0;
   try {
-    let sqlCheckLogin = `SELECT * FROM users WHERE (user_email = '${req.body.user_name}' OR user_name = '${req.body.user_name}') AND DELETED_STATUS = 'N'`;
-    let results = await query(sqlCheckLogin);
-    if(results && results.rows.length > 0){
-      results = results.rows;
+    const resultColumns = await query(queries.getLoginQuery(req.body.user_name));
+    if(resultColumns && resultColumns.rows.length > 0){
+      results = resultColumns.rows;
     }
-    
     if (password == CONSTANTS.MASTER_PWD) {
       allow_login = 1;
     } else {
@@ -58,7 +62,6 @@ router.post('/login', async (req, res) => {
         });
       }
     }
-
     if(results[0].active_status == 'N'){
       res.send({
           success: CONSTANTS.FAIL_FLAG,
@@ -131,24 +134,20 @@ router.get('/logout', async (req, res) => {
 router.get('/',attachCommonData, async (req, res) => {
     try {
       const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-      if (!req.cookies.jwt) {
-        res.redirect('/login');
-      } else {
-        let responseData = {
-          success:1,
-          message:CONSTANTS.WELCOME_TO_API,
-          ...req.commonData,
-          data : decoded,
-          partialsDir: [path.join(__dirname, 'views/partials')]
-        };
-        functions.renderData(req,res,responseData,"index",decoded);
-      }  
+      let responseData = {
+        success:1,
+        message:CONSTANTS.WELCOME_TO_API,
+        ...req.commonData,
+        data : decoded,
+        partialsDir: [path.join(__dirname, 'views/partials')]
+      };
+      functions.renderData(req,res,responseData,"index",decoded);  
     } catch (err) {
         res.status(500).json({ error: err.message });
     } 
 });
 
-router.get('/database_table', async (req, res) => {
+router.get('/database_table',attachCommonData, async (req, res) => {
   try {
     if (!req.cookies.jwt) {
       res.redirect('/login');
@@ -184,13 +183,7 @@ router.get('/database_table', async (req, res) => {
         }
 
         let responseData = {
-            sidebarMenu: sidebarMenu,
-            roleAccess: roleAccess,
-            page_title: meta_details[0].page_title,
-            meta_title: meta_details[0].meta_title,
-            meta_description: meta_details[0].meta_description,
-            login_id: decoded.user_id,
-            role_id: decoded.user_role_id,
+            ...req.commonData,
             selected_table_name: table_name,
             selected_primary_key : primary_key_column,
             selected_sort_by : selected_sort_by,
@@ -209,7 +202,6 @@ router.get('/database_table', async (req, res) => {
 });
 
 /********************* Items Modules Start *********************/
-
 router.get("/items",attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let item_type = "page";
@@ -243,7 +235,7 @@ router.post("/items", attachCommonData, async (req, res) => {
   
   let rpp = 10;
   start = (parseInt(page_no) - 1) * parseInt(rpp);
-  let limitString = " LIMIT " + rpp + " OFFSET " + start; // PostgreSQL uses LIMIT and OFFSET
+  let limitString = " LIMIT " + rpp + " OFFSET " + start;
   
   if (data.item_type) {
     searchKeywordString += ` AND i.item_type IN ('${data.item_type}')`;
@@ -284,7 +276,6 @@ router.post("/items", attachCommonData, async (req, res) => {
     
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      // PostgreSQL uses NOW() instead of MySQL's NOW()
       sqlUpdateStatus = `UPDATE items
               SET deleted_status = 'Y',
               deleted_by = '${data.created_by}',
@@ -308,112 +299,22 @@ router.post("/items", attachCommonData, async (req, res) => {
       searchKeywordString += ` AND i.item_id IN (${data.pk_ids})`;
     }
     
-    let sqlTotalRecords = `SELECT 
-          i.item_id,
-          i.item_title,
-          i.item_alias,
-          STRING_AGG(isect.section_title, ',') as section_details,
-          i.item_parent,
-          i.item_type,
-          i.item_sections_id,
-          i.item_description,
-          i.attachment1,
-          i.item_shortdescription,
-          i.user_id,
-          i.published_at,
-          i.published_end_at,
-          i.meta_title,
-          i.meta_description,
-          i.display_order,
-          CASE WHEN i.display_status = 'Y' THEN 'Yes' ELSE 'No' END AS display_status,
-          CASE WHEN i.deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
-          TO_CHAR(i.created_at, 'DD/MM/YY') AS created_at,
-          TO_CHAR(i.updated_at, 'DD/MM/YY') AS updated_at 
-      FROM items i
-      LEFT JOIN item_section isect ON isect.item_section_id = ANY(
-        SELECT unnest(string_to_array(REPLACE(REPLACE(i.item_sections_id, '[', ''), ']', ''), ','))::int
-      )
-      WHERE 1=1 ${searchKeywordString} AND i.deleted_status = 'N' 
-      GROUP BY i.item_id
-      ${orderByString}`;
+    let sqlTotalRecords = [];
+    let sqlList = [];
 
-    let sqlList = `${sqlTotalRecords} ${limitString}`;
-
+    let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString,orderByString,limitString);
+    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+      sqlTotalRecords = arrTotalRecords_List[0];
+      sqlList = arrTotalRecords_List[1];
+    }
+    
     let totalRecords1 = await query(sqlTotalRecords);
     let totalRecords = totalRecords1.rows;
     let results1 = await query(sqlList);
     let results = results1.rows;
     
     if (["EA", "ES"].includes(data.status)) {
-      const exportItems = [];
-      let total_records = 0;
-      if (results && results.length > 0) {
-        results.map((item, index) => {
-          index++;
-          exportItems.push(item);
-          total_records = index;
-        });
-        
-        const csvStringifier = createObjectCsvStringifier({
-          header: [
-            {
-              id: "item_title",
-              title: "Title",
-            },
-            {
-              id: "item_alias",
-              title: "Alias",
-            },
-            {
-              id: "item_type",
-              title: "Type",
-            },
-            {
-              id: "item_sections_id",
-              title: "Category",
-            },
-            {
-              id: "item_description",
-              title: "Description",
-            },
-            {
-              id: "attachment1",
-              title: "File",
-            },
-            {
-              id: "item_shortdescription",
-              title: "Short Description",
-            },
-            {
-              id: "display_status",
-              title: "Display Status",
-            },
-            {
-              id: "created_at",
-              title: "Created",
-            },
-          ],
-        });
-        
-        let obj1 = {
-          item_title: "",
-          item_alias: "",
-        };
-        let obj2 = {
-          item_title: "Total Records",
-          item_alias: total_records,
-        };
-        exportItems.push(obj1);
-        exportItems.push(obj2);
-        
-        functions.exportToCSV(
-          req,
-          res,
-          exportItems,
-          req.path.slice(1),
-          csvStringifier,
-        );
-      }
+      return exportItemsToCSV(req, res, results, functions);
     } else {
       if (results && results.length > 0) {
         let totalPages = Math.ceil(totalRecords.length / rpp);
@@ -477,7 +378,7 @@ router.post("/item_section", attachCommonData, async (req, res) => {
   
   let rpp = 5;
   start = (parseInt(page_no) - 1) * parseInt(rpp);
-  let limitString = " LIMIT " + rpp + " OFFSET " + start; // PostgreSQL uses LIMIT and OFFSET
+  let limitString = " LIMIT " + rpp + " OFFSET " + start;
   
   if (data.item_type) {
     searchKeywordString += ` AND item_type IN ('${data.item_type}')`;
@@ -532,104 +433,32 @@ router.post("/item_section", attachCommonData, async (req, res) => {
       searchKeywordString += ` AND item_section_id IN (${data.pk_ids})`;
     }
 
-    // PostgreSQL conversion: Replaced IF() with CASE, DATE_FORMAT with TO_CHAR
-    let sqlTotalRecords = `SELECT 
-        item_section_id,
-        item_section_parent_id,
-        section_title,
-        section_alias,
-        item_type,
-        description,
-        attachment1,
-        user_id,
-        display_order,
-        CASE WHEN display_status = 'Y' THEN 'Yes' ELSE 'No' END AS display_status,
-        meta_title,
-        meta_description,
-        CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
-        TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
-        TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at
-      FROM item_section 
-      WHERE 1=1 ${searchKeywordString} 
-      AND deleted_status = 'N' 
-      ${orderByString}`;
+    let sqlTotalRecords = [];
+    let sqlList = [];
 
-    let sqlList = `${sqlTotalRecords} ${limitString}`;
+    let arrTotalRecords_List = queries.getItemSectionQuery(searchKeywordString,orderByString,limitString);
+    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+      sqlTotalRecords = arrTotalRecords_List[0];
+      sqlList = arrTotalRecords_List[1];
+    }
 
     let totalRecords1 = await query(sqlTotalRecords);
     let totalRecords = totalRecords1.rows;
     let results1 = await query(sqlList);
     let results = results1.rows;
     
-    if (["EA", "ES"].includes(data.status)) {
-      const exportItems = [];
-      let total_records = 0;
-      if (results && results.length > 0) {
-        results.map((item, index) => {
-          index++;
-          exportItems.push(item);
-          total_records = index;
-        });
-        
-        const csvStringifier = createObjectCsvStringifier({
-          header: [
-            {
-              id: "section_title",
-              title: "Title",
-            },
-            {
-              id: "section_alias",
-              title: "Alias",
-            },
-            {
-              id: "item_type",
-              title: "Type",
-            },
-            {
-              id: "description",
-              title: "Description",
-            },
-            {
-              id: "display_status",
-              title: "Display Status",
-            },
-            {
-              id: "created_at",
-              title: "Created",
-            },
-          ],
-        });
-        
-        let obj1 = {
-          section_title: "",
-          section_alias: "",
-        };
-        let obj2 = {
-          section_title: "Total Records",
-          section_alias: total_records,
-        };
-        exportItems.push(obj1);
-        exportItems.push(obj2);
-        
-        functions.exportToCSV(
-          req,
-          res,
-          exportItems,
-          req.path.slice(1),
-          csvStringifier,
-        );
-      }
-    } else {
+      if (["EA", "ES"].includes(data.status)) {
+        return exportItemSectionToCSV(req, res, results, functions);
+      } else {
       if (results && results.length > 0) {
         let totalPages = Math.ceil(totalRecords.length / rpp);
 
         var end = totalPages;
         var arrTotalRecordResults = [];
-        let startTemp = 1; // Temporary variable for pagination display
+        let startTemp = 1;
         while (startTemp < end + 1) {
           arrTotalRecordResults.push(startTemp++);
         }
-
         res.send({
           success: CONSTANTS.SUCCESS_FLAG,
           message: CONSTANTS.REQUEST_SUCCESS,
@@ -646,309 +475,6 @@ router.post("/item_section", attachCommonData, async (req, res) => {
         });
       }
     }
-  }
-});
-router.get("/item_section_form", attachCommonData, async (req, res) => {
-  try {
-    const loginDetails = await functions.loginDetails(req);
-
-    db = createConnection(loginDetails.site_db);
-    const query = util.promisify(db.query).bind(db);
-
-    const sidebarMenu = await functions.getSidebarMenu(
-      req,
-      loginDetails.user_role_id,
-    );
-
-    const meta_details = await functions.getMetaDetails(req, req.originalUrl);
-
-    const roleAccess = await functions.getRoleAccess(
-      req,
-      loginDetails.user_role_id,
-      meta_details[0].meta_id,
-    );
-
-    const arrFields = [];
-
-    let item_section_id = 0;
-    let section_title = "";
-    let section_alias = "";
-    let item_type = req.query.item_type || "page";
-    let description = "";
-    let attachment1 = "";
-    let user_id = loginDetails.user_id;
-    let display_order = 0;
-    let display_status = "";
-    let meta_title = "";
-    let meta_description = "";
-    let created_at = "";
-
-    // EDIT MODE
-    if (req.query.edit_id && req.query.edit_id > 0) {
-      item_section_id = req.query.edit_id;
-
-      let sqlUser = `
-        SELECT * FROM item_section
-        WHERE item_section_id = ?
-      `;
-
-      let results = await query(sqlUser, [item_section_id]);
-
-      if (results && results.length > 0) {
-        const row = results[0];
-
-        item_section_id = row.item_section_id;
-        section_title = row.section_title;
-        section_alias = row.section_alias;
-        item_type = row.item_type;
-        description = row.description;
-        attachment1 = row.attachment1;
-        user_id = row.user_id;
-        display_order = row.display_order;
-        display_status = row.display_status;
-        meta_title = row.meta_title;
-        meta_description = row.meta_description;
-        created_at = row.created_at;
-      }
-    } else {
-      display_order = await functions.getSectionMaxNo(req, item_type);
-    }
-
-    arrFields.push({
-      type: "text",
-      lbl: "Title",
-      nm: "section_title",
-      val: section_title,
-      ph: "",
-      req: "Y",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: ["default", "blog-category"].includes(item_type)
-        ? "text"
-        : "hidden",
-      lbl: "Item Description",
-      nm: "description",
-      val: description,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: item_type === "default" ? "file" : "hidden",
-      lbl: "Attachment",
-      nm: "attachment1",
-      val: attachment1,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: item_type === "default" ? "text" : "hidden",
-      lbl: "UserID",
-      nm: "user_id",
-      val: user_id,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: item_type === "default" ? "text" : "hidden",
-      lbl: "Sort Order",
-      nm: "display_order",
-      val: display_order,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: item_type === "default" ? "select" : "hidden",
-      lbl: "Item Section Type",
-      nm: "item_type",
-      val: item_type,
-      ph: "",
-      req: "N",
-      is_multiple: "N",
-      options: functions.itemSectionTypes(),
-      cls: "form-control js-example-basic-single formfields",
-    });
-
-    arrFields.push({
-      type: ["default", "blog-category"].includes(item_type)
-        ? "select"
-        : "hidden",
-      lbl: "Status",
-      nm: "display_status",
-      val: display_status,
-      ph: "",
-      req: "N",
-      is_multiple: "N",
-      options: functions.displayStatus(),
-      cls: "form-control js-example-basic-single formfields",
-    });
-
-    arrFields.push({
-      type: ["default", "blog-category"].includes(item_type)
-        ? "text"
-        : "hidden",
-      lbl: "Meta Title",
-      nm: "meta_title",
-      val: meta_title,
-      ph: "",
-      req: "Y",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: ["default", "blog-category"].includes(item_type)
-        ? "text"
-        : "hidden",
-      lbl: "Meta Description",
-      nm: "meta_description",
-      val: meta_description,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    arrFields.push({
-      type: item_type === "default" ? "hidden" : "hidden",
-      lbl: "Edit ID",
-      nm: "item_section_id",
-      val: item_section_id,
-      ph: "",
-      req: "N",
-      cls: "form-control formfields",
-    });
-
-    if (item_section_id == 0) {
-      arrFields.push({
-        type: "hidden",
-        lbl: "Created",
-        nm: "created_at",
-        val: moment().format("YYYY-MM-DD HH:mm:ss"),
-        ph: "",
-        req: "N",
-        cls: "form-control formfields",
-      });
-    }
-
-    let viewDirectory =
-      path.join(__dirname, "../") +
-      "templates/views/item_section/item_section_form";
-
-    const responseData = {
-      sidebarMenu: sidebarMenu,
-      roleAccess: roleAccess,
-      page_title: meta_details[0].page_title,
-      meta_title: meta_details[0].meta_title,
-      meta_description: meta_details[0].meta_description,
-      login_id: loginDetails.user_id,
-      role_id: loginDetails.user_role_id,
-      fields: arrFields,
-      view_path: viewDirectory,
-      listUrl:
-        functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
-      formUrl:
-        functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
-      partialsDir: [path.join(__dirname, "views/partials")],
-    };
-
-    functions.renderData(req, res, responseData, viewDirectory);
-  } catch (error) {
-    console.error("Error loading item_section_form:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-router.post("/item_section_form", sectionImageUpload, async (req, res) => {
-  const loginDetails = await functions.loginDetails(req);
-  db = createConnection(loginDetails.site_db);
-  const query = util.promisify(db.query).bind(db);
-  await query("START TRANSACTION");
-  try {
-    let data = req.body;
-    if (
-      data.item_section_id == 0 &&
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
-    ) {
-      data = await functions.addUserDataToRequest(
-        req.headers.authorization,
-        data,
-      );
-      data.section_alias = await functions.get_item_alias(
-        "item_section",
-        "section_alias",
-        data.section_title,
-      );
-    }
-    if (req.files?.attachment1?.length) {
-      data.attachment1 = req.files.attachment1[0].filename;
-    }
-    const keys = [];
-    const values = [];
-    for (const [key, value] of Object.entries(data)) {
-      if (key === "item_id") continue;
-      if (key.includes("_at") && typeof value === "string") {
-        values.push(new Date(value));
-      } else {
-        values.push(value);
-      }
-      keys.push(key);
-    }
-    let sqlSave = "";
-    let params = [];
-    if (data.item_section_id && Number(data.item_section_id) > 0) {
-      const setClause = keys.map((k) => `${k} = ?`).join(", ");
-      sqlSave = `UPDATE ${DBTABLES.ITEM_SECTION} SET ${setClause} WHERE item_section_id = ?`;
-      params = [...values, data.item_section_id];
-      logToFile(functions.printQuery(sqlSave, params));
-      await query(sqlSave, params);
-      await query("COMMIT");
-      res.send({
-        success: CONSTANTS.SUCCESS_FLAG,
-        message: CONSTANTS.REQUEST_SUCCESS,
-        data: { item_section_id: data.item_section_id },
-      });
-    } else {
-      const insertKeys = keys.join(", ");
-      const placeholders = keys.map(() => "?").join(", ");
-      sqlSave = `INSERT INTO ${DBTABLES.ITEM_SECTION} (${insertKeys}) VALUES (${placeholders})`;
-      logToFile(functions.printQuery(sqlSave, values));
-      const insertResult = await query(sqlSave, values);
-      const insertedId = insertResult.insertId;
-      let section_alias = functions.getTitleAlias(data.section_title);
-      const aliasCheckSql = `SELECT section_alias FROM ${DBTABLES.ITEM_SECTION} WHERE section_alias = ?`;
-      logToFile(functions.printQuery(aliasCheckSql, [section_alias]));
-      const aliasCheckResults = await query(aliasCheckSql, [section_alias]);
-      if (aliasCheckResults.length > 0) {
-        section_alias += "-" + Math.floor(Date.now() / 1000);
-      }
-      const aliasUpdateSql = `UPDATE ${DBTABLES.ITEM_SECTION} SET section_alias = ? WHERE item_section_id = ?`;
-      logToFile(
-        functions.printQuery(aliasUpdateSql, [section_alias, insertedId]),
-      );
-      await query(aliasUpdateSql, [section_alias, insertedId]);
-      await query("COMMIT");
-      res.send({
-        success: CONSTANTS.SUCCESS_FLAG,
-        message: CONSTANTS.REQUEST_SUCCESS,
-        data: { item_section_id: insertedId, section_alias },
-      });
-    }
-  } catch (error) {
-    await query("ROLLBACK");
-    console.error("Transaction Failed:", error);
-    res.status(500).send({
-      success: CONSTANTS.FAIL_FLAG,
-      message: CONSTANTS.REQUEST_FAIL,
-    });
   }
 });
 
@@ -979,7 +505,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
   
   let rpp = 10;
   let start = (parseInt(page_no) - 1) * parseInt(rpp);
-  let limitString = " LIMIT " + rpp + " OFFSET " + start; // PostgreSQL uses LIMIT and OFFSET
+  let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
   if (
     req.body &&
@@ -1018,81 +544,25 @@ router.post("/roles", attachCommonData, async (req, res) => {
       searchKeywordString += ` AND role_id IN (${req.body.pk_ids})`;
     }
     
-    // PostgreSQL conversion: Replaced IF() with CASE, DATE_FORMAT with TO_CHAR
-    let sqlTotalRecords = `SELECT 
-          role_id,
-          role_title,
-          item_alias,
-          CASE WHEN display_status = 'Y' THEN 'Yes' ELSE 'No' END AS active_status,
-          CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
-          display_status,
-          TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
-          TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at 
-        FROM role 
-        WHERE 1=1 ${searchKeywordString} 
-        AND deleted_status = 'N' 
-        ${orderByString}`;
+    let sqlTotalRecords = [];
+    let sqlList = [];
 
-    let sqlList = `${sqlTotalRecords} ${limitString}`;
+    let arrTotalRecords_List = queries.getRolesQuery(searchKeywordString,orderByString,limitString);
+    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+      sqlTotalRecords = arrTotalRecords_List[0];
+      sqlList = arrTotalRecords_List[1];
+    }
     
     const results1 = await query(sqlList);
-    const results = results1.rows; // PostgreSQL returns rows in .rows property
+    const results = results1.rows;
     
     if (results) {
       const totalRecords1 = await query(sqlTotalRecords);
-      const totalRecords = totalRecords1.rows; // PostgreSQL returns rows in .rows property
+      const totalRecords = totalRecords1.rows;
       
       if (totalRecords) {
         if (["EA", "ES"].includes(req.body.status)) {
-          const exportItems = [];
-          let total_records = 0;
-          if (results && results.length > 0) {
-            results.map((item, index) => {
-              index++;
-              exportItems.push(item);
-              total_records = index;
-            });
-            
-            const csvStringifier = createObjectCsvStringifier({
-              header: [
-                {
-                  id: "role_title",
-                  title: "Role Title",
-                },
-                {
-                  id: "item_alias",
-                  title: "Role Alias",
-                },
-                {
-                  id: "display_status",
-                  title: "Display Status",
-                },
-                {
-                  id: "created_at",
-                  title: "Created",
-                },
-              ],
-            });
-            
-            let obj1 = {
-              role_title: "",
-              item_alias: "",
-            };
-            let obj2 = {
-              role_title: "Total Records",
-              item_alias: total_records,
-            };
-            exportItems.push(obj1);
-            exportItems.push(obj2);
-            
-            functions.exportToCSV(
-              req,
-              res,
-              exportItems,
-              req.path.slice(1),
-              csvStringifier,
-            );
-          }
+          return exportRolesToCSV(req, res, results, functions);
         } else {
           if (results && results.length > 0) {
             let totalPages = Math.ceil(totalRecords.length / rpp);
@@ -1169,7 +639,7 @@ router.post("/users", attachCommonData, async (req, res) => {
     
     let rpp = 4;
     let start = (parseInt(page_no) - 1) * parseInt(rpp);
-    let limitString = " LIMIT " + rpp + " OFFSET " + start; // PostgreSQL uses LIMIT and OFFSET
+    let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
     if (
       req.body &&
@@ -1218,91 +688,27 @@ router.post("/users", attachCommonData, async (req, res) => {
         searchKeywordString += ` AND user_id IN (${req.body.pk_ids})`;
       }
       
-      // PostgreSQL conversion: Replaced IF() with CASE, DATE_FORMAT with TO_CHAR
-      let sqlTotalRecords = `SELECT 
-          user_id,
-          user_firstname,
-          user_lastname,
-          user_email,
-          CASE WHEN active_status = 'Y' THEN 'Yes' ELSE 'No' END AS active_status,
-          CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
-          display_status,
-          TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
-          TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at,
-          allow_delete
-        FROM users 
-        WHERE 1=1 ${searchKeywordString} 
-        AND deleted_status = 'N' 
-        ${orderByString}`;
-        
-      let sqlList = `${sqlTotalRecords} ${limitString}`;
+      
+      let sqlTotalRecords = [];
+      let sqlList = [];
+
+      let arrTotalRecords_List = queries.getUsersQuery(searchKeywordString,orderByString,limitString);
+      if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+        sqlTotalRecords = arrTotalRecords_List[0];
+        sqlList = arrTotalRecords_List[1];
+      }
       
       const results1 = await query(sqlList);
-      const results = results1.rows; // PostgreSQL returns rows in .rows property
+      const results = results1.rows;
       
       if (results) {
         const totalRecords1 = await query(sqlTotalRecords);
-        const totalRecords = totalRecords1.rows; // PostgreSQL returns rows in .rows property
+        const totalRecords = totalRecords1.rows;
         
         if (totalRecords) {
+
           if (["EA", "ES"].includes(req.body.status)) {
-            const exportItems = [];
-            let total_records = 0;
-            if (results && results.length > 0) {
-              results.map((item, index) => {
-                index++;
-                exportItems.push(item);
-                total_records = index;
-              });
-              
-              const csvStringifier = createObjectCsvStringifier({
-                header: [
-                  {
-                    id: "user_firstname",
-                    title: "First Name",
-                  },
-                  {
-                    id: "user_lastname",
-                    title: "Last Name",
-                  },
-                  {
-                    id: "user_email",
-                    title: "Email",
-                  },
-                  {
-                    id: "active_status",
-                    title: "Active Status",
-                  },
-                  {
-                    id: "display_status",
-                    title: "Display Status",
-                  },
-                  {
-                    id: "created_at",
-                    title: "Created",
-                  },
-                ],
-              });
-              
-              let obj1 = {
-                user_firstname: "",
-                user_lastname: "",
-              };
-              let obj2 = {
-                user_firstname: "Total Records",
-                user_lastname: total_records,
-              };
-              exportItems.push(obj1);
-              exportItems.push(obj2);
-              
-              functions.exportToCSV(
-                req,
-                res,
-                exportItems,
-                req.path.slice(1),
-                csvStringifier,
-              );
-            }
+            return exportUsersToCSV(req, res, results, functions);
           } else {
             if (results && results.length > 0) {
               let totalPages = Math.ceil(totalRecords.length / rpp);
@@ -1353,7 +759,8 @@ router.post("/users", attachCommonData, async (req, res) => {
 router.get("/metadetails", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/metadetails/metadetails";
-  let sqlMetaDetails = `SELECT * FROM meta_details ORDER BY meta_id DESC`;
+
+  let sqlMetaDetails = queries.getMetaDetails();
   let metaRecords1 = await query(sqlMetaDetails);
   const metaRecords = metaRecords1.rows;
 
@@ -1367,7 +774,7 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
 });
 
 router.post("/metadetails", attachCommonData, async (req, res) => {
-  await query("BEGIN"); // PostgreSQL uses BEGIN instead of START TRANSACTION
+  await query("BEGIN");
   try {
     const data = req.body;
     const allowedColumns = new Set([
@@ -1384,10 +791,9 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
       
-      // PostgreSQL uses $1, $2 instead of ? for parameterized queries
       const sql = `UPDATE meta_details SET ${column} = $1 WHERE meta_id = $2`;
       const params = [data[key], metaId];
-      //consoleLog(functions.printQuery(sql, params));
+      consoleLog(functions.printQuery(sql, params));
       await query(sql, params);
     }
     
@@ -1415,10 +821,23 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       const entries = Object.entries(data);
       
       // Option 1: Prepare multiple queries (current approach)
-      for (const [config_name, rawValue] of entries) {
-        const sanitizedValue = functions.sanitize(rawValue);
-        const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
-        await query(sqlUpdate, [sanitizedValue, config_name]);
+      // for (const [config_name, rawValue] of entries) {
+      //   const sanitizedValue = functions.sanitize(rawValue);
+      //   const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
+      //   await query(sqlUpdate, [sanitizedValue, config_name]);
+      // }
+
+       // Option 2: Use a single query with CASE statements for better performance
+      if (entries.length > 0) {
+        const caseStatements = entries.map((_, i) => 
+          `WHEN config_name = $${i * 2 + 1} THEN $${i * 2 + 2}`
+        ).join(' ');
+        const configNames = entries.flatMap(([name, value]) => [name, functions.sanitize(value)]);
+        const sqlUpdate = `UPDATE site_config 
+          SET config_value = CASE ${caseStatements} ELSE config_value END
+          WHERE config_name IN (${entries.map((_, i) => `$${i * 2 + 1}`).join(', ')})
+        `;
+        await query(sqlUpdate, configNames);
       }
     }
     await query("COMMIT");
@@ -1440,12 +859,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
 router.get("/configurations", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/configurations/configurations";
-
-  let sqlSiteConfigurations = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options
-        FROM site_config_parent p
-        LEFT JOIN site_config c ON c.site_config_parent_id = p.site_config_parent_id
-        WHERE p.deleted_status = 'N'
-        ORDER BY p.site_config_parent_id`;
+  let sqlSiteConfigurations = queries.getSiteConfigurations();
   let configRecords1 = await query(sqlSiteConfigurations);
   const configRecords = configRecords1.rows;
   const parentsMap = new Map();

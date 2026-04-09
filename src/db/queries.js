@@ -28,6 +28,115 @@ const queries = {
     getTableData: (table_name,filter_string,primary_key,sort_by) => {
         let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string} ORDER BY ${primary_key ? primary_key : '1'} ${sort_by ? sort_by : 'ASC'}`; 
         return sqlQuery;
+    },
+    getLoginQuery: (user_name) => {
+        let sqlQuery = `SELECT * FROM users WHERE (user_email = '${user_name}' OR user_name = '${user_name}') AND DELETED_STATUS = 'N'`;
+        return sqlQuery;
+    },
+    getItemsQuery: (searchKeywordString,orderByString,limitString) => {
+        let sqlTotalRecords = `SELECT 
+                  i.item_id,
+                  i.item_title,
+                  i.item_alias,
+                  STRING_AGG(isect.section_title, ',') as section_details,
+                  i.item_parent,
+                  i.item_type,
+                  i.item_sections_id,
+                  i.item_description,
+                  i.attachment1,
+                  i.item_shortdescription,
+                  i.user_id,
+                  i.published_at,
+                  i.published_end_at,
+                  i.meta_title,
+                  i.meta_description,
+                  i.display_order,
+                  CASE WHEN i.display_status = 'Y' THEN 'Yes' ELSE 'No' END AS display_status,
+                  CASE WHEN i.deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
+                  TO_CHAR(i.created_at, 'DD/MM/YY') AS created_at,
+                  TO_CHAR(i.updated_at, 'DD/MM/YY') AS updated_at 
+              FROM items i
+              LEFT JOIN item_section isect ON isect.item_section_id = ANY(
+                SELECT unnest(string_to_array(REPLACE(REPLACE(i.item_sections_id, '[', ''), ']', ''), ','))::int
+              )
+              WHERE 1=1 ${searchKeywordString} AND i.deleted_status = 'N' 
+              GROUP BY i.item_id
+              ${orderByString}`;
+              let sqlList = `${sqlTotalRecords} ${limitString}`;
+        return [sqlTotalRecords,sqlList];
+    },
+    getItemSectionQuery: (searchKeywordString,orderByString,limitString) => {
+        let sqlTotalRecords = `SELECT 
+            item_section_id,
+            item_section_parent_id,
+            section_title,
+            section_alias,
+            item_type,
+            description,
+            attachment1,
+            user_id,
+            display_order,
+            CASE WHEN display_status = 'Y' THEN 'Yes' ELSE 'No' END AS display_status,
+            meta_title,
+            meta_description,
+            CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
+            TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
+            TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at
+        FROM item_section 
+        WHERE 1=1 ${searchKeywordString} 
+        AND deleted_status = 'N' 
+        ${orderByString}`;
+        let sqlList = `${sqlTotalRecords} ${limitString}`;
+        return [sqlTotalRecords,sqlList];
+    },
+    getRolesQuery: (searchKeywordString,orderByString,limitString) => {
+        let sqlTotalRecords = `SELECT 
+          role_id,
+          role_title,
+          item_alias,
+          CASE WHEN display_status = 'Y' THEN 'Yes' ELSE 'No' END AS active_status,
+          CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
+          display_status,
+          TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
+          TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at 
+        FROM role 
+        WHERE 1=1 ${searchKeywordString} 
+        AND deleted_status = 'N' 
+        ${orderByString}`;
+        let sqlList = `${sqlTotalRecords} ${limitString}`;
+        return [sqlTotalRecords,sqlList];
+    },
+    getUsersQuery: (searchKeywordString,orderByString,limitString) => {
+        let sqlTotalRecords = `SELECT 
+            user_id,
+            user_firstname,
+            user_lastname,
+            user_email,
+            CASE WHEN active_status = 'Y' THEN 'Yes' ELSE 'No' END AS active_status,
+            CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
+            display_status,
+            TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
+            TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at,
+            allow_delete
+            FROM users 
+            WHERE 1=1 ${searchKeywordString} 
+            AND deleted_status = 'N' 
+            ${orderByString}`;
+        
+        let sqlList = `${sqlTotalRecords} ${limitString}`;
+        return [sqlTotalRecords,sqlList];
+    },
+    getMetaDetails: () => {
+        let sqlMetaDetails = `SELECT * FROM meta_details ORDER BY meta_id DESC`;
+        return sqlMetaDetails;   
+    },
+    getSiteConfigurations: () => {
+        let sqlSiteConfigurations = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options
+        FROM site_config_parent p
+        LEFT JOIN site_config c ON c.site_config_parent_id = p.site_config_parent_id
+        WHERE p.deleted_status = 'N'
+        ORDER BY p.site_config_parent_id`;
+        return sqlSiteConfigurations;
     }
 };
 
