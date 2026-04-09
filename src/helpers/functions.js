@@ -4,7 +4,18 @@ const path = require("path");
 var fs = require("fs");
 const query = util.promisify(db.query).bind(db);
 const jwt = require('jsonwebtoken');
+const nodemailer = require("nodemailer");
 const { CONSTANTS } = require("./constants");
+const {mailPassword,mailUser,mailHost,mailPort,mailSecure} = require("../helpers/email");
+let transporter = nodemailer.createTransport({
+  host: mailHost,
+  port: mailPort,
+  secure: mailSecure,
+  auth: {
+    user: mailUser,
+    pass: mailPassword,
+  },
+});
 
 module.exports = {
     getHostUrl(req) {
@@ -223,5 +234,27 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       (match, p1, p2, p3) => (p2 === "&" || p2 === "?" ? p1 + p3 : match),
     );
     return updatedSql;
+  },
+  async sentAnEmail(to, subject, text, htmlContent) {
+    const header_html = `<html lang='en'> <head> <meta charset='UTF-8' /> <meta name='viewport' content='width=device-width, initial-scale=1' /> <title>Welcome Email</title> </head> <body style='font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;'> <div style='max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;'> <div style='background-color: #4a90e2; color: #ffffff; padding: 25px; text-align: center; font-size: 24px; font-weight: 700;'> Welcome to Our Platform! </div> `;
+    const content_html = htmlContent;
+    const footer_html = `<p>Welcome aboard,<br />The Team</p> </div> <div style='background-color: #f1f1f1; font-size: 12px; color: #999999; text-align: center; padding: 20px;'> If this email is suspected, please ignore this email or contact support. </div> </div> </body> </html>`;
+    const completeHtml = header_html + content_html + footer_html;
+    
+    try {
+      const mailData = {
+        from: `${process.env.AUTH_NAME} <${process.env.AUTH_USER}>`,
+        to: to,
+        subject: subject,
+        text: text,
+        html: completeHtml,
+      };
+      await transporter.verify();
+      const results = await transporter.sendMail(mailData);
+      return results;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 }

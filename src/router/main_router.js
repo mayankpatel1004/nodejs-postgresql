@@ -133,6 +133,261 @@ router.get('/logout', async (req, res) => {
   });
 });
 
+router.get('/forgot-password', (req, res) => {
+    res.render("forgot-password",{
+        data : [],
+        partialsDir: [path.join(__dirname, 'views/partials')]
+    });
+});
+
+router.post("/forgot-password", async (req, res) => {
+
+  try {
+    await query("BEGIN");
+
+    const { user_email } = req.body;
+
+    const sqlQuery = `
+      SELECT 
+        user_id,
+        user_firstname,
+        user_lastname,
+        active_status,
+        deleted_status 
+      FROM users 
+      WHERE user_email = $1 
+        AND deleted_status = 'N' 
+      ORDER BY user_id DESC 
+      LIMIT 1
+    `;
+
+    consoleLog(functions.printQuery(sqlQuery, [user_email]));
+
+    const result = await query(sqlQuery, [user_email]);
+
+    if (!result || result.rows.length === 0) {
+      await query("ROLLBACK");
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.EMAIL_FAIL_SENT,
+        data: [],
+      });
+    }
+
+    const user = result.rows[0];
+
+    if (user.active_status === "N") {
+      await query("ROLLBACK");
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.INACTIVE_ACCOUNT,
+        data: [],
+      });
+    }
+
+    if (user.deleted_status === "Y") {
+      await query("ROLLBACK");
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.DELETED_ACCOUNT,
+        data: [],
+      });
+    }
+
+    // Generate token
+    let user_token_random = Math.floor(1000 + Math.random() * 9000);
+    let user_token = `${user_token_random}${user.user_id}`;
+
+    const sqlUpdate = `
+      UPDATE users 
+      SET user_token = $1 
+      WHERE user_id = $2
+    `;
+
+    consoleLog(functions.printQuery(sqlUpdate, [user_token, user.user_id]));
+
+    const updateResult = await query(sqlUpdate, [
+      user_token,
+      user.user_id,
+    ]);
+
+    if (updateResult.rowCount === 0) {
+      await query("ROLLBACK");
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.EMAIL_FAIL_SENT,
+        data: [],
+      });
+    }
+
+    await query("COMMIT");
+
+    const user_name = `${user.user_firstname} ${user.user_lastname}`;
+
+    const html = `
+      <tr>
+        <td>
+          <h4>Hello ${user_name},</h4>
+          <p>There was recently a request to change the password of your account on ${CONSTANTS.COMPANY_NAME}.</p>
+          <p>If you requested this password change, please use the secure code below.</p>
+          <p><strong>${user_token}</strong></p>
+          <p>If you don't want to change your password, just ignore this message.</p>
+          <p>If you have any questions or need further assistance, please contact us.</p>
+        </td>
+      </tr>
+    `;
+
+    const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
+    console.log("user_email",user_email);
+    await functions.sentAnEmail(user_email, subject, "", html);
+
+    return res.send({
+      success: CONSTANTS.SUCCESS_FLAG,
+      message: CONSTANTS.EMAIL_SUCCESS_SENT,
+      data: [],
+    });
+
+  } catch (error) {
+    await query("ROLLBACK");
+    console.error("Transaction Failed:", error);
+
+    return res.status(500).send({
+      success: 0,
+      message: "Something went wrong. Transaction rolled back.",
+    });
+
+  }
+});
+
+router.get("/password-token", async (req, res) => {
+  let email = ``;
+  if (req.query.email && typeof req.query.email !== "undefined") {
+    email = req.query.email;
+  }
+  const responseData = {
+    email: email,
+    data: [],
+    partialsDir: [path.join(__dirname, "views/partials")],
+  };
+  res.render("password-token", responseData);
+});
+
+router.post("/password_token", async (req, res) => {
+  try {
+    const { email, token } = req.body;
+    const sqlQuery = `
+  SELECT user_id, user_token, user_email 
+  FROM users 
+  WHERE user_email = $1 
+    AND user_token = $2
+`;
+
+const result = await query(sqlQuery, [email, token]);
+
+if (!result || result.rows.length === 0) {
+  return res.send({
+    success: CONSTANTS.FAIL_FLAG,
+    message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
+    data: [],
+  });
+}
+
+const user = result.rows[0];
+    if (
+      parseInt(user.user_token) !== parseInt(token) ||
+      user.user_email !== email
+    ) {
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
+        data: [],
+      });
+    }
+    const sqlUpdate = `UPDATE users SET user_token = $1 WHERE user_id = $2`;
+    consoleLog(functions.printQuery(sqlUpdate, ["", user.user_id]));
+    await query(sqlUpdate, ["", user.user_id]);
+    res.send({
+      success: CONSTANTS.SUCCESS_FLAG,
+      message: CONSTANTS.REQUEST_SUCCESS,
+      data: user,
+    });
+  } catch (error) {
+    console.error("Transaction Failed:", error);
+    res.status(500).send({
+      success: 0,
+      message: "Something went wrong. Transaction rolled back.",
+    });
+  }
+});
+
+router.post("/activate_account", async (req, res) => {
+
+  try {
+    const { id, password } = req.body;
+    const encryptPass = bcrypt.hashSync(password, 10);
+    const sqlUpdate = `
+      UPDATE users 
+      SET user_password = $1, 
+          user_token = $2 
+      WHERE user_id = $3
+    `;
+    const params = [encryptPass, "", id];
+    const result = await query(sqlUpdate, params);
+    if (result.rowCount === 0) {
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: "Invalid user",
+        data: [],
+      });
+    }
+
+    return res.send({
+      success: CONSTANTS.SUCCESS_FLAG,
+      message: CONSTANTS.REQUEST_SUCCESS,
+      data: { user_id: id },
+    });
+
+  } catch (error) {
+    console.error("Transaction Failed:", error);
+
+    return res.status(500).send({
+      success: 0,
+      message: "Something went wrong. Transaction rolled back.",
+    });
+
+  }
+});
+
+router.get("/reset-password", async (req, res) => {
+  try {
+    let queryParam = req.query.email || "";
+    let split_data = queryParam.split("@@");
+
+    let id = split_data[0] || 0;
+    let email = split_data[1] || "";
+    let token = split_data[2] || "";
+    let token_exists = false;
+
+    const responseData = {
+      id,
+      email,
+      token,
+      token_exists,
+      partialsDir: [path.join(__dirname, "views/partials")],
+    };
+
+    return res.render("reset-password", responseData);
+
+  } catch (error) {
+    console.error("Error in reset-password:", error);
+
+    return res.status(500).send({
+      success: 0,
+      message: "Something went wrong.",
+    });
+  }
+});
+
 router.get('/',attachCommonData, async (req, res) => {
     try {
       const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
