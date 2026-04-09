@@ -90,11 +90,9 @@ router.post('/login', async (req, res) => {
           expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
           httpOnly: true
         };
-    
         if (token) {
           res.cookie('jwt', token, cookieOptions);
         }
-    
         res.send({
           success: 1,
           user_id: id,
@@ -141,12 +139,8 @@ router.get('/forgot-password', (req, res) => {
 });
 
 router.post("/forgot-password", async (req, res) => {
-
   try {
-    await query("BEGIN");
-
     const { user_email } = req.body;
-
     const sqlQuery = `
       SELECT 
         user_id,
@@ -158,72 +152,49 @@ router.post("/forgot-password", async (req, res) => {
       WHERE user_email = $1 
         AND deleted_status = 'N' 
       ORDER BY user_id DESC 
-      LIMIT 1
-    `;
-
-    consoleLog(functions.printQuery(sqlQuery, [user_email]));
-
+      LIMIT 1`;
     const result = await query(sqlQuery, [user_email]);
-
     if (!result || result.rows.length === 0) {
-      await query("ROLLBACK");
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
         message: CONSTANTS.EMAIL_FAIL_SENT,
         data: [],
       });
     }
-
     const user = result.rows[0];
-
     if (user.active_status === "N") {
-      await query("ROLLBACK");
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
         message: CONSTANTS.INACTIVE_ACCOUNT,
         data: [],
       });
     }
-
     if (user.deleted_status === "Y") {
-      await query("ROLLBACK");
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
         message: CONSTANTS.DELETED_ACCOUNT,
         data: [],
       });
     }
-
-    // Generate token
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
-
     const sqlUpdate = `
       UPDATE users 
       SET user_token = $1 
       WHERE user_id = $2
     `;
-
-    consoleLog(functions.printQuery(sqlUpdate, [user_token, user.user_id]));
-
     const updateResult = await query(sqlUpdate, [
       user_token,
       user.user_id,
     ]);
-
     if (updateResult.rowCount === 0) {
-      await query("ROLLBACK");
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
         message: CONSTANTS.EMAIL_FAIL_SENT,
         data: [],
       });
     }
-
-    await query("COMMIT");
-
     const user_name = `${user.user_firstname} ${user.user_lastname}`;
-
     const html = `
       <tr>
         <td>
@@ -238,9 +209,7 @@ router.post("/forgot-password", async (req, res) => {
     `;
 
     const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
-    console.log("user_email",user_email);
     await functions.sentAnEmail(user_email, subject, "", html);
-
     return res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.EMAIL_SUCCESS_SENT,
@@ -248,14 +217,11 @@ router.post("/forgot-password", async (req, res) => {
     });
 
   } catch (error) {
-    await query("ROLLBACK");
     console.error("Transaction Failed:", error);
-
     return res.status(500).send({
       success: 0,
       message: "Something went wrong. Transaction rolled back.",
     });
-
   }
 });
 
@@ -304,7 +270,6 @@ const user = result.rows[0];
       });
     }
     const sqlUpdate = `UPDATE users SET user_token = $1 WHERE user_id = $2`;
-    consoleLog(functions.printQuery(sqlUpdate, ["", user.user_id]));
     await query(sqlUpdate, ["", user.user_id]);
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
@@ -321,7 +286,6 @@ const user = result.rows[0];
 });
 
 router.post("/activate_account", async (req, res) => {
-
   try {
     const { id, password } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
@@ -340,21 +304,17 @@ router.post("/activate_account", async (req, res) => {
         data: [],
       });
     }
-
     return res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.REQUEST_SUCCESS,
       data: { user_id: id },
     });
-
   } catch (error) {
     console.error("Transaction Failed:", error);
-
     return res.status(500).send({
       success: 0,
       message: "Something went wrong. Transaction rolled back.",
     });
-
   }
 });
 
@@ -362,12 +322,10 @@ router.get("/reset-password", async (req, res) => {
   try {
     let queryParam = req.query.email || "";
     let split_data = queryParam.split("@@");
-
     let id = split_data[0] || 0;
     let email = split_data[1] || "";
     let token = split_data[2] || "";
     let token_exists = false;
-
     const responseData = {
       id,
       email,
@@ -375,12 +333,9 @@ router.get("/reset-password", async (req, res) => {
       token_exists,
       partialsDir: [path.join(__dirname, "views/partials")],
     };
-
     return res.render("reset-password", responseData);
-
   } catch (error) {
     console.error("Error in reset-password:", error);
-
     return res.status(500).send({
       success: 0,
       message: "Something went wrong.",
@@ -401,7 +356,7 @@ router.get('/',attachCommonData, async (req, res) => {
       functions.renderData(req,res,responseData,"index",decoded);  
     } catch (err) {
         res.status(500).json({ error: err.message });
-    } 
+    }
 });
 
 router.get('/database_table',attachCommonData, async (req, res) => {
@@ -410,10 +365,6 @@ router.get('/database_table',attachCommonData, async (req, res) => {
       res.redirect('/login');
     } else {
         const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-        const sidebarMenu = await functions.getSidebarMenu(req,decoded.user_role_id);
-        const meta_details = await functions.getMetaDetails(req, req.originalUrl);
-        const roleAccess = await functions.getRoleAccess(req,decoded.user_role_id,meta_details[0].meta_id);
-
         let table_name = '';
         let primary_key_column = '';
         let selected_sort_by = '';
