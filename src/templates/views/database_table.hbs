@@ -10,43 +10,46 @@
             <div class="card-body">
               <div class="d-flex1 flex-wrap justify-content-between">
                 <div>
-                  <h4 class="card-title mb-3 text-primary pt-3 pl-2">Databases overview : <small class="text-danger font-weight-bold">Total number of database tables : {{total_database_tables}}</small></h4>
+                  <h4 class="card-title mb-3 text-primary pt-3 pl-2">Databases overview <small class="text-danger font-weight-bold float-right mr-1">Total number of database tables : {{total_database_tables}}</small></h4>
                 </div>
-                    
-                <div class="row mb-2">
-                  <div class="col-3">
-                    <select class="form-control"  id="table_name">
-                      <option value="">Select Tablename</option>
-                      {{#select selected_table_name}}
-                      {{#each database_tables}}
-                      <option value="{{table_name}}">{{table_name}} / {{total_rows}} / {{primary_key}}</option>
-                      {{/each}}
-                      {{/select}}
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <select class="form-control" id="primary_key">
-                      <option value="">Select Primary Key</option>
-                      {{#select selected_primary_key}}
-                      {{#each database_tables}}
-                      <option value="{{primary_key}}">{{primary_key}} / {{table_name}}</option>
-                      {{/each}}
-                      {{/select}}
-                    </select>
-                  </div>
-                  <div class="col-2">
-                    <select class="form-control" id="sort_by">
-                      {{#select selected_sort_by}}
-                      <option value="ASC">ASC</option>
-                      <option value="DESC">DESC</option>
-                      {{/select}}
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <input type="button" class="btn btn-primary btn-sm" value="Get Details" onclick="fnGetDatabaseDetails()" />
-                    <a class="btn btn-primary btn-sm" href="/databases">Reset</a>
+                <div class="m-0 p-2 bg bg-info">
+                  <div class="row mb-2">
+                    <div class="col-3">
+                      <select class="form-control"  id="table_name">
+                        <option value="">Select Tablename</option>
+                        {{#select selected_table_name}}
+                        {{#each database_tables}}
+                        <option value="{{table_name}}">{{table_name}} / {{total_rows}} / {{primary_key}}</option>
+                        {{/each}}
+                        {{/select}}
+                      </select>
+                    </div>
+                    <div class="col-3">
+                      <select class="form-control" id="primary_key">
+                        <option value="">Select Primary Key</option>
+                        {{#select selected_primary_key}}
+                        {{#each database_tables}}
+                        <option value="{{primary_key}}">{{primary_key}} / {{table_name}}</option>
+                        {{/each}}
+                        {{/select}}
+                      </select>
+                    </div>
+                    <div class="col-2">
+                      <select class="form-control" id="sort_by">
+                        {{#select selected_sort_by}}
+                        <option value="ASC">ASC</option>
+                        <option value="DESC">DESC</option>
+                        {{/select}}
+                      </select>
+                    </div>
+                    <div class="col-3 pt-1">
+                      <input type="button" class="btn btn-primary btn-sm" value="Get Details" onclick="fnGetDatabaseDetails()" />
+                      <a class="btn btn-primary btn-sm" href="/databases">Reset</a>
+                    </div>
                   </div>
                 </div>
+                
+
                 <div class="row">
                   {{#if selectedTableRowstructure}}
                   <div class="col-12">
@@ -88,7 +91,7 @@
                   </div>
                   {{/if}}
                 </div>
-                <div class="text-info small font-weight-bold">http://localhost:3900/database_table?tableName=item_section&pk=item_section_id&pk_id=1</div>
+                <div class="text-secondary small font-weight-bold mt-5">/database_table?tableName=item_section&pk=item_section_id&pk_id=1</div>
               </div>
             </div>
           </div>
