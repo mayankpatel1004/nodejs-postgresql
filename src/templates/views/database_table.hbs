@@ -12,9 +12,9 @@
                 <div>
                   <h4 class="card-title mb-3 text-primary pt-3 pl-2">Databases overview <small class="text-danger font-weight-bold float-right mr-1">Total number of database tables : {{total_database_tables}}</small></h4>
                 </div>
-                <div class="m-0 p-2 bg bg-info">
+                <div class="m-0 p-2 bg bg-primary">
                   <div class="row mb-2">
-                    <div class="col-3">
+                    <div class="col-3 pt-1">
                       <select class="form-control"  id="table_name">
                         <option value="">Select Tablename</option>
                         {{#select selected_table_name}}
@@ -24,7 +24,7 @@
                         {{/select}}
                       </select>
                     </div>
-                    <div class="col-3">
+                    <div class="col-3 pt-1">
                       <select class="form-control" id="primary_key">
                         <option value="">Select Primary Key</option>
                         {{#select selected_primary_key}}
@@ -34,7 +34,7 @@
                         {{/select}}
                       </select>
                     </div>
-                    <div class="col-2">
+                    <div class="col-2 pt-1">
                       <select class="form-control" id="sort_by">
                         {{#select selected_sort_by}}
                         <option value="ASC">ASC</option>
@@ -43,8 +43,8 @@
                       </select>
                     </div>
                     <div class="col-3 pt-1">
-                      <input type="button" class="btn btn-primary btn-sm" value="Get Details" onclick="fnGetDatabaseDetails()" />
-                      <a class="btn btn-primary btn-sm" href="/databases">Reset</a>
+                      <input type="button" class="btn btn-secondary btn-sm" value="Get Details" onclick="fnGetDatabaseDetails()" />
+                      <a class="btn btn-secondary btn-sm" href="/databases">Reset</a>
                     </div>
                   </div>
                 </div>
