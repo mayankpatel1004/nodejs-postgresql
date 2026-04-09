@@ -73,6 +73,14 @@ const queries = {
         WHERE user_id = '${user_id}'
         `;
         return sqlUpdate;
+    },
+    updateMetaDetails: (column) => {
+        const sqlUpdate = `UPDATE meta_details SET ${column} = $1 WHERE meta_id = $2`;
+        return sqlUpdate;
+    },
+    updateConfigurations: () => {
+        const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
+        return sqlUpdate;
     }
 };
 

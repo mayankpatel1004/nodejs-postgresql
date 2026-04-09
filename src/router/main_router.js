@@ -329,10 +329,7 @@ router.get('/', attachCommonData, async (req, res) => {
 
 router.get('/database_table', attachCommonData, async (req, res) => {
   try {
-    if (!req.cookies.jwt) {
-      res.redirect('/login');
-    } else {
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
       let table_name = '';
       let primary_key_column = '';
       let selected_sort_by = '';
@@ -371,7 +368,6 @@ router.get('/database_table', attachCommonData, async (req, res) => {
         partialsDir: [path.join(__dirname, 'views/partials')]
       };
       functions.renderData(req, res, responseData, "database_table", decoded);
-    }
   } catch (err) {
     res.status(500).send({ 
       success: CONSTANTS.FAIL_FLAG,
@@ -898,7 +894,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
 
-      const sql = `UPDATE meta_details SET ${column} = $1 WHERE meta_id = $2`;
+      let sql = updateQueries.updateMetaDetails(column);
       const params = [data[key], metaId];
       consoleLog(functions.printQuery(sql, params));
       await query(sql, params);
@@ -925,24 +921,25 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       const entries = Object.entries(data);
 
       // Option 1: Prepare multiple queries (current approach)
-      // for (const [config_name, rawValue] of entries) {
-      //   const sanitizedValue = functions.sanitize(rawValue);
-      //   const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
-      //   await query(sqlUpdate, [sanitizedValue, config_name]);
-      // }
+      for (const [config_name, rawValue] of entries) {
+        const sanitizedValue = functions.sanitize(rawValue);
+        //const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
+        let sqlUpdate = updateQueries.updateConfigurations();
+        await query(sqlUpdate, [sanitizedValue, config_name]);
+      }
 
       // Option 2: Use a single query with CASE statements for better performance
-      if (entries.length > 0) {
-        const caseStatements = entries.map((_, i) =>
-          `WHEN config_name = $${i * 2 + 1} THEN $${i * 2 + 2}`
-        ).join(' ');
-        const configNames = entries.flatMap(([name, value]) => [name, functions.sanitize(value)]);
-        const sqlUpdate = `UPDATE site_config 
-          SET config_value = CASE ${caseStatements} ELSE config_value END
-          WHERE config_name IN (${entries.map((_, i) => `$${i * 2 + 1}`).join(', ')})
-        `;
-        await query(sqlUpdate, configNames);
-      }
+      // if (entries.length > 0) {
+      //   const caseStatements = entries.map((_, i) =>
+      //     `WHEN config_name = $${i * 2 + 1} THEN $${i * 2 + 2}`
+      //   ).join(' ');
+      //   const configNames = entries.flatMap(([name, value]) => [name, functions.sanitize(value)]);
+      //   const sqlUpdate = `UPDATE site_config 
+      //     SET config_value = CASE ${caseStatements} ELSE config_value END
+      //     WHERE config_name IN (${entries.map((_, i) => `$${i * 2 + 1}`).join(', ')})
+      //   `;
+      //   await query(sqlUpdate, configNames);
+      // }
     }
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
