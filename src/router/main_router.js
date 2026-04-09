@@ -8,6 +8,7 @@ const moment = require('moment');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const queries = require('../db/queries');
+const updateQueries = require('../db/updateQueries');
 const fs = require('node:fs');
 const multer = require("multer");
 const functions = require("../helpers/functions");
@@ -42,12 +43,13 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-  let password = req.body.password;
+  let data = req.body;
+  let password = data.password;
+  
   let results = [];
-  logToFile(JSON.stringify(req.body), 'success', 'login');
   let allow_login = 0;
   try {
-    const resultColumns = await query(queries.getLoginQuery(req.body.user_name));
+    const resultColumns = await query(queries.getLoginQuery(data.user_name));
     if(resultColumns && resultColumns.rows.length > 0){
       results = resultColumns.rows;
     }
@@ -105,7 +107,8 @@ router.post('/login', async (req, res) => {
           user_role_id: results[0].user_role_id,
           is_developer_account: results[0].is_developer_account,
           web_or_app : results[0].web_or_app,
-          active_status: results[0].active_status
+          active_status: results[0].active_status,
+          token: token
         });
       } else {
         res.send({
@@ -260,34 +263,17 @@ router.post("/items", attachCommonData, async (req, res) => {
       "%') ";
   }
   
-  if (
-    data.action == "update_status" &&
-    ["Y", "N", "T"].includes(data.status)
-  ) {
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
-    ) {
-      data = await functions.addUserDataToRequest(
-        req.headers.authorization,
-        data,
-      );
+  if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      data = await functions.addUserDataToRequest(req.headers.authorization,data);
     }
-    
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = `UPDATE items
-              SET deleted_status = 'Y',
-              deleted_by = '${data.created_by}',
-              deleted_by_name = '${data.created_by_name}',
-              deleted_time = NOW()
-              WHERE item_id IN (${data.pk_ids})`;
+      sqlUpdateStatus = updateQueries.updateItemsTrash(data);
     } else {
-      sqlUpdateStatus = `UPDATE items 
-              SET display_status = '${data.status}'
-              WHERE item_id IN (${data.pk_ids})`;
+      sqlUpdateStatus = updateQueries.updateItemsStatus(data);
     }
-    
+    console.log(sqlUpdateStatus);
     let results = await query(sqlUpdateStatus);
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
@@ -363,7 +349,6 @@ router.get("/item_section", attachCommonData, async (req, res) => {
 });
 
 router.post("/item_section", attachCommonData, async (req, res) => {
-  
   let searchKeywordString = "";
   let start = 1;
   let data = req.body;
@@ -372,8 +357,8 @@ router.post("/item_section", attachCommonData, async (req, res) => {
   let orderByString = "ORDER BY item_section_id DESC";
   let page_no = 1;
 
-  if (req && req.body.page_no !== undefined && req.body.page_no != "/") {
-    page_no = req.body.page_no;
+  if (req && data.page_no !== undefined && data.page_no != "/") {
+    page_no = data.page_no;
   }
   
   let rpp = 5;
@@ -403,22 +388,15 @@ router.post("/item_section", attachCommonData, async (req, res) => {
       "%') ";
   }
 
-  if (
-    data.action == "update_status" &&
-    ["Y", "N", "T"].includes(data.status)
-  ) {
+  if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+    }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = `UPDATE item_section 
-              SET deleted_status = 'Y',
-              deleted_by = '${data.created_by}',
-              deleted_by_name = '${data.created_by_name}',
-              deleted_time = NOW() 
-              WHERE item_section_id IN (${data.pk_ids})`;
+      sqlUpdateStatus = updateQueries.updateItemSectionTrash(data);
     } else {
-      sqlUpdateStatus = `UPDATE item_section 
-              SET display_status = '${data.status}' 
-              WHERE item_section_id IN (${data.pk_ids})`;
+      sqlUpdateStatus = updateQueries.updateItemSectionStatus(data);
     }
     let results = await query(sqlUpdateStatus);
     if (results) {
@@ -496,11 +474,12 @@ router.get("/roles", attachCommonData, async (req, res) => {
 
 router.post("/roles", attachCommonData, async (req, res) => {
   let searchKeywordString = "";
+  let data = req.body;
   let orderByString = "ORDER BY role_id DESC";
   let page_no = 1;
   
-  if (req && req.body.page_no !== undefined && req.body.page_no != "/") {
-    page_no = req.body.page_no;
+  if (req && data.page_no !== undefined && data.page_no != "/") {
+    page_no = data.page_no;
   }
   
   let rpp = 10;
@@ -508,28 +487,23 @@ router.post("/roles", attachCommonData, async (req, res) => {
   let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
   if (
-    req.body &&
-    req.body.search_keyword !== undefined &&
-    req.body.search_keyword != ""
+    data &&
+    data.search_keyword !== undefined &&
+    data.search_keyword != ""
   ) {
     searchKeywordString +=
-      " AND ( role_title LIKE '%" + req.body.search_keyword + "%') ";
+      " AND ( role_title LIKE '%" + data.search_keyword + "%') ";
   }
 
-  if (
-    req.body.action == "update_status" &&
-    ["Y", "N", "T"].includes(req.body.status)
-  ) {
+  if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+    }
     let sqlUpdateStatus = ``;
-    if (req.body.status == "T") {
-      sqlUpdateStatus = `UPDATE role
-                         SET deleted_status = 'Y',
-                         deleted_time = NOW() 
-                         WHERE role_id IN (${req.body.pk_ids})`;
+    if (data.status == "T") {
+      sqlUpdateStatus = updateQueries.updateRoleTrash(data);
     } else {
-      sqlUpdateStatus = `UPDATE role 
-                         SET display_status = '${req.body.status}' 
-                         WHERE role_id IN (${req.body.pk_ids})`;
+      sqlUpdateStatus = updateQueries.updateRoleStatus(data);
     }
     const results = await query(sqlUpdateStatus);
     if (results) {
@@ -540,8 +514,8 @@ router.post("/roles", attachCommonData, async (req, res) => {
       });
     }
   } else {
-    if (req.body.pk_ids) {
-      searchKeywordString += ` AND role_id IN (${req.body.pk_ids})`;
+    if (data.pk_ids) {
+      searchKeywordString += ` AND role_id IN (${data.pk_ids})`;
     }
     
     let sqlTotalRecords = [];
@@ -561,7 +535,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
       const totalRecords = totalRecords1.rows;
       
       if (totalRecords) {
-        if (["EA", "ES"].includes(req.body.status)) {
+        if (["EA", "ES"].includes(data.status)) {
           return exportRolesToCSV(req, res, results, functions);
         } else {
           if (results && results.length > 0) {
@@ -631,10 +605,10 @@ router.post("/users", attachCommonData, async (req, res) => {
   
   let searchKeywordString = "";
     let orderByString = "ORDER BY user_id DESC";
-
+    let data = req.body;
     let page_no = 1;
-    if (req && req.body.page_no !== undefined && req.body.page_no != "/") {
-      page_no = req.body.page_no;
+    if (req && data.page_no !== undefined && data.page_no != "/") {
+      page_no = data.page_no;
     }
     
     let rpp = 4;
@@ -642,34 +616,29 @@ router.post("/users", attachCommonData, async (req, res) => {
     let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
     if (
-      req.body &&
-      req.body.search_keyword !== undefined &&
-      req.body.search_keyword != ""
+      data &&
+      data.search_keyword !== undefined &&
+      data.search_keyword != ""
     ) {
       searchKeywordString +=
         " AND ( user_email LIKE '%" +
-        req.body.search_keyword +
+        data.search_keyword +
         "%' OR user_firstname LIKE '%" +
-        req.body.search_keyword +
+        data.search_keyword +
         "%' OR user_lastname LIKE '%" +
-        req.body.search_keyword +
+        data.search_keyword +
         "%') ";
     }
 
-    if (
-      req.body.action == "update_status" &&
-      ["Y", "N", "T"].includes(req.body.status)
-    ) {
+    if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
+      if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        data = await functions.addUserDataToRequest(req.headers.authorization,data);
+      }
       let sqlUpdateStatus = ``;
-      if (req.body.status == "T") {
-        sqlUpdateStatus = `UPDATE users 
-                          SET deleted_status = 'Y',
-                          deleted_time = NOW() 
-                          WHERE user_id IN (${req.body.pk_ids})`;
+      if (data.status == "T") {
+        sqlUpdateStatus = updateQueries.updateUserTrash(data);
       } else {
-        sqlUpdateStatus = `UPDATE users 
-                          SET active_status = '${req.body.status}' 
-                          WHERE user_id IN (${req.body.pk_ids})`;
+        sqlUpdateStatus = updateQueries.updateUserStatus(data);
       }
       const results = await query(sqlUpdateStatus);
       if (results) {
@@ -684,8 +653,8 @@ router.post("/users", attachCommonData, async (req, res) => {
       if (token_details.user_role_id > 2) {
         searchKeywordString += ` AND created_by IN ('${token_details.user_id}')`;
       }
-      if (req.body.pk_ids) {
-        searchKeywordString += ` AND user_id IN (${req.body.pk_ids})`;
+      if (data.pk_ids) {
+        searchKeywordString += ` AND user_id IN (${data.pk_ids})`;
       }
       
       
@@ -707,7 +676,7 @@ router.post("/users", attachCommonData, async (req, res) => {
         
         if (totalRecords) {
 
-          if (["EA", "ES"].includes(req.body.status)) {
+          if (["EA", "ES"].includes(data.status)) {
             return exportUsersToCSV(req, res, results, functions);
           } else {
             if (results && results.length > 0) {

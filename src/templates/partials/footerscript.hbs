@@ -92,7 +92,7 @@
       type: "POST",
       url: '{{listUrl}}',
       data: {
-        pk_ids: pk_ids,
+        pk_ids: pk_ids.join(","),
         status: status,
         action: 'update_status'
       },

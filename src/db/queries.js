@@ -1,3 +1,5 @@
+const { CONSTANTS } = require("../helpers/constants");
+
 const queries = {
     getAllTables: () => {
         let sqlQuery =`
@@ -30,7 +32,7 @@ const queries = {
         return sqlQuery;
     },
     getLoginQuery: (user_name) => {
-        let sqlQuery = `SELECT * FROM users WHERE (user_email = '${user_name}' OR user_name = '${user_name}') AND DELETED_STATUS = 'N'`;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_USERS} WHERE (user_email = '${user_name}' OR user_name = '${user_name}') AND DELETED_STATUS = 'N'`;
         return sqlQuery;
     },
     getItemsQuery: (searchKeywordString,orderByString,limitString) => {
@@ -55,8 +57,8 @@ const queries = {
                   CASE WHEN i.deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
                   TO_CHAR(i.created_at, 'DD/MM/YY') AS created_at,
                   TO_CHAR(i.updated_at, 'DD/MM/YY') AS updated_at 
-              FROM items i
-              LEFT JOIN item_section isect ON isect.item_section_id = ANY(
+              FROM ${CONSTANTS.TBL_ITEMS} i
+              LEFT JOIN ${CONSTANTS.TBL_ITEM_SECTION} isect ON isect.item_section_id = ANY(
                 SELECT unnest(string_to_array(REPLACE(REPLACE(i.item_sections_id, '[', ''), ']', ''), ','))::int
               )
               WHERE 1=1 ${searchKeywordString} AND i.deleted_status = 'N' 
@@ -82,7 +84,7 @@ const queries = {
             CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
             TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
             TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at
-        FROM item_section 
+        FROM ${CONSTANTS.TBL_ITEM_SECTION} 
         WHERE 1=1 ${searchKeywordString} 
         AND deleted_status = 'N' 
         ${orderByString}`;
@@ -94,12 +96,13 @@ const queries = {
           role_id,
           role_title,
           item_alias,
+          allow_delete,
           CASE WHEN display_status = 'Y' THEN 'Yes' ELSE 'No' END AS active_status,
           CASE WHEN deleted_status = 'Y' THEN 'Yes' ELSE 'No' END AS deleted_status,
           display_status,
           TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
           TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at 
-        FROM role 
+        FROM ${CONSTANTS.TBL_ROLES} 
         WHERE 1=1 ${searchKeywordString} 
         AND deleted_status = 'N' 
         ${orderByString}`;
@@ -118,7 +121,7 @@ const queries = {
             TO_CHAR(created_at, 'DD/MM/YY') AS created_at,
             TO_CHAR(updated_at, 'DD/MM/YY') AS updated_at,
             allow_delete
-            FROM users 
+            FROM ${CONSTANTS.TBL_USERS} 
             WHERE 1=1 ${searchKeywordString} 
             AND deleted_status = 'N' 
             ${orderByString}`;
@@ -127,13 +130,13 @@ const queries = {
         return [sqlTotalRecords,sqlList];
     },
     getMetaDetails: () => {
-        let sqlMetaDetails = `SELECT * FROM meta_details ORDER BY meta_id DESC`;
+        let sqlMetaDetails = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id DESC`;
         return sqlMetaDetails;   
     },
     getSiteConfigurations: () => {
         let sqlSiteConfigurations = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options
-        FROM site_config_parent p
-        LEFT JOIN site_config c ON c.site_config_parent_id = p.site_config_parent_id
+        FROM ${CONSTANTS.TBL_SITE_CONFIG_PARENT} p
+        LEFT JOIN ${CONSTANTS.TBL_SITE_CONFIG} c ON c.site_config_parent_id = p.site_config_parent_id
         WHERE p.deleted_status = 'N'
         ORDER BY p.site_config_parent_id`;
         return sqlSiteConfigurations;

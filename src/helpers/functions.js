@@ -3,6 +3,7 @@ const util = require("util");
 const path = require("path");
 var fs = require("fs");
 const query = util.promisify(db.query).bind(db);
+const jwt = require('jsonwebtoken');
 const { CONSTANTS } = require("./constants");
 
 module.exports = {
@@ -82,6 +83,7 @@ module.exports = {
         WHERE end_points = $1 
             AND deleted_status = 'N'
         `;
+        
       const sqlQuery = this.removeEditIdFromQuery(sqlPreQuery);
       let result = await query(sqlQuery, [end_points]);
       
@@ -107,13 +109,13 @@ module.exports = {
           result = await query(sqlQuery, [end_points]);
         }
       }
-      if (result.length > 0) {
+      if (resultRows.length > 0) {
         return [
           {
-            meta_id: result[0].meta_id,
-            page_title: result[0].page_title,
-            meta_title: `${result[0].meta_title} - ${CONSTANTS.DEFAULT_META_TITLE}`,
-            meta_description: result[0].meta_description,
+            meta_id: resultRows[0].meta_id,
+            page_title: resultRows[0].page_title,
+            meta_title: `${resultRows[0].meta_title} - ${CONSTANTS.DEFAULT_META_TITLE}`,
+            meta_description: resultRows[0].meta_description,
           },
         ];
       }
@@ -151,19 +153,28 @@ module.exports = {
         throw error;
     }
 },
-addUserDataToRequest: async (headers, data) => {
+
+async addUserDataToRequest(headers, data) {
+  try {
+    if (!headers || !headers.startsWith("Bearer ")) {
+      return data;
+    }
     const token = headers.split(" ")[1];
     const decoded = jwt.decode(token);
-    if (decoded && typeof decoded.data !== "undefined") {
+    if (decoded) {
       return {
         ...data,
-        created_by: decoded.data.user_id,
-        created_by_name:
-          decoded.data.user_firstname + " " + decoded.data.user_lastname,
-        created_by_role: decoded.data.user_role_id,
+        created_by: decoded.user_id,
+        created_by_name: `${decoded.login_name || ""}`.trim(),
+        created_by_role: decoded.user_role_id,
       };
     }
+
     return data;
+  } catch (err) {
+    console.error("Token decode error:", err);
+    return data;
+  }
 },
 exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     let first_line = report_name + " Details Report\n";

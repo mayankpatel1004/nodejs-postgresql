@@ -50,12 +50,12 @@ exports.CONSTANTS = {
 
     MASTER_PWD: "asd@12345",
 
-    DB_USERS : "users",
-    DB_ROLES: "role",
-    DB_ROLE_ACCESS: "role_access",
-    DB_SITE_CONFIG : "site_config",
-    DB_SITE_CONFIG_PARENT : "site_config_parent",
-    DB_ITEM_SECTION : "item_section",
-    DB_ITEMS: "items",
-    DB_META_DETAILS : "meta_details"
+    TBL_USERS : "users",
+    TBL_ROLES: "role",
+    TBL_ROLE_ACCESS: "role_access",
+    TBL_SITE_CONFIG : "site_config",
+    TBL_SITE_CONFIG_PARENT : "site_config_parent",
+    TBL_ITEM_SECTION : "item_section",
+    TBL_ITEMS: "items",
+    TBL_META_DETAILS : "meta_details"
 }

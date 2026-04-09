@@ -256,6 +256,7 @@ async function migrate() {
           web_or_app VARCHAR(4) NOT NULL DEFAULT 'App',
           active_status VARCHAR(25) NOT NULL DEFAULT 'N',
           display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          deleted_time TIMESTAMP DEFAULT NULL,
           deleted_status VARCHAR(4) NOT NULL DEFAULT 'N',
           created_at TIMESTAMP DEFAULT NULL,
           updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
