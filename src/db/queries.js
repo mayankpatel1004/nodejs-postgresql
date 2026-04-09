@@ -52,10 +52,9 @@ const queries = {
     },
     getUserToken: (email, token) => {
         const sqlQuery = `
-  SELECT user_id, user_token, user_email 
-  FROM users 
-  WHERE user_email = '${email}' 
-    AND user_token = '${token}'`;
+        SELECT user_id, user_token, user_email 
+        FROM users 
+        WHERE user_email = '${email}' AND user_token = '${token}'`;
     return sqlQuery;
     },
     getItemsQuery: (searchKeywordString,orderByString,limitString) => {

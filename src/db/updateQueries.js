@@ -59,19 +59,19 @@ const queries = {
     },
     updateUserToken: (token,user_id) => {
         const sqlUpdate = `
-      UPDATE users 
-      SET user_token = '${token}' 
-      WHERE user_id = '${user_id}'
-    `;
+        UPDATE users 
+        SET user_token = '${token}' 
+        WHERE user_id = '${user_id}'
+        `;
     return sqlUpdate;
     },
     activateAccount: (password,token,user_id) => {
         const sqlUpdate = `
-      UPDATE users 
-      SET user_password = '${password}', 
-          user_token = '${token}' 
-      WHERE user_id = '${user_id}'
-    `;
+        UPDATE users 
+        SET user_password = '${password}', 
+            user_token = '${token}' 
+        WHERE user_id = '${user_id}'
+        `;
     return sqlUpdate;
     }
 };
