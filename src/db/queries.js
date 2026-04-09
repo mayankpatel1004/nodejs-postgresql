@@ -2,7 +2,7 @@ const { CONSTANTS } = require("../helpers/constants");
 
 const queries = {
     getAllTables: () => {
-        let sqlQuery =`
+        let sqlQuery = `
             SELECT 
                 t.table_schema, 
                 t.table_name,
@@ -21,14 +21,14 @@ const queries = {
             WHERE t.table_type = 'BASE TABLE' 
                 AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
             ORDER BY t.table_schema, t.table_name`;
-            return sqlQuery;
+        return sqlQuery;
     },
     getTableStructure(table_name) {
         let sqlQuery = `SELECT column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_name = '${table_name}' ORDER BY ordinal_position`;
         return sqlQuery;
     },
-    getTableData: (table_name,filter_string,primary_key,sort_by) => {
-        let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string} ORDER BY ${primary_key ? primary_key : '1'} ${sort_by ? sort_by : 'ASC'}`; 
+    getTableData: (table_name, filter_string, primary_key, sort_by) => {
+        let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string} ORDER BY ${primary_key ? primary_key : '1'} ${sort_by ? sort_by : 'ASC'}`;
         return sqlQuery;
     },
     getLoginQuery: (user_name) => {
@@ -55,9 +55,9 @@ const queries = {
         SELECT user_id, user_token, user_email 
         FROM users 
         WHERE user_email = '${email}' AND user_token = '${token}'`;
-    return sqlQuery;
+        return sqlQuery;
     },
-    getItemsQuery: (searchKeywordString,orderByString,limitString) => {
+    getItemsQuery: (searchKeywordString, orderByString, limitString) => {
         let sqlTotalRecords = `SELECT 
                   i.item_id,
                   i.item_title,
@@ -86,10 +86,10 @@ const queries = {
               WHERE 1=1 ${searchKeywordString} AND i.deleted_status = 'N' 
               GROUP BY i.item_id
               ${orderByString}`;
-              let sqlList = `${sqlTotalRecords} ${limitString}`;
-        return [sqlTotalRecords,sqlList];
+        let sqlList = `${sqlTotalRecords} ${limitString}`;
+        return [sqlTotalRecords, sqlList];
     },
-    getItemSectionQuery: (searchKeywordString,orderByString,limitString) => {
+    getItemSectionQuery: (searchKeywordString, orderByString, limitString) => {
         let sqlTotalRecords = `SELECT 
             item_section_id,
             item_section_parent_id,
@@ -111,9 +111,9 @@ const queries = {
         AND deleted_status = 'N' 
         ${orderByString}`;
         let sqlList = `${sqlTotalRecords} ${limitString}`;
-        return [sqlTotalRecords,sqlList];
+        return [sqlTotalRecords, sqlList];
     },
-    getRolesQuery: (searchKeywordString,orderByString,limitString) => {
+    getRolesQuery: (searchKeywordString, orderByString, limitString) => {
         let sqlTotalRecords = `SELECT 
           role_id,
           role_title,
@@ -129,9 +129,9 @@ const queries = {
         AND deleted_status = 'N' 
         ${orderByString}`;
         let sqlList = `${sqlTotalRecords} ${limitString}`;
-        return [sqlTotalRecords,sqlList];
+        return [sqlTotalRecords, sqlList];
     },
-    getUsersQuery: (searchKeywordString,orderByString,limitString) => {
+    getUsersQuery: (searchKeywordString, orderByString, limitString) => {
         let sqlTotalRecords = `SELECT 
             user_id,
             user_firstname,
@@ -147,13 +147,13 @@ const queries = {
             WHERE 1=1 ${searchKeywordString} 
             AND deleted_status = 'N' 
             ${orderByString}`;
-        
+
         let sqlList = `${sqlTotalRecords} ${limitString}`;
-        return [sqlTotalRecords,sqlList];
+        return [sqlTotalRecords, sqlList];
     },
     getMetaDetails: () => {
         let sqlMetaDetails = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id DESC`;
-        return sqlMetaDetails;   
+        return sqlMetaDetails;
     },
     getSiteConfigurations: () => {
         let sqlSiteConfigurations = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options

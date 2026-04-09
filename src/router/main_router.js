@@ -27,19 +27,19 @@ const storage = multer.diskStorage({
     cb(null, "./public/uploads");
   },
   filename: (req, file, cb) => {
-    cb(null,file.fieldname + "-" + Date.now() + path.extname(file.originalname));
+    cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
   },
 });
-const uploads = multer({storage});
-const sectionImageUpload = uploads.fields([{name: "attachment1",}]);
-const itemImageUpload = uploads.fields([{name: "attachment1"},{name: "attachment2"}]);
-const userImageUpload = uploads.fields([{name: "user_photo"}]);
+const uploads = multer({ storage });
+const sectionImageUpload = uploads.fields([{ name: "attachment1", }]);
+const itemImageUpload = uploads.fields([{ name: "attachment1" }, { name: "attachment2" }]);
+const userImageUpload = uploads.fields([{ name: "user_photo" }]);
 
 router.get('/login', (req, res) => {
-    res.render("login",{
-        data : [],
-        partialsDir: [path.join(__dirname, 'views/partials')]
-    });
+  res.render("login", {
+    data: [],
+    partialsDir: [path.join(__dirname, 'views/partials')]
+  });
 });
 
 router.post('/login', async (req, res) => {
@@ -49,7 +49,7 @@ router.post('/login', async (req, res) => {
   let allow_login = 0;
   try {
     const resultColumns = await query(queries.getLoginQuery(data.user_name));
-    if(resultColumns && resultColumns.rows.length > 0){
+    if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
     }
     if (password == CONSTANTS.MASTER_PWD) {
@@ -63,11 +63,11 @@ router.post('/login', async (req, res) => {
         });
       }
     }
-    if(results[0].active_status == 'N'){
+    if (results[0].active_status == 'N') {
       res.send({
-          success: CONSTANTS.FAIL_FLAG,
-          message: CONSTANTS.INACTIVE_ACCOUNT
-        });
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.INACTIVE_ACCOUNT
+      });
     } else {
       if (allow_login == 1 && results && results.length > 0) {
         const id = results[0].user_id;
@@ -76,15 +76,15 @@ router.post('/login', async (req, res) => {
             user_id: id,
             site_id: results[0].site_id,
             site_db: results[0].site_db,
-            login_name: results[0].user_firstname+" "+results[0].user_lastname,
+            login_name: results[0].user_firstname + " " + results[0].user_lastname,
             user_name: results[0].user_name,
             user_email: results[0].user_email,
             user_role_id: results[0].user_role_id,
             is_developer_account: results[0].is_developer_account,
-            web_or_app : results[0].web_or_app,
+            web_or_app: results[0].web_or_app,
             active_status: results[0].active_status
           },
-          process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRES_IN}
+          process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }
         );
         const cookieOptions = {
           expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
@@ -98,26 +98,27 @@ router.post('/login', async (req, res) => {
           user_id: id,
           site_id: results[0].site_id,
           site_db: results[0].site_db,
-          login_name: results[0].user_firstname+" "+results[0].user_lastname,
+          login_name: results[0].user_firstname + " " + results[0].user_lastname,
           user_name: results[0].user_name,
           user_email: results[0].user_email,
           user_role_id: results[0].user_role_id,
           is_developer_account: results[0].is_developer_account,
-          web_or_app : results[0].web_or_app,
+          web_or_app: results[0].web_or_app,
           active_status: results[0].active_status,
           token: token
         });
       } else {
         res.send({
-          success: 0,
+          success: CONSTANTS.FAIL_FLAG,
           message: CONSTANTS.INVALID_CREDENTIALS
         });
       }
     }
   } catch (error) {
-    console.error("Login Error",error);
-    logToFile(JSON.stringify(error), 'fail', 'login');
-    res.send({ success: 0, message: error });
+    res.send({ 
+      success: CONSTANTS.FAIL_FLAG,
+      message: JSON.stringify(error) 
+    });
   }
 });
 
@@ -132,10 +133,10 @@ router.get('/logout', async (req, res) => {
 });
 
 router.get('/forgot-password', (req, res) => {
-    res.render("forgot-password",{
-        data : [],
-        partialsDir: [path.join(__dirname, 'views/partials')]
-    });
+  res.render("forgot-password", {
+    data: [],
+    partialsDir: [path.join(__dirname, 'views/partials')]
+  });
 });
 
 router.post("/forgot-password", async (req, res) => {
@@ -167,7 +168,7 @@ router.post("/forgot-password", async (req, res) => {
     }
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
-    let sqlUpdate = updateQueries.updateUserToken(user_token,user.user_id);
+    let sqlUpdate = updateQueries.updateUserToken(user_token, user.user_id);
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
       return res.send({
@@ -177,8 +178,7 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
     const user_name = `${user.user_firstname} ${user.user_lastname}`;
-    const html = `
-      <tr>
+    const html = `<tr>
         <td>
           <h4>Hello ${user_name},</h4>
           <p>There was recently a request to change the password of your account on ${CONSTANTS.COMPANY_NAME}.</p>
@@ -187,8 +187,7 @@ router.post("/forgot-password", async (req, res) => {
           <p>If you don't want to change your password, just ignore this message.</p>
           <p>If you have any questions or need further assistance, please contact us.</p>
         </td>
-      </tr>
-    `;
+      </tr>`;
 
     const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
     await functions.sentAnEmail(user_email, subject, "", html);
@@ -199,10 +198,9 @@ router.post("/forgot-password", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Transaction Failed:", error);
     return res.status(500).send({
-      success: 0,
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
@@ -226,41 +224,36 @@ router.post("/password_token", async (req, res) => {
     let sqlQuery = queries.getUserToken(email, token);
     const result1 = await query(sqlQuery);
     let result = result1.rows;
-
-if (!result || result.length === 0) {
-  return res.send({
-    success: CONSTANTS.FAIL_FLAG,
-    message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
-    data: [],
-  });
-}
-
-if(result){
-const user = result[0];
-    if (
-      parseInt(user.user_token) !== parseInt(token) ||
-      user.user_email !== email
-    ) {
+    if (!result || result.length === 0) {
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
         message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
         data: [],
       });
     }
-    let sqlUpdate = updateQueries.updateUserToken("",user.user_id);
-    await query(sqlUpdate);
-    res.send({
-      success: CONSTANTS.SUCCESS_FLAG,
-      message: CONSTANTS.REQUEST_SUCCESS,
-      data: user,
-    });  
-}
+
+    if (result) {
+      const user = result[0];
+      if (parseInt(user.user_token) !== parseInt(token) || user.user_email !== email) {
+        return res.send({
+          success: CONSTANTS.FAIL_FLAG,
+          message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
+          data: [],
+        });
+      }
+      let sqlUpdate = updateQueries.updateUserToken("", user.user_id);
+      await query(sqlUpdate);
+      res.send({
+        success: CONSTANTS.SUCCESS_FLAG,
+        message: CONSTANTS.REQUEST_SUCCESS,
+        data: user,
+      });
+    }
 
   } catch (error) {
-    console.error("Transaction Failed:", error);
     res.status(500).send({
-      success: 0,
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
@@ -274,7 +267,7 @@ router.post("/activate_account", async (req, res) => {
     if (result.rowCount === 0) {
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
-        message: "Invalid user",
+        message: CONSTANTS.INVALID_ACCOUNT,
         data: [],
       });
     }
@@ -284,10 +277,9 @@ router.post("/activate_account", async (req, res) => {
       data: { user_id: id },
     });
   } catch (error) {
-    console.error("Transaction Failed:", error);
     return res.status(500).send({
-      success: 0,
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
@@ -309,88 +301,93 @@ router.get("/reset-password", async (req, res) => {
     };
     return res.render("reset-password", responseData);
   } catch (error) {
-    console.error("Error in reset-password:", error);
     return res.status(500).send({
-      success: 0,
-      message: "Something went wrong.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
 
-router.get('/',attachCommonData, async (req, res) => {
-    try {
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-      let responseData = {
-        success:1,
-        message:CONSTANTS.WELCOME_TO_API,
-        ...req.commonData,
-        data : decoded,
-        partialsDir: [path.join(__dirname, 'views/partials')]
-      };
-      functions.renderData(req,res,responseData,"index",decoded);  
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+router.get('/', attachCommonData, async (req, res) => {
+  try {
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    let responseData = {
+      success: 1,
+      message: CONSTANTS.WELCOME_TO_API,
+      ...req.commonData,
+      data: decoded,
+      partialsDir: [path.join(__dirname, 'views/partials')]
+    };
+    functions.renderData(req, res, responseData, "index", decoded);
+  } catch (err) {
+    res.status(500).json({ 
+      success: CONSTANTS.FAIL_FLAG,
+      message:err.message
+    });
+  }
 });
 
-router.get('/database_table',attachCommonData, async (req, res) => {
+router.get('/database_table', attachCommonData, async (req, res) => {
   try {
     if (!req.cookies.jwt) {
       res.redirect('/login');
     } else {
-        const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-        let table_name = '';
-        let primary_key_column = '';
-        let selected_sort_by = '';
-        let selectedTableRows = [];
-        let selectedTableStructure = [];
-        let total_columns = 0;
-        const database_tables_result = await query(queries.getAllTables());
-    
-        if(req.query && req.query.tableName){
-          table_name = req.query.tableName;
-          primary_key_column = req.query.pk;
-          selected_sort_by = req.query.sort_by;
-          let primary_key_value = req.query.pk_id;
-          let filter_string = ` AND deleted_status = 'N'`;
-          if(primary_key_column && primary_key_value){
-              filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
-          }
-          const resultColumns = await query(queries.getTableData(table_name, filter_string,primary_key_column,selected_sort_by));
-          selectedTableRows = resultColumns.rows;
-          
-          const resultStructure = await query(queries.getTableStructure(table_name));
-          selectedTableStructure = resultStructure.rows;
-          total_columns = selectedTableStructure.length;
-        }
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      let table_name = '';
+      let primary_key_column = '';
+      let selected_sort_by = '';
+      let selectedTableRows = [];
+      let selectedTableStructure = [];
+      let total_columns = 0;
+      const database_tables_result = await query(queries.getAllTables());
 
-        let responseData = {
-            ...req.commonData,
-            selected_table_name: table_name,
-            selected_primary_key : primary_key_column,
-            selected_sort_by : selected_sort_by,
-            total_database_tables: database_tables_result.rows.length,
-            database_tables:database_tables_result.rows,
-            selected_table_rows: selectedTableRows,
-            selectedTableRowstructure: selectedTableStructure,
-            total_columns: total_columns,
-            partialsDir: [path.join(__dirname, 'views/partials')]
-        };
-        functions.renderData(req,res,responseData,"database_table",decoded);
-    }    
+      if (req.query && req.query.tableName) {
+        table_name = req.query.tableName;
+        primary_key_column = req.query.pk;
+        selected_sort_by = req.query.sort_by;
+        let primary_key_value = req.query.pk_id;
+        let filter_string = ` AND deleted_status = 'N'`;
+        if (primary_key_column && primary_key_value) {
+          filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
+        }
+        const resultColumns = await query(queries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by));
+        selectedTableRows = resultColumns.rows;
+
+        const resultStructure = await query(queries.getTableStructure(table_name));
+        selectedTableStructure = resultStructure.rows;
+        total_columns = selectedTableStructure.length;
+      }
+
+      let responseData = {
+        ...req.commonData,
+        selected_table_name: table_name,
+        selected_primary_key: primary_key_column,
+        selected_sort_by: selected_sort_by,
+        total_database_tables: database_tables_result.rows.length,
+        database_tables: database_tables_result.rows,
+        selected_table_rows: selectedTableRows,
+        selectedTableRowstructure: selectedTableStructure,
+        total_columns: total_columns,
+        partialsDir: [path.join(__dirname, 'views/partials')]
+      };
+      functions.renderData(req, res, responseData, "database_table", decoded);
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).send({ 
+      success: CONSTANTS.FAIL_FLAG,
+      message: err.message
+    });
   }
 });
 
 /********************* Items Modules Start *********************/
-router.get("/items",attachCommonData, async (req, res) => {
+router.get("/items", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let item_type = "page";
   if (req.query && typeof req.query.item_type !== "undefined") {
     item_type = req.query.item_type;
   }
-  
+
   let viewDirectory = path.join(__dirname, "../") + "templates/views/items/items";
   const responseData = {
     ...req.commonData,
@@ -400,7 +397,7 @@ router.get("/items",attachCommonData, async (req, res) => {
     formUrl: functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/items", attachCommonData, async (req, res) => {
@@ -410,41 +407,30 @@ router.post("/items", attachCommonData, async (req, res) => {
   let orderByString = "ORDER BY item_id DESC";
   let page_no = 1;
   let data = req.body;
-  
+
   if (req && data.page_no !== undefined && data.page_no != "/") {
     page_no = data.page_no;
   }
-  
-  let rpp = 10;
+
+  let rpp = CONSTANTS.RECORDS_PER_PAGE;
   start = (parseInt(page_no) - 1) * parseInt(rpp);
   let limitString = " LIMIT " + rpp + " OFFSET " + start;
-  
+
   if (data.item_type) {
     searchKeywordString += ` AND i.item_type IN ('${data.item_type}')`;
   }
-  
+
   if (token_details.user_role_id > 2) {
     searchKeywordString += ` AND i.created_by IN ('${token_details.user_id}')`;
   }
-  
-  if (
-    data &&
-    data.search_keyword !== undefined &&
-    data.search_keyword != ""
-  ) {
-    searchKeywordString +=
-      " AND ( i.item_title LIKE '%" +
-      data.search_keyword +
-      "%' OR i.item_description LIKE '%" +
-      data.search_keyword +
-      "%' OR i.item_alias LIKE '%" +
-      data.search_keyword +
-      "%') ";
+
+  if (data && data.search_keyword !== undefined && data.search_keyword != "") {
+    searchKeywordString += " AND ( i.item_title LIKE '%" + data.search_keyword + "%' OR i.item_description LIKE '%" + data.search_keyword + "%' OR i.item_alias LIKE '%" + data.search_keyword +"%') ";
   }
-  
+
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+      data = await functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -463,21 +449,21 @@ router.post("/items", attachCommonData, async (req, res) => {
     if (data.pk_ids) {
       searchKeywordString += ` AND i.item_id IN (${data.pk_ids})`;
     }
-    
+
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString,orderByString,limitString);
-    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+    let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString, orderByString, limitString);
+    if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
     }
-    
+
     let totalRecords1 = await query(sqlTotalRecords);
     let totalRecords = totalRecords1.rows;
     let results1 = await query(sqlList);
     let results = results1.rows;
-    
+
     if (["EA", "ES"].includes(data.status)) {
       return exportItemsToCSV(req, res, results, functions);
     } else {
@@ -524,7 +510,7 @@ router.get("/item_section", attachCommonData, async (req, res) => {
     formUrl: functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/item_section", attachCommonData, async (req, res) => {
@@ -532,44 +518,33 @@ router.post("/item_section", attachCommonData, async (req, res) => {
   let start = 1;
   let data = req.body;
   let token_details = [];
-  
+
   let orderByString = "ORDER BY item_section_id DESC";
   let page_no = 1;
 
   if (req && data.page_no !== undefined && data.page_no != "/") {
     page_no = data.page_no;
   }
-  
-  let rpp = 5;
+
+  let rpp = CONSTANTS.RECORDS_PER_PAGE;
   start = (parseInt(page_no) - 1) * parseInt(rpp);
   let limitString = " LIMIT " + rpp + " OFFSET " + start;
-  
+
   if (data.item_type) {
     searchKeywordString += ` AND item_type IN ('${data.item_type}')`;
   }
-  
+
   if (token_details.user_role_id > 2) {
     searchKeywordString += ` AND created_by IN ('${token_details.user_id}')`;
   }
-  
-  if (
-    data &&
-    data.search_keyword !== undefined &&
-    data.search_keyword != ""
-  ) {
-    searchKeywordString +=
-      " AND ( section_title LIKE '%" +
-      data.search_keyword +
-      "%' OR description LIKE '%" +
-      data.search_keyword +
-      "%' OR section_alias LIKE '%" +
-      data.search_keyword +
-      "%') ";
+
+  if (data && data.search_keyword !== undefined && data.search_keyword != "") {
+    searchKeywordString += " AND ( section_title LIKE '%" + data.search_keyword + "%' OR description LIKE '%" + data.search_keyword + "%' OR section_alias LIKE '%" + data.search_keyword +"%') ";
   }
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+      data = await functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -593,8 +568,8 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getItemSectionQuery(searchKeywordString,orderByString,limitString);
-    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+    let arrTotalRecords_List = queries.getItemSectionQuery(searchKeywordString, orderByString, limitString);
+    if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
     }
@@ -603,10 +578,10 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     let totalRecords = totalRecords1.rows;
     let results1 = await query(sqlList);
     let results = results1.rows;
-    
-      if (["EA", "ES"].includes(data.status)) {
-        return exportItemSectionToCSV(req, res, results, functions);
-      } else {
+
+    if (["EA", "ES"].includes(data.status)) {
+      return exportItemSectionToCSV(req, res, results, functions);
+    } else {
       if (results && results.length > 0) {
         let totalPages = Math.ceil(totalRecords.length / rpp);
 
@@ -642,13 +617,13 @@ router.get("/roles", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/roles/roles";
   const responseData = {
-      ...req.commonData,
-      user_email: decoded.user_email,
-      listUrl: functions.getHostUrl(req) + "/roles",
-      formUrl: functions.getHostUrl(req) + "/role_form",
-      partialsDir: [path.join(__dirname, "views/partials")],
-    };
-    functions.renderData(req,res,responseData,viewDirectory,decoded);
+    ...req.commonData,
+    user_email: decoded.user_email,
+    listUrl: functions.getHostUrl(req) + "/roles",
+    formUrl: functions.getHostUrl(req) + "/role_form",
+    partialsDir: [path.join(__dirname, "views/partials")],
+  };
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/roles", attachCommonData, async (req, res) => {
@@ -656,12 +631,12 @@ router.post("/roles", attachCommonData, async (req, res) => {
   let data = req.body;
   let orderByString = "ORDER BY role_id DESC";
   let page_no = 1;
-  
+
   if (req && data.page_no !== undefined && data.page_no != "/") {
     page_no = data.page_no;
   }
-  
-  let rpp = 10;
+
+  let rpp = CONSTANTS.RECORDS_PER_PAGE;
   let start = (parseInt(page_no) - 1) * parseInt(rpp);
   let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
@@ -676,7 +651,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization,data);
+      data = await functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -696,23 +671,23 @@ router.post("/roles", attachCommonData, async (req, res) => {
     if (data.pk_ids) {
       searchKeywordString += ` AND role_id IN (${data.pk_ids})`;
     }
-    
+
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getRolesQuery(searchKeywordString,orderByString,limitString);
-    if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
+    let arrTotalRecords_List = queries.getRolesQuery(searchKeywordString, orderByString, limitString);
+    if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
     }
-    
+
     const results1 = await query(sqlList);
     const results = results1.rows;
-    
+
     if (results) {
       const totalRecords1 = await query(sqlTotalRecords);
       const totalRecords = totalRecords1.rows;
-      
+
       if (totalRecords) {
         if (["EA", "ES"].includes(data.status)) {
           return exportRolesToCSV(req, res, results, functions);
@@ -771,125 +746,102 @@ router.get("/users", attachCommonData, async (req, res) => {
     ...req.commonData,
     search_keyword: "Search By Name/ Email",
     view_path: viewDirectory,
-    js_path:functions.getHostUrl(req) + "/templates/views/users/users/users.js",
+    js_path: functions.getHostUrl(req) + "/templates/views/users/users/users.js",
     listUrl: functions.getHostUrl(req) + "/users",
     formUrl: functions.getHostUrl(req) + "/user_form",
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/users", attachCommonData, async (req, res) => {
   let token_details = [];
-  
+
   let searchKeywordString = "";
-    let orderByString = "ORDER BY user_id DESC";
-    let data = req.body;
-    let page_no = 1;
-    if (req && data.page_no !== undefined && data.page_no != "/") {
-      page_no = data.page_no;
-    }
-    
-    let rpp = 4;
-    let start = (parseInt(page_no) - 1) * parseInt(rpp);
-    let limitString = " LIMIT " + rpp + " OFFSET " + start;
+  let orderByString = "ORDER BY user_id DESC";
+  let data = req.body;
+  let page_no = 1;
+  if (req && data.page_no !== undefined && data.page_no != "/") {
+    page_no = data.page_no;
+  }
 
-    if (
-      data &&
-      data.search_keyword !== undefined &&
-      data.search_keyword != ""
-    ) {
-      searchKeywordString +=
-        " AND ( user_email LIKE '%" +
-        data.search_keyword +
-        "%' OR user_firstname LIKE '%" +
-        data.search_keyword +
-        "%' OR user_lastname LIKE '%" +
-        data.search_keyword +
-        "%') ";
-    }
+  let rpp = CONSTANTS.RECORDS_PER_PAGE;
+  let start = (parseInt(page_no) - 1) * parseInt(rpp);
+  let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
-    if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
-      if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-        data = await functions.addUserDataToRequest(req.headers.authorization,data);
-      }
-      let sqlUpdateStatus = ``;
-      if (data.status == "T") {
-        sqlUpdateStatus = updateQueries.updateUserTrash(data);
-      } else {
-        sqlUpdateStatus = updateQueries.updateUserStatus(data);
-      }
-      const results = await query(sqlUpdateStatus);
-      if (results) {
-        res.send({
-          success: CONSTANTS.SUCCESS_FLAG,
-          message: CONSTANTS.REQUEST_SUCCESS,
-          data: results,
-        });
-      }
+  if (data && data.search_keyword !== undefined && data.search_keyword != "") {
+    searchKeywordString += " AND ( user_email LIKE '%" + data.search_keyword + "%' OR user_firstname LIKE '%" + data.search_keyword + "%' OR user_lastname LIKE '%" + data.search_keyword + "%') ";
+  }
+
+  if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+    }
+    let sqlUpdateStatus = ``;
+    if (data.status == "T") {
+      sqlUpdateStatus = updateQueries.updateUserTrash(data);
     } else {
-      searchKeywordString += ` AND is_developer_account = 'N' `;
-      if (token_details.user_role_id > 2) {
-        searchKeywordString += ` AND created_by IN ('${token_details.user_id}')`;
-      }
-      if (data.pk_ids) {
-        searchKeywordString += ` AND user_id IN (${data.pk_ids})`;
-      }
-      
-      
-      let sqlTotalRecords = [];
-      let sqlList = [];
+      sqlUpdateStatus = updateQueries.updateUserStatus(data);
+    }
+    const results = await query(sqlUpdateStatus);
+    if (results) {
+      res.send({
+        success: CONSTANTS.SUCCESS_FLAG,
+        message: CONSTANTS.REQUEST_SUCCESS,
+        data: results,
+      });
+    }
+  } else {
+    searchKeywordString += ` AND is_developer_account = 'N' `;
+    if (token_details.user_role_id > 2) {
+      searchKeywordString += ` AND created_by IN ('${token_details.user_id}')`;
+    }
+    if (data.pk_ids) {
+      searchKeywordString += ` AND user_id IN (${data.pk_ids})`;
+    }
 
-      let arrTotalRecords_List = queries.getUsersQuery(searchKeywordString,orderByString,limitString);
-      if(arrTotalRecords_List && arrTotalRecords_List.length > 0){
-        sqlTotalRecords = arrTotalRecords_List[0];
-        sqlList = arrTotalRecords_List[1];
-      }
-      
-      const results1 = await query(sqlList);
-      const results = results1.rows;
-      
-      if (results) {
-        const totalRecords1 = await query(sqlTotalRecords);
-        const totalRecords = totalRecords1.rows;
-        
-        if (totalRecords) {
+    let sqlTotalRecords = [];
+    let sqlList = [];
 
-          if (["EA", "ES"].includes(data.status)) {
-            return exportUsersToCSV(req, res, results, functions);
-          } else {
-            if (results && results.length > 0) {
-              let totalPages = Math.ceil(totalRecords.length / rpp);
-              var start1 = 1;
-              var end = totalPages;
-              var arrTotalRecordResults = [];
-              while (start1 < end + 1) {
-                arrTotalRecordResults.push(start1++);
-              }
+    let arrTotalRecords_List = queries.getUsersQuery(searchKeywordString, orderByString, limitString);
+    if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
+      sqlTotalRecords = arrTotalRecords_List[0];
+      sqlList = arrTotalRecords_List[1];
+    }
 
-              res.send({
-                success: CONSTANTS.SUCCESS_FLAG,
-                message: CONSTANTS.REQUEST_SUCCESS,
-                data: results,
-                arrTotalPages: arrTotalRecordResults,
-                current_page_no: page_no,
-              });
-            } else {
-              res.send({
-                success: CONSTANTS.FAIL_FLAG,
-                message: CONSTANTS.REQUEST_FAIL,
-                data: [],
-                totalRecords: 0,
-              });
-            }
-          }
+    const results1 = await query(sqlList);
+    const results = results1.rows;
+
+    if (results) {
+      const totalRecords1 = await query(sqlTotalRecords);
+      const totalRecords = totalRecords1.rows;
+      if (totalRecords) {
+        if (["EA", "ES"].includes(data.status)) {
+          return exportUsersToCSV(req, res, results, functions);
         } else {
-          res.send({
-            success: CONSTANTS.FAIL_FLAG,
-            message: CONSTANTS.REQUEST_FAIL,
-            data: [],
-            totalRecords: 0,
-          });
+          if (results && results.length > 0) {
+            let totalPages = Math.ceil(totalRecords.length / rpp);
+            var start1 = 1;
+            var end = totalPages;
+            var arrTotalRecordResults = [];
+            while (start1 < end + 1) {
+              arrTotalRecordResults.push(start1++);
+            }
+            res.send({
+              success: CONSTANTS.SUCCESS_FLAG,
+              message: CONSTANTS.REQUEST_SUCCESS,
+              data: results,
+              arrTotalPages: arrTotalRecordResults,
+              current_page_no: page_no,
+            });
+          } else {
+            res.send({
+              success: CONSTANTS.FAIL_FLAG,
+              message: CONSTANTS.REQUEST_FAIL,
+              data: [],
+              totalRecords: 0,
+            });
+          }
         }
       } else {
         res.send({
@@ -899,7 +851,15 @@ router.post("/users", attachCommonData, async (req, res) => {
           totalRecords: 0,
         });
       }
+    } else {
+      res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.REQUEST_FAIL,
+        data: [],
+        totalRecords: 0,
+      });
     }
+  }
 });
 /********************* User Modules Over *********************/
 
@@ -918,11 +878,10 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
     metadetails: metaRecords,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/metadetails", attachCommonData, async (req, res) => {
-  await query("BEGIN");
   try {
     const data = req.body;
     const allowedColumns = new Set([
@@ -930,7 +889,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       "meta_title",
       "meta_description",
     ]);
-    
+
     for (const key in data) {
       const parts = key.split("__");
       if (parts.length !== 2) continue;
@@ -938,22 +897,20 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       const metaId = parseInt(parts[1]);
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
-      
+
       const sql = `UPDATE meta_details SET ${column} = $1 WHERE meta_id = $2`;
       const params = [data[key], metaId];
       consoleLog(functions.printQuery(sql, params));
       await query(sql, params);
     }
-    
-    await query("COMMIT");
+
     return res.status(200).send({
       message: CONSTANTS.REQUEST_SUCCESS,
     });
   } catch (error) {
-    await query("ROLLBACK");
-    console.error("Transaction Failed:", error);
     return res.status(500).send({
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
@@ -962,12 +919,11 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
 
 /********************* Configurations Modules Start *********************/
 router.post("/configurations", attachCommonData, async (req, res) => {
-  await query("BEGIN");
   try {
     const data = req.body;
     if (data && typeof data === "object") {
       const entries = Object.entries(data);
-      
+
       // Option 1: Prepare multiple queries (current approach)
       // for (const [config_name, rawValue] of entries) {
       //   const sanitizedValue = functions.sanitize(rawValue);
@@ -975,9 +931,9 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       //   await query(sqlUpdate, [sanitizedValue, config_name]);
       // }
 
-       // Option 2: Use a single query with CASE statements for better performance
+      // Option 2: Use a single query with CASE statements for better performance
       if (entries.length > 0) {
-        const caseStatements = entries.map((_, i) => 
+        const caseStatements = entries.map((_, i) =>
           `WHEN config_name = $${i * 2 + 1} THEN $${i * 2 + 2}`
         ).join(' ');
         const configNames = entries.flatMap(([name, value]) => [name, functions.sanitize(value)]);
@@ -988,18 +944,15 @@ router.post("/configurations", attachCommonData, async (req, res) => {
         await query(sqlUpdate, configNames);
       }
     }
-    await query("COMMIT");
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.REQUEST_SUCCESS,
       data,
     });
   } catch (error) {
-    await query("ROLLBACK");
-    console.error("Transaction Failed:", error);
     res.status(500).send({
-      success: 0,
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });
@@ -1049,7 +1002,7 @@ router.get("/configurations", attachCommonData, async (req, res) => {
     configurations: parents,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 /********************* Configurations Modules Over *********************/
@@ -1063,48 +1016,43 @@ router.get("/change-password", attachCommonData, async (req, res) => {
     user_email: decoded.user_email,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req,res,responseData,viewDirectory,decoded);
+  functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/change-password", attachCommonData, async (req, res) => {
-  await query("BEGIN");
   try {
     const { user_id, user_email, password } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
-    
+
     // Escape values to prevent SQL injection (use with caution)
     const escapedPassword = encryptPass.replace(/'/g, "''");
     const escapedUserId = user_id.replace(/'/g, "''");
     const escapedEmail = user_email.replace(/'/g, "''");
-    
+
     const sqlUpdate = `UPDATE users SET user_password = '${escapedPassword}' WHERE user_id = '${escapedUserId}' AND user_email = '${escapedEmail}'`;
     logToFile(functions.printQuery(sqlUpdate, []));
     const result = await query(sqlUpdate);
-    
+
     // Check result for affected rows
     const rowCount = result.rowCount || result.affectedRows || (result.rows ? result.rows.length : 0);
-    
+
     if (rowCount === 0) {
-      await query("ROLLBACK");
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
-        message: "Invalid user or email",
+        message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
         data: [],
       });
     }
-    
-    await query("COMMIT");
+
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.PASSWORD_CHANGED_SUCCESSFULLY,
       data: { user_id },
     });
   } catch (error) {
-    await query("ROLLBACK");
-    console.error("Transaction Failed:", error);
     res.status(500).send({
-      success: 0,
-      message: "Something went wrong. Transaction rolled back.",
+      success: CONSTANTS.FAIL_FLAG,
+      message: REQUEST_FAIL,
     });
   }
 });

@@ -1,1 +1,0 @@
-let sqlQuery = queries.getForgotPasswordQuery(user_email);

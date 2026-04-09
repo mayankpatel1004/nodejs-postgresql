@@ -57,22 +57,22 @@ const queries = {
                           WHERE user_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
-    updateUserToken: (token,user_id) => {
+    updateUserToken: (token, user_id) => {
         const sqlUpdate = `
         UPDATE users 
         SET user_token = '${token}' 
         WHERE user_id = '${user_id}'
         `;
-    return sqlUpdate;
+        return sqlUpdate;
     },
-    activateAccount: (password,token,user_id) => {
+    activateAccount: (password, token, user_id) => {
         const sqlUpdate = `
         UPDATE users 
         SET user_password = '${password}', 
             user_token = '${token}' 
         WHERE user_id = '${user_id}'
         `;
-    return sqlUpdate;
+        return sqlUpdate;
     }
 };
 
