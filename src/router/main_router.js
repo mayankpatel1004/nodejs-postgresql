@@ -141,19 +141,8 @@ router.get('/forgot-password', (req, res) => {
 router.post("/forgot-password", async (req, res) => {
   try {
     const { user_email } = req.body;
-    const sqlQuery = `
-      SELECT 
-        user_id,
-        user_firstname,
-        user_lastname,
-        active_status,
-        deleted_status 
-      FROM users 
-      WHERE user_email = $1 
-        AND deleted_status = 'N' 
-      ORDER BY user_id DESC 
-      LIMIT 1`;
-    const result = await query(sqlQuery, [user_email]);
+    let sqlQuery = queries.getForgotPasswordQuery(user_email);
+    const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
@@ -178,15 +167,8 @@ router.post("/forgot-password", async (req, res) => {
     }
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
-    const sqlUpdate = `
-      UPDATE users 
-      SET user_token = $1 
-      WHERE user_id = $2
-    `;
-    const updateResult = await query(sqlUpdate, [
-      user_token,
-      user.user_id,
-    ]);
+    let sqlUpdate = updateQueries.updateUserToken(user_token,user.user_id);
+    const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
       return res.send({
         success: CONSTANTS.FAIL_FLAG,
@@ -241,16 +223,11 @@ router.get("/password-token", async (req, res) => {
 router.post("/password_token", async (req, res) => {
   try {
     const { email, token } = req.body;
-    const sqlQuery = `
-  SELECT user_id, user_token, user_email 
-  FROM users 
-  WHERE user_email = $1 
-    AND user_token = $2
-`;
+    let sqlQuery = queries.getUserToken(email, token);
+    const result1 = await query(sqlQuery);
+    let result = result1.rows;
 
-const result = await query(sqlQuery, [email, token]);
-
-if (!result || result.rows.length === 0) {
+if (!result || result.length === 0) {
   return res.send({
     success: CONSTANTS.FAIL_FLAG,
     message: CONSTANTS.INVALID_TOKEN_OR_EMAIL,
@@ -258,7 +235,8 @@ if (!result || result.rows.length === 0) {
   });
 }
 
-const user = result.rows[0];
+if(result){
+const user = result[0];
     if (
       parseInt(user.user_token) !== parseInt(token) ||
       user.user_email !== email
@@ -269,13 +247,15 @@ const user = result.rows[0];
         data: [],
       });
     }
-    const sqlUpdate = `UPDATE users SET user_token = $1 WHERE user_id = $2`;
-    await query(sqlUpdate, ["", user.user_id]);
+    let sqlUpdate = updateQueries.updateUserToken("",user.user_id);
+    await query(sqlUpdate);
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.REQUEST_SUCCESS,
       data: user,
-    });
+    });  
+}
+
   } catch (error) {
     console.error("Transaction Failed:", error);
     res.status(500).send({
@@ -289,14 +269,8 @@ router.post("/activate_account", async (req, res) => {
   try {
     const { id, password } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
-    const sqlUpdate = `
-      UPDATE users 
-      SET user_password = $1, 
-          user_token = $2 
-      WHERE user_id = $3
-    `;
-    const params = [encryptPass, "", id];
-    const result = await query(sqlUpdate, params);
+    let sqlUpdate = updateQueries.activateAccount(encryptPass, "", id);
+    const result = await query(sqlUpdate);
     if (result.rowCount === 0) {
       return res.send({
         success: CONSTANTS.FAIL_FLAG,

@@ -35,6 +35,29 @@ const queries = {
         let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_USERS} WHERE (user_email = '${user_name}' OR user_name = '${user_name}') AND DELETED_STATUS = 'N'`;
         return sqlQuery;
     },
+    getForgotPasswordQuery: (user_email) => {
+        const sqlQuery = `
+      SELECT 
+        user_id,
+        user_firstname,
+        user_lastname,
+        active_status,
+        deleted_status 
+      FROM users 
+      WHERE user_email = '${user_email}' 
+        AND deleted_status = 'N' 
+      ORDER BY user_id DESC 
+      LIMIT 1`;
+        return sqlQuery;
+    },
+    getUserToken: (email, token) => {
+        const sqlQuery = `
+  SELECT user_id, user_token, user_email 
+  FROM users 
+  WHERE user_email = '${email}' 
+    AND user_token = '${token}'`;
+    return sqlQuery;
+    },
     getItemsQuery: (searchKeywordString,orderByString,limitString) => {
         let sqlTotalRecords = `SELECT 
                   i.item_id,
