@@ -26,40 +26,40 @@ const queries = {
         return sqlUpdateStatus;
     },
     updateItemSectionStatus: (data) => {
-        sqlUpdateStatus = `UPDATE item_section 
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ITEM_SECTION} 
               SET display_status = '${data.status}' 
               WHERE item_section_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
     updateRoleTrash: (data) => {
-        sqlUpdateStatus = `UPDATE role
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ROLES}
                          SET deleted_status = 'Y',
                          deleted_time = NOW() 
                          WHERE role_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
     updateRoleStatus: (data) => {
-        sqlUpdateStatus = `UPDATE role 
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ROLES} 
                          SET display_status = '${data.status}' 
                          WHERE role_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
     updateUserTrash: (data) => {
-        sqlUpdateStatus = `UPDATE users 
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_USERS} 
                           SET deleted_status = 'Y',
                           deleted_time = NOW() 
                           WHERE user_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
     updateUserStatus: (data) => {
-        sqlUpdateStatus = `UPDATE users 
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_USERS} 
                           SET active_status = '${data.status}' 
                           WHERE user_id IN (${data.pk_ids})`;
         return sqlUpdateStatus;
     },
     updateUserToken: (token, user_id) => {
         const sqlUpdate = `
-        UPDATE users 
+        UPDATE ${CONSTANTS.TBL_USERS} 
         SET user_token = '${token}' 
         WHERE user_id = '${user_id}'
         `;
@@ -67,7 +67,7 @@ const queries = {
     },
     activateAccount: (password, token, user_id) => {
         const sqlUpdate = `
-        UPDATE users 
+        UPDATE ${CONSTANTS.TBL_USERS} 
         SET user_password = '${password}', 
             user_token = '${token}' 
         WHERE user_id = '${user_id}'
@@ -75,15 +75,15 @@ const queries = {
         return sqlUpdate;
     },
     updateMetaDetails: (column) => {
-        const sqlUpdate = `UPDATE meta_details SET ${column} = $1 WHERE meta_id = $2`;
+        const sqlUpdate = `UPDATE ${CONSTANTS.TBL_META_DETAILS} SET ${column} = $1 WHERE meta_id = $2`;
         return sqlUpdate;
     },
     updateConfigurations: () => {
-        const sqlUpdate = `UPDATE site_config SET config_value = $1 WHERE config_name = $2`;
+        const sqlUpdate = `UPDATE ${CONSTANTS.TBL_SITE_CONFIG} SET config_value = $1 WHERE config_name = $2`;
         return sqlUpdate;
     },
     updateChangePassword : (escapedPassword,escapedUserId,escapedEmail) => {
-        const sqlUpdate = `UPDATE users SET user_password = '${escapedPassword}' WHERE user_id = '${escapedUserId}' AND user_email = '${escapedEmail}'`;
+        const sqlUpdate = `UPDATE ${CONSTANTS.TBL_USERS} SET user_password = '${escapedPassword}' WHERE user_id = '${escapedUserId}' AND user_email = '${escapedEmail}'`;
         return sqlUpdate;
     }
 };

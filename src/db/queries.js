@@ -43,7 +43,7 @@ const queries = {
         user_lastname,
         active_status,
         deleted_status 
-      FROM users 
+      FROM ${CONSTANTS.TBL_USERS} 
       WHERE user_email = '${user_email}' 
         AND deleted_status = 'N' 
       ORDER BY user_id DESC 
@@ -53,7 +53,7 @@ const queries = {
     getUserToken: (email, token) => {
         const sqlQuery = `
         SELECT user_id, user_token, user_email 
-        FROM users 
+        FROM ${CONSTANTS.TBL_USERS} 
         WHERE user_email = '${email}' AND user_token = '${token}'`;
         return sqlQuery;
     },
