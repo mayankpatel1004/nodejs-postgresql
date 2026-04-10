@@ -17,7 +17,7 @@ function logToFile(message, flag, url = '') {
   } else {
     filePath = path.join(__dirname, '../../src/log/logs_fail.txt');
     const separator = '----------------------------------------';
-    fs.appendFileSync(filePath,`${message}\n\n${separator}\n\n`);
+    fs.appendFileSync(filePath,`${JSON.stringify(message)}\n\n${separator}\n\n`);
   }
 }
 
