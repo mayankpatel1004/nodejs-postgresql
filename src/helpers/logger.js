@@ -6,7 +6,7 @@ function consoleLog(message) {
   if(process.env.ENABLE_CONSOLE_LOGS == 'Y'){
     console.log(message);
   }
-  if(process.env.ENABLE_LOGS == "Y"){
+  if(process.env.ENABLE_SINGLE_FILE_LOGS == "Y"){
     const currentdate = new Date(); 
     const log_name = 
       currentdate.getDate() + "" + 
