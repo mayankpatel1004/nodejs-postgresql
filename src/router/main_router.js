@@ -14,6 +14,7 @@ const multer = require("multer");
 const functions = require("../helpers/functions");
 const logToFile = require('../helpers/logs');
 const consoleLog = require('../helpers/logger');
+const logQueryToFile = require('../helpers/log_query');
 const { createObjectCsvStringifier } = require("csv-writer");
 const { attachCommonData } = require("../middleware/auth");
 const { CONSTANTS } = require("../helpers/constants");
@@ -48,7 +49,9 @@ router.post('/login', async (req, res) => {
   let results = [];
   let allow_login = 0;
   try {
-    const resultColumns = await query(queries.getLoginQuery(data.user_name));
+    let sqlQuery = queries.getLoginQuery(data.user_name);
+    logQueryToFile(functions.printQuery(sqlQuery));
+    const resultColumns = await query(sqlQuery);
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
     }
@@ -143,6 +146,7 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { user_email } = req.body;
     let sqlQuery = queries.getForgotPasswordQuery(user_email);
+    logQueryToFile(functions.printQuery(sqlQuery));
     const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {
       return res.send({
@@ -169,6 +173,7 @@ router.post("/forgot-password", async (req, res) => {
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
     let sqlUpdate = updateQueries.updateUserToken(user_token, user.user_id);
+    logQueryToFile(functions.printQuery(sqlUpdate));
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
       return res.send({
@@ -222,6 +227,7 @@ router.post("/password_token", async (req, res) => {
   try {
     const { email, token } = req.body;
     let sqlQuery = queries.getUserToken(email, token);
+    logQueryToFile(functions.printQuery(sqlQuery));
     const result1 = await query(sqlQuery);
     let result = result1.rows;
     if (!result || result.length === 0) {
@@ -336,7 +342,9 @@ router.get('/database_table', attachCommonData, async (req, res) => {
       let selectedTableRows = [];
       let selectedTableStructure = [];
       let total_columns = 0;
-      const database_tables_result = await query(queries.getAllTables());
+      let sqlQuery = queries.getAllTables();
+      logQueryToFile(functions.printQuery(sqlQuery));
+      const database_tables_result = await query(sqlQuery);
 
       if (req.query && req.query.tableName) {
         table_name = req.query.tableName;
@@ -347,7 +355,9 @@ router.get('/database_table', attachCommonData, async (req, res) => {
         if (primary_key_column && primary_key_value) {
           filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
         }
-        const resultColumns = await query(queries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by));
+        let sqlQuery = queries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by);
+        logQueryToFile(functions.printQuery(sqlQuery));
+        const resultColumns = await query(sqlQuery);
         selectedTableRows = resultColumns.rows;
 
         const resultStructure = await query(queries.getTableStructure(table_name));
@@ -434,7 +444,6 @@ router.post("/items", attachCommonData, async (req, res) => {
     } else {
       sqlUpdateStatus = updateQueries.updateItemsStatus(data);
     }
-    console.log(sqlUpdateStatus);
     let results = await query(sqlUpdateStatus);
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
@@ -450,9 +459,12 @@ router.post("/items", attachCommonData, async (req, res) => {
     let sqlList = [];
 
     let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString, orderByString, limitString);
+    
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
+      logQueryToFile(functions.printQuery(sqlTotalRecords));
       sqlList = arrTotalRecords_List[1];
+      logQueryToFile(functions.printQuery(sqlList));
     }
 
     let totalRecords1 = await query(sqlTotalRecords);
@@ -568,6 +580,8 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
+      logQueryToFile(functions.printQuery(sqlTotalRecords));
+      logQueryToFile(functions.printQuery(sqlList));
     }
 
     let totalRecords1 = await query(sqlTotalRecords);
@@ -675,6 +689,8 @@ router.post("/roles", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
+      logQueryToFile(functions.printQuery(sqlTotalRecords));
+      logQueryToFile(functions.printQuery(sqlList));
     }
 
     const results1 = await query(sqlList);
@@ -803,6 +819,8 @@ router.post("/users", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
+      logQueryToFile(functions.printQuery(sqlTotalRecords));
+      logQueryToFile(functions.printQuery(sqlList));
     }
 
     const results1 = await query(sqlList);
@@ -865,6 +883,7 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
   let viewDirectory = path.join(__dirname, "../") + "templates/views/metadetails/metadetails";
 
   let sqlMetaDetails = queries.getMetaDetails();
+  logQueryToFile(functions.printQuery(sqlMetaDetails));
   let metaRecords1 = await query(sqlMetaDetails);
   const metaRecords = metaRecords1.rows;
 
@@ -894,10 +913,10 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
 
-      let sql = updateQueries.updateMetaDetails(column);
+      let sqlQuery = updateQueries.updateMetaDetails(column);
+      logQueryToFile(functions.printQuery(sqlQuery));
       const params = [data[key], metaId];
-      consoleLog(functions.printQuery(sql, params));
-      await query(sql, params);
+      await query(sqlQuery, params);
     }
 
     return res.status(200).send({
@@ -923,6 +942,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       for (const [config_name, rawValue] of entries) {
         const sanitizedValue = functions.sanitize(rawValue);
         let sqlUpdate = updateQueries.updateConfigurations();
+        logQueryToFile(functions.printQuery(sqlUpdate));
         await query(sqlUpdate, [sanitizedValue, config_name]);
       }
     }
@@ -943,6 +963,7 @@ router.get("/configurations", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/configurations/configurations";
   let sqlSiteConfigurations = queries.getSiteConfigurations();
+  logQueryToFile(functions.printQuery(sqlSiteConfigurations));
   let configRecords1 = await query(sqlSiteConfigurations);
   const configRecords = configRecords1.rows;
   const parentsMap = new Map();
