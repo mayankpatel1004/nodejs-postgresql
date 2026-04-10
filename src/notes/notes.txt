@@ -1,7 +1,4 @@
-echo "" > src/logs/logs_fail.json && echo "" > src/logs/logs_query.sql && echo "" > src/logs/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
-
-
-
+echo "" > src/log/logs_fail.json && echo "" > src/log/logs_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
 Steps to integrate 
 - Git Clone.
