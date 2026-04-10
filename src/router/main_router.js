@@ -339,6 +339,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
     logToFile("Dashboard Screen Called..........","success","");
     logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
     logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
+    consoleLog("Mayank Patel");
     const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
       let table_name = '';
       let primary_key_column = '';
