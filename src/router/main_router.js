@@ -316,6 +316,7 @@ router.get("/reset-password", async (req, res) => {
 
 router.get('/', attachCommonData, async (req, res) => {
   try {
+    
     const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
     let responseData = {
       success: 1,
@@ -335,6 +336,9 @@ router.get('/', attachCommonData, async (req, res) => {
 
 router.get('/database_table', attachCommonData, async (req, res) => {
   try {
+    logToFile("Dashboard Screen Called..........","success","");
+    logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
+    logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
     const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
       let table_name = '';
       let primary_key_column = '';
@@ -1033,7 +1037,7 @@ router.post("/change-password", attachCommonData, async (req, res) => {
     const escapedEmail = user_email.replace(/'/g, "''");
 
     let sqlUpdate = updateQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
-    logToFile(functions.printQuery(sqlUpdate, []));
+    logToFile(functions.printQuery(sqlUpdate),"success");
     const result = await query(sqlUpdate);
 
     const rowCount = result.rowCount || result.affectedRows || (result.rows ? result.rows.length : 0);

@@ -3,7 +3,7 @@ const path = require('path');
 
 function logQueryToFile(message, flag, url = '') {
   let filePath = '';
-  filePath = path.join(__dirname, '../../src/logs/logs_query.sql');
+  filePath = path.join(__dirname, '../../src/log/logs_query.sql');
 
   const separator = '----------------------------------------';
 

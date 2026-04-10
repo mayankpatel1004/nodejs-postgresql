@@ -6,18 +6,18 @@ function logToFile(message, flag, url = '') {
 
   if (flag === 'success') {
     filePath = path.join(__dirname, '../../src/log/logs_success.txt');
-    fs.appendFileSync(filePath, `${message}\n`);
-
+    const separator = '----------------------------------------';
+    fs.appendFileSync(filePath,`${message}\n\n${separator}\n\n`);
+    
   } else if (flag === 'request') {
-    filePath = path.join(__dirname, '../../src/log/logs_request.json');
-    const print_url = { url: url };
-
+    filePath = path.join(__dirname, '../../src/log/logs_request.txt');
+    let print_url = { url: url };
     fs.appendFileSync(filePath, JSON.stringify(print_url) + '\n');
     fs.appendFileSync(filePath, JSON.stringify(message) + '\n');
-
   } else {
-    filePath = path.join(__dirname, '../../src/log/logs_fail.json');
-    fs.appendFileSync(filePath, `${message}\n`);
+    filePath = path.join(__dirname, '../../src/log/logs_fail.txt');
+    const separator = '----------------------------------------';
+    fs.appendFileSync(filePath,`${message}\n\n${separator}\n\n`);
   }
 }
 

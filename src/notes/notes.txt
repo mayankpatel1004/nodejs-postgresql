@@ -1,4 +1,4 @@
-echo "" > src/log/logs_fail.json && echo "" > src/log/logs_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
+echo "" > src/log/logs_fail.txt && echo "" > src/log/logs_request.txt && echo "" > src/log/logs_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
 Steps to integrate 
 - Git Clone.
@@ -14,3 +14,12 @@ http://localhost:3900/databases?tableName=item_section&pk=item_section_id&pk_id=
 
 clear && node src/migrations/migrations.js
 clear && node src/migrations/seeders.js
+
+
+How to call logs : 
+logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
+logToFile(functions.printQuery(sqlUpdate),"success");
+logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
+
+
+
