@@ -966,3 +966,14 @@ tr.highlighted {
 .items-listing .listing-row {
   margin-bottom: 10px;
 }
+
+.items-form .main-panel{
+  padding:20px;
+}
+.items-form form {
+  margin-bottom: 10px;
+}
+
+.items-form form{
+  margin: 10px;
+}

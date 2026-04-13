@@ -8,7 +8,7 @@
 <body>
     <div class="container-scroller">
         {{>header}}
-        <div class="container-fluid page-body-wrapper">
+        <div class="container-fluid page-body-wrapper items-form">
             {{>sidebar}}
             <div class="main-panel">
                 <div class="content-wrapper">
@@ -16,8 +16,8 @@
                         <div class="col-12 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body">
-                                    <div class="d-flex flex-wrap justify-content-between">
-                                        <h4 class="card-title text-primary">{{page_title}}</h4>
+                                    <div class="d-flex flex-wrap justify-content-between bg-primary mb-3">
+                                        <h4 class="card-title text-white pt-3 pl-3">{{page_title}}</h4>
                                     </div>
                                     <form id="userForm" method="POST" enctype="multipart/form-data">
                                         <div class="row">
@@ -139,7 +139,7 @@
     <script type="text/javascript">
         $(document).ready(function () {
             setTimeout(function () {
-                {{#each role_access }}
+                {{#each role_access}}
                 if ('{{grant_add}}' == 'Y') {
                     $("#{{module_id}}_add").prop('checked', true);
                 }
@@ -152,7 +152,7 @@
                 if ('{{grant_view}}' == 'Y') {
                     $("#{{module_id}}_view").prop('checked', true);
                 }
-                {{/each }}
+                {{/each}}
             }, 1000);
         });
         function checkAll(ele, alt) {

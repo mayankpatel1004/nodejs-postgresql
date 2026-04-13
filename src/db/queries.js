@@ -162,7 +162,19 @@ const queries = {
         WHERE p.deleted_status = 'N'
         ORDER BY p.site_config_parent_id`;
         return sqlSiteConfigurations;
-    }
+    },
+    getRoleById: (id) => {
+        let sqlSiteConfigurations = `SELECT * FROM ${CONSTANTS.TBL_ROLES} WHERE role_id = ${id}`;
+        return sqlSiteConfigurations;
+    },
+    getRoleMetaDetails: () => {
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} WHERE is_module = 1 ORDER BY meta_id DESC`;
+        return sqlQuery;
+    },
+    getRoleAccess: (id) => {
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${id}`;
+        return sqlQuery;
+    },
 };
 
 module.exports = queries;

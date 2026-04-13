@@ -201,7 +201,6 @@ router.post("/forgot-password", async (req, res) => {
       message: CONSTANTS.EMAIL_SUCCESS_SENT,
       data: [],
     });
-
   } catch (error) {
     return res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
@@ -655,13 +654,8 @@ router.post("/roles", attachCommonData, async (req, res) => {
   let start = (parseInt(page_no) - 1) * parseInt(rpp);
   let limitString = " LIMIT " + rpp + " OFFSET " + start;
 
-  if (
-    data &&
-    data.search_keyword !== undefined &&
-    data.search_keyword != ""
-  ) {
-    searchKeywordString +=
-      " AND ( role_title LIKE '%" + data.search_keyword + "%') ";
+  if (data && data.search_keyword !== undefined && data.search_keyword != "") {
+    searchKeywordString += " AND ( role_title LIKE '%" + data.search_keyword + "%') ";
   }
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
@@ -750,6 +744,195 @@ router.post("/roles", attachCommonData, async (req, res) => {
         totalRecords: 0,
       });
     }
+  }
+});
+
+router.get("/role_form", attachCommonData, async (req, res) => {
+  try {
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      const arrFields = [];
+
+      let edit_id = 0;
+      let edit_role_title = "";
+      let edit_item_alias = "";
+      let edit_display_order = "";
+      let edit_display_status = "";
+
+      if (req.query.edit_id && req.query.edit_id > 0) {
+        edit_id = req.query.edit_id;
+
+        let sqlUser = queries.getRoleById(edit_id);
+        let results1 = await query(sqlUser);
+        const results = results1.rows;
+
+        if (results && results.length > 0) {
+            edit_id = results[0].role_id;
+            edit_role_title = results[0].role_title;
+            edit_item_alias = results[0].item_alias;
+            edit_display_order = results[0].display_order;
+            edit_display_status = results[0].display_status;
+        }
+      }
+
+      // Hidden Edit ID
+      arrFields.push({
+        type: "hidden",
+        lbl: "Edit ID",
+        nm: "edit_id",
+        val: edit_id,
+        ph: "",
+        req: "N",
+        cls: "form-control formfields",
+      });
+
+      // Created At for new record
+      if (edit_id == 0) {
+        arrFields.push({
+          type: "hidden",
+          lbl: "Created",
+          nm: "created_at",
+          val: moment().format("YYYY-MM-DD HH:mm:ss"),
+          ph: "",
+          req: "N",
+          cls: "form-control formfields",
+        });
+      }
+
+      arrFields.push(
+          {
+            type: "text",
+            lbl: "Role Name",
+            nm: "role_title",
+            val: edit_role_title,
+            ph: "",
+            req: "Y",
+            cls: "form-control formfields",
+          },
+          {
+            type: "hidden",
+            lbl: "Item Alias",
+            nm: "item_alias",
+            val: edit_item_alias,
+            ph: "",
+            req: "N",
+            cls: "form-control formfields",
+          },
+          {
+            type: "select",
+            lbl: "Display Status",
+            nm: "display_status",
+            val: edit_display_status,
+            ph: "",
+            req: "N",
+            is_multiple: "N",
+            options: functions.displayStatus(),
+            cls: "form-control js-example-basic-single formfields",
+          },
+      );
+
+      let sqlMetaDetails = queries.getRoleMetaDetails();
+      let metaRecords1 = await query(sqlMetaDetails);
+      const metaRecords = metaRecords1.rows;
+
+      let sqlUserRolesAccess = queries.getRoleAccess(edit_id);
+      let roleAccessRecords1 = await query(sqlUserRolesAccess);
+      const roleAccessRecords = roleAccessRecords1.rows;
+
+      let viewDirectory = path.join(__dirname, "../") + "templates/views/roles/role_form";
+      const responseData = {
+          ...req.commonData,
+          modules: metaRecords,
+          role_id: decoded.user_role_id,
+          fields: arrFields,
+          role_access: roleAccessRecords,
+          view_path: viewDirectory,
+          listUrl: functions.getHostUrl(req) + "/roles",
+          formUrl: functions.getHostUrl(req) + "/role_form",
+          partialsDir: [path.join(__dirname, "views/partials")],
+      };
+
+      functions.renderData(req, res, responseData, viewDirectory, decoded);
+  } catch (error) {
+      res.status(500).send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.REQUEST_FAIL,
+        data: [],
+        totalRecords: 0,
+      });
+  }
+});
+
+router.post("/role_form", userImageUpload, async (req, res) => {
+  try {
+    await query("BEGIN");
+    const data = req.body;
+    let roleId = data.edit_id;
+    const excludeKeys = new Set(["edit_id","view","add","edit","delete","module_id"]);
+    const keys = [];
+    const values = [];
+
+    for (const [key, value] of Object.entries(data)) {
+      if (excludeKeys.has(key)) continue;
+      keys.push(key);
+      values.push(key.includes("_at") && typeof value === "string" ? new Date(value) : value);
+    }
+
+    if (roleId && Number(roleId) > 0) {
+      const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
+      const sqlUpdate = `UPDATE ${CONSTANTS.TBL_ROLES} SET ${setClause} WHERE role_id = $${keys.length + 1}`;
+      const params = [...values, roleId];
+      await query(sqlUpdate, params);
+    }
+    else {
+      const insertKeys = keys.join(", ");
+      const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+      const sqlInsert = `INSERT INTO ${CONSTANTS.TBL_ROLES} (${insertKeys}) VALUES (${placeholders}) RETURNING role_id`;
+      const result = await query(sqlInsert, values);
+      roleId = result.rows[0].role_id;
+    }
+
+    const sqlDelete = `DELETE FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${roleId}`;
+    await query(sqlDelete);
+
+    if (Array.isArray(data.module_id) && Array.isArray(data.view) && data.module_id.length === data.view.length) {
+      const inserts = [];
+
+      for (let i = 0; i < data.module_id.length; i++) {
+        const moduleId = parseInt(data.module_id[i]);
+        if (!moduleId) continue;
+
+        inserts.push([
+          roleId,
+          moduleId,
+          data.view[i] === "1" ? "Y" : "N",
+          data.add?.[i] === "1" ? "Y" : "N",
+          data.edit?.[i] === "1" ? "Y" : "N",
+          data.delete?.[i] === "1" ? "Y" : "N",
+          data.display_status || "Y",
+          0,
+          new Date(),
+        ]);
+      }
+
+      if (inserts.length > 0) {
+        const valueStrings = inserts.map((_, i) => `(${inserts[i] .map((__, j) => `$${i * inserts[i].length + j + 1}`).join(",")})`).join(",");
+        const flatValues = inserts.flat();
+        const sqlBulk = `INSERT INTO ${CONSTANTS.TBL_ROLE_ACCESS} (role_id, module_id, grant_view, grant_add, grant_edit, grant_delete, display_status, display_order, created_at) VALUES ${valueStrings}`;
+        await query(sqlBulk, flatValues);
+      }
+    }
+    await query("COMMIT");
+    return res.send({
+      success: CONSTANTS.SUCCESS_FLAG,
+      message: CONSTANTS.REQUEST_SUCCESS,
+      data: { role_id: roleId },
+    });
+  } catch (error) {
+    await query("ROLLBACK");
+    res.status(500).send({
+      success: CONSTANTS.FAIL_FLAG,
+      message: CONSTANTS.REQUEST_FAIL
+    });
   }
 });
 
@@ -880,6 +1063,254 @@ router.post("/users", attachCommonData, async (req, res) => {
     }
   }
 });
+
+router.get("/user_form", attachCommonData, async (req, res) => {
+  try {
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const arrFields = [];
+
+    let edit_id = 0;
+    let edit_firstname = "";
+    let edit_lastname = "";
+    let edit_email = "";
+    let edit_active_status = "Y";
+    let edit_role_id = 0;
+    let edit_site_db = process.env.DB_NAME;
+    let readonly = "";
+    let user_photo = "";
+
+    
+    if (req.query.edit_id && req.query.edit_id > 0) {
+      edit_id = req.query.edit_id;
+
+      let sqlUser = `SELECT * FROM users WHERE user_id = $1`;
+      const results1 = await query(sqlUser, [edit_id]);
+      const results = results1.rows;
+      if (results && results.length > 0) {
+        edit_id = results[0].user_id;
+        edit_firstname = results[0].user_firstname;
+        edit_lastname = results[0].user_lastname;
+        edit_email = results[0].user_email;
+        edit_active_status = results[0].active_status;
+        edit_role_id = results[0].user_role_id;
+        user_photo = results[0].user_photo;
+        edit_site_db = results[0].site_db;
+        readonly = "readonly";
+      }
+    }
+
+    // Hidden Edit ID
+    arrFields.push({
+      type: "hidden",
+      lbl: "Edit ID",
+      nm: "edit_id",
+      val: edit_id,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    // Created At (only for new record)
+    if (edit_id == 0) {
+      arrFields.push({
+        type: "hidden",
+        lbl: "Created",
+        nm: "created_at",
+        val: moment().format("YYYY-MM-DD HH:mm:ss"),
+        ph: "",
+        req: "N",
+        cls: "form-control formfields",
+      });
+    }
+
+    arrFields.push(
+      {
+        type: "text",
+        lbl: "Databse Name",
+        nm: "site_db",
+        val: edit_site_db,
+        ph: "",
+        req: "Y",
+        cls: "form-control formfields",
+      },
+      {
+        type: "text",
+        lbl: "First Name",
+        nm: "user_firstname",
+        val: edit_firstname,
+        ph: "",
+        req: "Y",
+        cls: "form-control formfields",
+      },
+      {
+        type: "text",
+        lbl: "Last Name",
+        nm: "user_lastname",
+        val: edit_lastname,
+        ph: "",
+        req: "Y",
+        cls: "form-control formfields",
+      },
+      {
+        type: "file",
+        lbl: "Photo",
+        nm: "user_photo",
+        val: user_photo,
+        ph: "",
+        req: "N",
+        cls: "form-control formfields",
+      },
+      {
+        type: "email",
+        lbl: "Email",
+        nm: "user_email",
+        val: edit_email,
+        ph: "",
+        req: "Y",
+        cls: "form-control formfields " + readonly,
+      },
+      {
+        type: "select",
+        lbl: "Active Status",
+        nm: "active_status",
+        val: edit_active_status,
+        ph: "",
+        req: "N",
+        is_multiple: "N",
+        options: functions.displayStatus(),
+        cls: "form-control js-example-basic-single formfields",
+      },
+      {
+        type: "select",
+        lbl: "Role",
+        nm: "user_role_id",
+        val: edit_role_id,
+        ph: "",
+        req: "Y",
+        is_multiple: "N",
+        options: await functions.getAllRoles(),
+        cls: "form-control js-example-basic-single formfields",
+      }
+    );
+
+    let viewDirectory = path.join(__dirname, "../") + "templates/views/users/user_form";
+
+    const responseData = {
+      ...req.commonData,
+      fields: arrFields,
+      view_path: viewDirectory,
+      listUrl: functions.getHostUrl(req) + "/users",
+      formUrl: functions.getHostUrl(req) + "/user_form",
+      partialsDir: [path.join(__dirname, "views/partials")],
+    };
+
+    functions.renderData(req, res, responseData, viewDirectory,decoded);
+  } catch (error) {
+    res.status(500).send({
+      success: CONSTANTS.FAIL_FLAG,
+      message: JSON.stringify(error)
+    });
+  }
+});
+
+router.post("/user_form", userImageUpload, async (req, res) => {
+  try {
+    await query("BEGIN");
+    let data = req.body;
+    if (req.headers.authorization?.startsWith("Bearer ")) {
+      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+    }
+    if (req.files?.user_photo?.length) {
+      data.user_photo = req.files.user_photo[0].filename;
+    }
+    if ((!data.edit_id || Number(data.edit_id) === 0) && CONSTANTS.USER_EMAIL_UNIQUE === "Y") {
+      const sqlCheck = `SELECT user_id FROM users WHERE user_email = $1 LIMIT 1`;
+      const checkResult = await query(sqlCheck, [data.user_email]);
+
+      if (checkResult.rows.length > 0) {
+        await query("ROLLBACK");
+        return res.send({
+          success: CONSTANTS.FAIL_FLAG,
+          message: CONSTANTS.EMAIL_EXISTS,
+        });
+      }
+    }
+
+    const keys = [];
+    const values = [];
+
+    for (const [key, value] of Object.entries(data)) {
+      if (key === "edit_id") continue;
+
+      keys.push(key);
+      values.push(key.includes("_at") && typeof value === "string" ? new Date(value) : value);
+    }
+
+    if (keys.length === 0) {
+      await query("ROLLBACK");
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.DATA_NOT_FOUND,
+      });
+    }
+
+    if (data.edit_id && Number(data.edit_id) > 0) {
+      const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
+      const sqlUpdate = `UPDATE users SET ${setClause} WHERE user_id = $${keys.length + 1}`;
+      const params = [...values, data.edit_id];
+      const updateResult = await query(sqlUpdate, params);
+      if (updateResult.rowCount === 0) {
+        await query("ROLLBACK");
+        return res.send({
+          success: CONSTANTS.FAIL_FLAG,
+          message: CONSTANTS.DATA_NOT_FOUND,
+        });
+      }
+      await query("COMMIT");
+      return res.send({
+        success: CONSTANTS.SUCCESS_FLAG,
+        message: CONSTANTS.REQUEST_SUCCESS,
+      });
+    }
+
+    const insertKeys = keys.join(", ");
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+    const sqlInsert = `INSERT INTO users (${insertKeys}) VALUES (${placeholders}) RETURNING user_id`;
+
+    const insertResult = await query(sqlInsert, values);
+    const userId = insertResult.rows[0].user_id;
+
+    if (data.user_email) {
+      const to = data.user_email;
+      const subject = `${CONSTANTS.WELCOME_SUBJECT_PREFIX} - ${CONSTANTS.COMPANY_NAME}`;
+      const html = `Hello ${data.user_firstname},<br/>${CONSTANTS.ACCOUNT_SUCCESSFULLY_CREATED} on ${CONSTANTS.COMPANY_NAME}`;
+      await functions.sentAnEmail(to, subject, "", html);
+    }
+
+    await query("COMMIT");
+
+    return res.send({
+      success: CONSTANTS.SUCCESS_FLAG,
+      message: CONSTANTS.REQUEST_SUCCESS,
+      data: { user_id: userId },
+    });
+
+  } catch (error) {
+    await query("ROLLBACK");
+    console.error("Transaction Error:", error);
+    if (error.code === "23505") {
+      return res.send({
+        success: CONSTANTS.FAIL_FLAG,
+        message: CONSTANTS.EMAIL_EXISTS,
+      });
+    }
+    return res.send({
+      success: CONSTANTS.FAIL_FLAG,
+      message: error.message,
+    });
+  }
+});
+
 /********************* User Modules Over *********************/
 
 /******************** Meta Details Start ***********/

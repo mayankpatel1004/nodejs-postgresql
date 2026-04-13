@@ -49,6 +49,18 @@ module.exports = {
       });
       return formattedQuery;
     },
+    displayStatus() {
+      return [
+        {
+          ID: "Y",
+          NAME: "Active",
+        },
+        {
+          ID: "N",
+          NAME: "Inactive",
+        },
+      ];
+    },
     sanitize(str) {
       return (str || "").replace(/'/g, "''"); // Double up single quotes
     },
@@ -234,6 +246,17 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       (match, p1, p2, p3) => (p2 === "&" || p2 === "?" ? p1 + p3 : match),
     );
     return updatedSql;
+  },
+  getAllRoles: async function () {
+    try {
+      const sql = `SELECT role_id AS "ID",role_title AS "NAME" FROM role WHERE deleted_status = 'N' ORDER BY role_id ASC`;
+      const result1 = await query(sql);
+      const result = result1.rows;
+      return result;
+    } catch (error) {
+      console.error("Error in getAllRoles:", error);
+      throw error;
+    }
   },
   async sentAnEmail(to, subject, text, htmlContent) {
     const header_html = `<html lang='en'> <head> <meta charset='UTF-8' /> <meta name='viewport' content='width=device-width, initial-scale=1' /> <title>Welcome Email</title> </head> <body style='font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;'> <div style='max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;'> <div style='background-color: #4a90e2; color: #ffffff; padding: 25px; text-align: center; font-size: 24px; font-weight: 700;'> Welcome to Our Platform! </div> `;
