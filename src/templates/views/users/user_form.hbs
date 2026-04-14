@@ -84,11 +84,9 @@
     function validateForm(event){
         let is_error = 0;
         $('[required]').each(function(index, element) {
-            console.log(" elementid= ",element.id," value=",element.value);
             if(element.value == ''){
                 $("#form_error").html(element.title+" should not blank.");
                 is_error = 1;
-                console.log(element.title+" should not blank.");
             }
         });
         if(is_error == 0){

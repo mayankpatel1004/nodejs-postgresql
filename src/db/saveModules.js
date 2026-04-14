@@ -282,7 +282,6 @@ const queries = {
         try {
             await query("BEGIN");
             let data = req.body;
-            console.log("dataaaaaaaaaaa",data);
             if (data.item_section_id == 0 && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
                 data = await functions.addUserDataToRequest(req.headers.authorization,data);
                 data.section_alias = await functions.get_item_alias("item_section","section_alias",data.section_title);
@@ -329,7 +328,6 @@ const queries = {
                 const insertResult = await query(sqlSave, values);
                 const insertedId = insertResult.rows[0].item_section_id;
                 if(insertedId > 0){
-                    console.log("insertedIdinsertedIdinsertedId",insertedId);
                     let section_alias = functions.getTitleAlias(data.section_title);
                     
                     const aliasCheckSql = `SELECT section_alias FROM item_section WHERE section_alias = $1`;
