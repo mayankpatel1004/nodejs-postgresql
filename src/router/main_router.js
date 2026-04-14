@@ -32,6 +32,7 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
   },
 });
+
 const uploads = multer({ storage });
 const sectionImageUpload = uploads.fields([{ name: "attachment1", }]);
 const itemImageUpload = uploads.fields([{ name: "attachment1" }, { name: "attachment2" }]);
@@ -237,7 +238,6 @@ router.post("/password_token", async (req, res) => {
         data: [],
       });
     }
-
     if (result) {
       const user = result[0];
       if (parseInt(user.user_token) !== parseInt(token) || user.user_email !== email) {
