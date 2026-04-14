@@ -8,7 +8,7 @@ const consoleLog = require('../helpers/logger');
 const logQueryToFile = require('../helpers/log_query');
 
 const queries = {
-    saveItemForm: async (req,res,data) => {
+    saveItemForm: async (req, res, data) => {
         try {
             await query("BEGIN");
             if ((!data.item_id || Number(data.item_id) === 0) && req.headers.authorization?.startsWith("Bearer ")) {
@@ -98,7 +98,7 @@ const queries = {
             });
         }
     },
-    saveRoleForm: async (req,res, data) => {
+    saveRoleForm: async (req, res, data) => {
         try {
             await query("BEGIN");
             let roleId = data.edit_id;
@@ -177,7 +177,7 @@ const queries = {
             });
         }
     },
-    saveUserForm: async (req,res, data) => {
+    saveUserForm: async (req, res, data) => {
         try {
             await query("BEGIN");
             if (req.headers.authorization?.startsWith("Bearer ")) {
@@ -193,8 +193,8 @@ const queries = {
                 if (checkResult.rows.length > 0) {
                     await query("ROLLBACK");
                     return res.send({
-                    success: CONSTANTS.FAIL_FLAG,
-                    message: CONSTANTS.EMAIL_EXISTS,
+                        success: CONSTANTS.FAIL_FLAG,
+                        message: CONSTANTS.EMAIL_EXISTS,
                     });
                 }
             }
@@ -225,8 +225,8 @@ const queries = {
                 if (updateResult.rowCount === 0) {
                     await query("ROLLBACK");
                     return res.send({
-                    success: CONSTANTS.FAIL_FLAG,
-                    message: CONSTANTS.DATA_NOT_FOUND,
+                        success: CONSTANTS.FAIL_FLAG,
+                        message: CONSTANTS.DATA_NOT_FOUND,
                     });
                 }
                 await query("COMMIT");
@@ -251,30 +251,30 @@ const queries = {
             }
 
             await query("COMMIT");
-            if(parseInt(userId) > 0){
+            if (parseInt(userId) > 0) {
                 return res.send({
-                success: CONSTANTS.SUCCESS_FLAG,
-                message: CONSTANTS.REQUEST_SUCCESS,
-                data: { user_id: userId },
+                    success: CONSTANTS.SUCCESS_FLAG,
+                    message: CONSTANTS.REQUEST_SUCCESS,
+                    data: { user_id: userId },
                 });
             } else {
                 return res.send({
-                success: CONSTANTS.FAIL_FLAG,
-                message: CONSTANTS.REQUEST_FAIL
+                    success: CONSTANTS.FAIL_FLAG,
+                    message: CONSTANTS.REQUEST_FAIL
                 });
             }
         } catch (error) {
             await query("ROLLBACK");
             console.error("Transaction Error:", error);
             if (error.code === "23505") {
-            return res.send({
-                success: CONSTANTS.FAIL_FLAG,
-                message: CONSTANTS.EMAIL_EXISTS,
-            });
+                return res.send({
+                    success: CONSTANTS.FAIL_FLAG,
+                    message: CONSTANTS.EMAIL_EXISTS,
+                });
             }
             return res.send({
-            success: CONSTANTS.FAIL_FLAG,
-            message: error.message,
+                success: CONSTANTS.FAIL_FLAG,
+                message: error.message,
             });
         }
     }
