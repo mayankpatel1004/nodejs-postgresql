@@ -221,6 +221,12 @@ async addUserDataToRequest(headers, data) {
     if (decoded) {
       return {
         ...data,
+        login_id: decoded.user_id,
+        login_name : decoded.login_name,
+        user_name : decoded.user_name,
+        user_email : decoded.user_email,
+        is_web: decoded.web_or_app,
+        role_id: decoded.user_role_id,
         created_by: decoded.user_id,
         created_by_name: `${decoded.login_name || ""}`.trim(),
         created_by_role: decoded.user_role_id,

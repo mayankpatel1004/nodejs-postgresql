@@ -5,40 +5,37 @@ const functions = require('../helpers/functions');
 
 exports.attachCommonData = async (req, res, next) => {
   try {
-    // ✅ Check token first (avoid unnecessary execution)
     if (!req.cookies.jwt) {
       return res.redirect('/login');
     }
 
-    // ✅ Verify JWT
-    const decoded = await promisify(jwt.verify)(
-      req.cookies.jwt,
-      process.env.JWT_SECRET
-    );
-
-    // ✅ Run independent async calls in parallel (performance boost 🚀)
+    let decoded = '';
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      decoded = await functions.addUserDataToRequest(req.headers.authorization, []);
+    } else {
+      decoded = await promisify(jwt.verify)(req.cookies.jwt,process.env.JWT_SECRET);
+    }
+    
     const [sidebarMenu, metaDetails] = await Promise.all([
       functions.getSidebarMenu(req, decoded.user_role_id),
       functions.getMetaDetails(req, req.originalUrl)
     ]);
 
-    // ✅ Dependent call (needs meta_id)
-    const roleAccess = await functions.getRoleAccess(
-      req,
-      decoded.user_role_id,
-      metaDetails[0].meta_id
-    );
+    const roleAccess = await functions.getRoleAccess(req,decoded.user_role_id,metaDetails[0].meta_id);
 
-    // ✅ Attach everything to req (clean access later)
     req.user = decoded;
     req.commonData = {
-      sidebarMenu,
-      roleAccess,
       page_title: metaDetails[0].page_title,
       meta_title: metaDetails[0].meta_title,
       meta_description: metaDetails[0].meta_description,
       login_id: decoded.user_id,
+      login_name : decoded.login_name,
+      user_name : decoded.user_name,
+      user_email : decoded.user_email,
+      is_web: decoded.web_or_app,
       role_id: decoded.user_role_id,
+      sidebarMenu,
+      roleAccess,
       partialsDir: [path.join(__dirname, '../views/partials')]
     };
 

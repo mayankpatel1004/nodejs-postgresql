@@ -815,6 +815,7 @@ router.get("/item_section", attachCommonData, async (req, res) => {
 });
 
 router.post("/item_section", attachCommonData, async (req, res) => {
+  
   let searchKeywordString = "";
   let start = 1;
   let data = req.body;
