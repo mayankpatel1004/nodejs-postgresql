@@ -49,6 +49,40 @@ module.exports = {
       });
       return formattedQuery;
     },
+    get_item_alias: async (table_name, column_name, title) => {
+      try {
+        const a = "àáäâãèéëêìíïîòóöôùúüûñçßÿœæŕśńṕẃǵǹḿǘẍźḧ·/_,:;'";
+        const b = "aaaaaeeeeiiiioooouuuuncsyoarsnpwgnmuxzh------";
+        const p = new RegExp(a.split("").join("|"), "g");
+        let title_alias = title
+          .toString()
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(p, (c) => b.charAt(a.indexOf(c)))
+          .replace(/&/g, "-and-")
+          .replace(/[^\w\-]+/g, "")
+          .replace(/\-\-+/g, "-")
+          .replace(/^-+/, "")
+          .replace(/-+$/, "");
+        if (
+          !/^[a-zA-Z0-9_]+$/.test(table_name) ||
+          !/^[a-zA-Z0-9_]+$/.test(column_name)
+        ) {
+          throw new Error("Invalid table or column name");
+        }
+        const sqlCheckAlias = `SELECT ${column_name} FROM ${table_name} WHERE ${column_name} = '${title_alias}' LIMIT 1`;
+        const results1 = await query(sqlCheckAlias);
+        const results = results1.rows;
+        if (results.length > 0) {
+          const last5 = Date.now().toString().slice(-5);
+          return `${title_alias}-${Number(last5)}`;
+        }
+        return title_alias;
+      } catch (error) {
+        console.error("Error in get_item_alias:", error);
+        throw error;
+      }
+    },
     displayStatus() {
       return [
         {
@@ -257,6 +291,62 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       console.error("Error in getAllRoles:", error);
       throw error;
     }
+  },
+  getBlogCategory: async function (item_type) {
+    try {
+      const sql = `SELECT item_section_id AS "ID", section_title AS "NAME" FROM item_section WHERE item_type = $1 AND deleted_status = 'N' ORDER BY item_section_id ASC`;
+      const result1 = await query(sql, [item_type]);
+      const result = result1.rows;
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  },
+  itemTypes() {
+    return [
+      {
+        ID: "blog",
+        NAME: "Blog",
+      },
+      {
+        ID: "default",
+        NAME: "Default",
+      },
+      {
+        ID: "page",
+        NAME: "Page",
+      },
+    ];
+  },
+  getItemsMaxNo: async function (req, item_type = "page") {
+    try {
+      const sql = `SELECT MAX(display_order) AS display_order FROM items WHERE item_type = $1`;
+      const results1 = await query(sql, [item_type]);
+      const results = results1.rows;
+      const maxValue = results[0]?.display_order;
+      return maxValue ? parseInt(maxValue) + 1 : 1;
+    } catch (error) {
+      console.error("Error in getItemsMaxNo:", error);
+      throw error;
+    }
+  },
+  getTitleAlias(title, options = {}) {
+    const { separator = "-", lowerCase = true, strict = true } = options;
+    let alias = title;
+    if (lowerCase) {
+      alias = alias.toLowerCase();
+    }
+    alias = alias
+      .replace(/\s+/g, separator)
+      .replace(/[^\w\-]+/g, "")
+      .replace(new RegExp(`\\${separator}+`, "g"), separator)
+      .replace(new RegExp(`^\\${separator}+`), "")
+      .replace(new RegExp(`\\${separator}+$`), "");
+
+    if (strict) {
+      alias = alias.replace(/[^a-z0-9\-]/g, "");
+    }
+    return alias;
   },
   async sentAnEmail(to, subject, text, htmlContent) {
     const header_html = `<html lang='en'> <head> <meta charset='UTF-8' /> <meta name='viewport' content='width=device-width, initial-scale=1' /> <title>Welcome Email</title> </head> <body style='font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;'> <div style='max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;'> <div style='background-color: #4a90e2; color: #ffffff; padding: 25px; text-align: center; font-size: 24px; font-weight: 700;'> Welcome to Our Platform! </div> `;
