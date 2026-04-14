@@ -318,6 +318,22 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       },
     ];
   },
+  itemSectionTypes() {
+    return [
+      {
+        ID: "blog",
+        NAME: "Blog",
+      },
+      {
+        ID: "default",
+        NAME: "Default",
+      },
+      {
+        ID: "blog-category",
+        NAME: "Category",
+      },
+    ];
+  },
   getItemsMaxNo: async function (req, item_type = "page") {
     try {
       const sql = `SELECT MAX(display_order) AS display_order FROM items WHERE item_type = $1`;
@@ -327,6 +343,18 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       return maxValue ? parseInt(maxValue) + 1 : 1;
     } catch (error) {
       console.error("Error in getItemsMaxNo:", error);
+      throw error;
+    }
+  },
+  getSectionMaxNo: async function (req, item_type = "page") {
+    try {
+      const sql = `SELECT MAX(display_order) AS display_order FROM item_section WHERE item_type = $1`;
+      const results1 = await query(sql, [item_type]);
+      const results = results1.rows;
+      const maxValue = results[0]?.display_order;
+      return maxValue ? parseInt(maxValue) + 1 : 1;
+    } catch (error) {
+      console.error("Error in getSectionMaxNo:", error);
       throw error;
     }
   },

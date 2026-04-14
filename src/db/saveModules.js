@@ -277,6 +277,88 @@ const queries = {
                 message: error.message,
             });
         }
-    }
+    },
+    saveItemSectionForm: async (req,res,daa) => {
+        try {
+            await query("BEGIN");
+            let data = req.body;
+            console.log("dataaaaaaaaaaa",data);
+            if (data.item_section_id == 0 && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+                data = await functions.addUserDataToRequest(req.headers.authorization,data);
+                data.section_alias = await functions.get_item_alias("item_section","section_alias",data.section_title);
+            }
+
+            if (req.files?.attachment1?.length) {
+                data.attachment1 = req.files.attachment1[0].filename;
+            }
+
+            const keys = [];
+            const values = [];
+
+            for (const [key, value] of Object.entries(data)) {
+                if (key === "item_section_id") continue;
+                    keys.push(key);
+                if (key.includes("_at") && typeof value === "string") {
+                    values.push(new Date(value));
+                } else {
+                    values.push(value);
+                }
+            }
+
+            let sqlSave = "";
+            let params = [];
+
+            if (data.item_section_id && Number(data.item_section_id) > 0) {
+                const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
+
+                sqlSave = `UPDATE item_section SET ${setClause} WHERE item_section_id = $${keys.length + 1}`;
+                params = [...values, data.item_section_id];
+                consoleLog(functions.printQuery(sqlSave, params));
+                await query(sqlSave, params);
+                await query("COMMIT");
+                res.send({
+                    success: CONSTANTS.SUCCESS_FLAG,
+                    message: CONSTANTS.REQUEST_SUCCESS,
+                    data: { item_section_id: data.item_section_id },
+                });
+            } else {
+                const insertKeys = keys.join(", ");
+                const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+                sqlSave = `INSERT INTO item_section (${insertKeys}) VALUES (${placeholders}) RETURNING item_section_id`;
+                consoleLog(functions.printQuery(sqlSave, placeholders));
+                const insertResult = await query(sqlSave, values);
+                const insertedId = insertResult.rows[0].item_section_id;
+                if(insertedId > 0){
+                    console.log("insertedIdinsertedIdinsertedId",insertedId);
+                    let section_alias = functions.getTitleAlias(data.section_title);
+                    
+                    const aliasCheckSql = `SELECT section_alias FROM item_section WHERE section_alias = $1`;
+                    consoleLog(functions.printQuery(aliasCheckSql, [section_alias]));
+                    const aliasCheckResults = await query(aliasCheckSql, [section_alias]);
+
+                    if (aliasCheckResults.rows.length > 0) {
+                        section_alias += "-" + Math.floor(Date.now() / 1000);
+                    }
+
+                    const aliasUpdateSql = `UPDATE item_section SET section_alias = $1 WHERE item_section_id = $2`;
+                    consoleLog(functions.printQuery(aliasUpdateSql, [section_alias, insertedId]));
+                    await query(aliasUpdateSql, [section_alias, insertedId]);
+                    await query("COMMIT");
+                    res.send({
+                        success: CONSTANTS.SUCCESS_FLAG,
+                        message: CONSTANTS.REQUEST_SUCCESS,
+                        data: { item_section_id: insertedId, section_alias },
+                    });
+                }
+            }
+        } catch (error) {
+            await query("ROLLBACK");
+            console.error("Transaction Failed:", error);
+            res.status(500).send({
+            success: 0,
+            message: "Something went wrong. Transaction rolled back.",
+            });
+        }
+    },
 };
 module.exports = queries;

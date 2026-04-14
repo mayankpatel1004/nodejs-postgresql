@@ -913,6 +913,186 @@ router.post("/item_section", attachCommonData, async (req, res) => {
   }
 });
 
+router.get("/item_section_form", attachCommonData, async (req, res) => {
+  try {
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const arrFields = [];
+
+    let item_section_id = 0;
+    let section_title = "";
+    let section_alias = "";
+    let item_type = req.query.item_type || "page";
+    let description = "";
+    let attachment1 = "";
+    let user_id = decoded.user_id;
+    let display_order = 0;
+    let display_status = "";
+    let meta_title = "";
+    let meta_description = "";
+    let created_at = "";
+
+    if (req.query.edit_id && req.query.edit_id > 0) {
+      item_section_id = req.query.edit_id;
+
+      let sqlUser = `SELECT * FROM item_section WHERE item_section_id = $1`;
+      let results1 = await query(sqlUser, [item_section_id]);
+      let results = results1.rows;
+      if (results && results.length > 0) {
+        const row = results[0];
+        item_section_id = row.item_section_id;
+        section_title = row.section_title;
+        section_alias = row.section_alias;
+        item_type = row.item_type;
+        description = row.description;
+        attachment1 = row.attachment1;
+        user_id = row.user_id;
+        display_order = row.display_order;
+        display_status = row.display_status;
+        meta_title = row.meta_title;
+        meta_description = row.meta_description;
+        created_at = row.created_at;
+      }
+    } else {
+      display_order = await functions.getSectionMaxNo(req, item_type);
+    }
+
+    arrFields.push({
+      type: "text",
+      lbl: "Title",
+      nm: "section_title",
+      val: section_title,
+      ph: "",
+      req: "Y",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      lbl: "Item Description",
+      nm: "description",
+      val: description,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: item_type === "default" ? "file" : "hidden",
+      lbl: "Attachment",
+      nm: "attachment1",
+      val: attachment1,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: item_type === "default" ? "text" : "hidden",
+      lbl: "UserID",
+      nm: "user_id",
+      val: user_id,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: item_type === "default" ? "text" : "hidden",
+      lbl: "Sort Order",
+      nm: "display_order",
+      val: display_order,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: item_type === "default" ? "select" : "hidden",
+      lbl: "Item Section Type",
+      nm: "item_type",
+      val: item_type,
+      ph: "",
+      req: "N",
+      is_multiple: "N",
+      options: functions.itemSectionTypes(),
+      cls: "form-control js-example-basic-single formfields",
+    });
+
+    arrFields.push({
+      type: ["default", "blog-category"].includes(item_type) ? "select" : "hidden",
+      lbl: "Status",
+      nm: "display_status",
+      val: display_status,
+      ph: "",
+      req: "N",
+      is_multiple: "N",
+      options: functions.displayStatus(),
+      cls: "form-control js-example-basic-single formfields",
+    });
+
+    arrFields.push({
+      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      lbl: "Meta Title",
+      nm: "meta_title",
+      val: meta_title,
+      ph: "",
+      req: "Y",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      lbl: "Meta Description",
+      nm: "meta_description",
+      val: meta_description,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    arrFields.push({
+      type: item_type === "default" ? "hidden" : "hidden",
+      lbl: "Edit ID",
+      nm: "item_section_id",
+      val: item_section_id,
+      ph: "",
+      req: "N",
+      cls: "form-control formfields",
+    });
+
+    if (item_section_id == 0) {
+      arrFields.push({
+        type: "hidden",
+        lbl: "Created",
+        nm: "created_at",
+        val: moment().format("YYYY-MM-DD HH:mm:ss"),
+        ph: "",
+        req: "N",
+        cls: "form-control formfields",
+      });
+    }
+
+    let viewDirectory = path.join(__dirname, "../") + "templates/views/item_section/item_section_form";
+
+    const responseData = {
+      ...req.commonData,
+      fields: arrFields,
+      view_path: viewDirectory,
+      listUrl: functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
+      formUrl: functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
+      partialsDir: [path.join(__dirname, "views/partials")],
+    };
+    functions.renderData(req, res, responseData, viewDirectory,decoded);
+  } catch (error) {
+    console.error("Error loading item_section_form:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.post("/item_section_form", sectionImageUpload, async (req, res) => {
+  await saveModulesData.saveItemSectionForm(req,res,req.body);
+});
+
 /********************* Item Section Modules Over *********************/
 
 /********************* Roles Modules Start *********************/
