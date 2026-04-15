@@ -8,7 +8,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS items (
-          item_id SERIAL PRIMARY KEY,
+          item_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           item_title VARCHAR(255) DEFAULT NULL,
           item_alias VARCHAR(255) DEFAULT NULL,
@@ -49,7 +49,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS item_section (
-          item_section_id SERIAL PRIMARY KEY,
+          item_section_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           item_section_parent_id INT NOT NULL DEFAULT 0,
           section_title VARCHAR(255) DEFAULT NULL,
@@ -83,7 +83,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS item_section_relation (
-          item_section_relation_id SERIAL PRIMARY KEY,
+          item_section_relation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           item_id BIGINT NOT NULL DEFAULT 0,
           section_id BIGINT NOT NULL DEFAULT 0,
@@ -102,7 +102,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS meta_details (
-          meta_id SERIAL PRIMARY KEY,
+          meta_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           parent_id INT NOT NULL DEFAULT 0,
           end_points VARCHAR(255) DEFAULT NULL,
@@ -127,7 +127,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS role (
-          role_id SERIAL PRIMARY KEY,
+          role_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           role_title VARCHAR(255) DEFAULT NULL,
           item_alias VARCHAR(255) DEFAULT NULL,
@@ -156,7 +156,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS role_access (
-          role_access_id SERIAL PRIMARY KEY,
+          role_access_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           role_id INT DEFAULT 0,
           module_id INT DEFAULT 0,
@@ -169,8 +169,7 @@ async function migrate() {
           deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
           created_at TIMESTAMP DEFAULT NULL,
           updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-      `;
+        )`;
       await query(sqlQuery);
       console.log("✅ Table 'role_access' created successfully");
     } catch (err) {
@@ -181,7 +180,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS site_config (
-          config_id SERIAL PRIMARY KEY,
+          config_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           config_title VARCHAR(1024) DEFAULT NULL,
           config_name VARCHAR(1024) DEFAULT NULL,
@@ -215,7 +214,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS site_config_parent (
-          site_config_parent_id SERIAL PRIMARY KEY,
+          site_config_parent_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL,
           site_config_title VARCHAR(191) NOT NULL,
           display_order INT NOT NULL,
@@ -237,7 +236,7 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS users (
-          user_id SERIAL PRIMARY KEY,
+          user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           site_db VARCHAR(255) DEFAULT NULL,
           user_firstname VARCHAR(255) DEFAULT NULL,
@@ -284,7 +283,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS customers (
-          customer_id SERIAL PRIMARY KEY,
+          customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           cart_id_pk INT DEFAULT 0,
           cart_customer_id VARCHAR(255) DEFAULT NULL,
           customer_pin INT NOT NULL DEFAULT 0,
@@ -343,7 +342,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_cart (
-          cart_id SERIAL PRIMARY KEY,
+          cart_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           cart_customer_id VARCHAR(255) DEFAULT NULL,
           cart_sub_id INT NOT NULL DEFAULT 0,
           session_id VARCHAR(255) DEFAULT NULL,
@@ -423,7 +422,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_cart_product (
-          cart_product_id SERIAL PRIMARY KEY,
+          cart_product_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           cart_id INT NOT NULL DEFAULT 0,
           cart_sub_id INT NOT NULL DEFAULT 0,
           customer_id INT NOT NULL DEFAULT 0,
@@ -476,7 +475,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_cashback_credit_transaction (
-          cashbackcredit_transaction_id SERIAL PRIMARY KEY,
+          cashbackcredit_transaction_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           user_id INT NOT NULL DEFAULT 0,
           order_id INT DEFAULT 0,
           customer_id INT NOT NULL DEFAULT 0,
@@ -502,7 +501,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_cashback_transaction (
-          cashback_id SERIAL PRIMARY KEY,
+          cashback_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           customer_id INT NOT NULL DEFAULT 0,
           customer_name VARCHAR(255) DEFAULT NULL,
           customer_email VARCHAR(255) DEFAULT NULL,
@@ -534,7 +533,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_closeday (
-          closeday_id SERIAL PRIMARY KEY,
+          closeday_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           opening_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
           closing_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
           closing_time TIMESTAMP DEFAULT NULL,
@@ -558,7 +557,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_coupon (
-          coupon_id SERIAL PRIMARY KEY,
+          coupon_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           item_type VARCHAR(255) DEFAULT 'discount',
           coupon_code_type VARCHAR(255) NOT NULL DEFAULT 'alluser',
           specific_user_id INT NOT NULL DEFAULT 0,
@@ -605,7 +604,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order (
-          order_id SERIAL PRIMARY KEY,
+          order_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           order_id_unique VARCHAR(255) UNIQUE DEFAULT NULL,
           cart_id INT NOT NULL DEFAULT 0,
           cart_customer_id VARCHAR(255) DEFAULT NULL,
@@ -701,7 +700,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order_payment_details (
-          order_payment_details_id SERIAL PRIMARY KEY,
+          order_payment_details_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           order_id INT NOT NULL DEFAULT 0,
           order_status VARCHAR(255) DEFAULT NULL,
           order_key VARCHAR(255) DEFAULT NULL,
@@ -723,7 +722,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order_products (
-          order_product_id SERIAL PRIMARY KEY,
+          order_product_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           cart_id INT NOT NULL DEFAULT 0,
           order_id INT NOT NULL DEFAULT 0,
           order_status VARCHAR(255) DEFAULT NULL,
@@ -782,7 +781,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order_products_return (
-          products_return_id SERIAL PRIMARY KEY,
+          products_return_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           user_id INT NOT NULL DEFAULT 0,
           user_name VARCHAR(255) DEFAULT NULL,
           user_email VARCHAR(255) DEFAULT NULL,
@@ -830,7 +829,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order_products_return_logs (
-          products_return_id SERIAL PRIMARY KEY,
+          products_return_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           exchange_refund_primary_key INT NOT NULL DEFAULT 0,
           created_by INT NOT NULL DEFAULT 0,
           created_by_name VARCHAR(255) DEFAULT NULL,
@@ -880,7 +879,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_order_status (
-          order_status_id SERIAL PRIMARY KEY,
+          order_status_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           order_id INT NOT NULL,
           order_status VARCHAR(255) DEFAULT NULL,
           updated_status VARCHAR(255) DEFAULT NULL,
@@ -904,7 +903,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_products (
-          item_id SERIAL PRIMARY KEY,
+          item_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           user_id INT NOT NULL DEFAULT 0,
           pos_user VARCHAR(1) NOT NULL DEFAULT 'N',
           item_title VARCHAR(255) DEFAULT NULL,
@@ -983,7 +982,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_product_price (
-          product_price_id SERIAL PRIMARY KEY,
+          product_price_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           item_id INT NOT NULL DEFAULT 0,
           user_id INT NOT NULL DEFAULT 0,
           product_attribute_1 VARCHAR(255) DEFAULT NULL,
@@ -1022,7 +1021,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_product_price_log (
-          product_price_log_id SERIAL PRIMARY KEY,
+          product_price_log_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           product_price_id INT NOT NULL DEFAULT 0,
           item_id INT NOT NULL DEFAULT 0,
           item_title VARCHAR(255) DEFAULT NULL,
@@ -1058,7 +1057,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_product_reviews (
-          product_review_id SERIAL PRIMARY KEY,
+          product_review_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           item_id INT NOT NULL DEFAULT 0,
           item_alias VARCHAR(255) DEFAULT NULL,
           customer_id INT NOT NULL DEFAULT 0,
@@ -1091,7 +1090,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_product_specifications (
-          product_specification_id SERIAL PRIMARY KEY,
+          product_specification_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           item_id INT NOT NULL DEFAULT 0,
           item_alias VARCHAR(255) DEFAULT NULL,
           specification_title VARCHAR(255) DEFAULT NULL,
@@ -1117,7 +1116,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_search_terms (
-          search_terms_id SERIAL PRIMARY KEY,
+          search_terms_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           keyword VARCHAR(255) UNIQUE DEFAULT NULL,
           search_count INT NOT NULL DEFAULT 1,
           created_at TIMESTAMP DEFAULT NULL
@@ -1134,7 +1133,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_search_terms_logs (
-          search_terms_id SERIAL PRIMARY KEY,
+          search_terms_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           keyword VARCHAR(255) DEFAULT NULL,
           search_count INT NOT NULL DEFAULT 0,
           is_web VARCHAR(1) NOT NULL DEFAULT 'N',
@@ -1162,7 +1161,7 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS ec_wishlist (
-          wishlist_id SERIAL PRIMARY KEY,
+          wishlist_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           customer_id INT NOT NULL DEFAULT 0,
           item_id INT NOT NULL DEFAULT 0,
           product_price_id INT NOT NULL DEFAULT 0,

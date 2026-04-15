@@ -6,7 +6,7 @@ async function migrate() {
   try {
     // Table: items
     try {
-      let sqlQuery = `DROP DATABASE IF EXISTS Demonstration1`;
+      let sqlQuery = `DROP DATABASE IF EXISTS Demonstration`;
       await query(sqlQuery);
       console.log("✅ All Database dropped successfully");
     } catch (err) {

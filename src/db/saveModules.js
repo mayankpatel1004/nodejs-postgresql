@@ -12,7 +12,7 @@ const queries = {
         try {
             await query("BEGIN");
             if ((!data.item_id || Number(data.item_id) === 0) && req.headers.authorization?.startsWith("Bearer ")) {
-                data = await functions.addUserDataToRequest(req.headers.authorization, data);
+                //data = await functions.addUserDataToRequest(req.headers.authorization, data);
                 data.item_alias = await functions.get_item_alias("items", "item_alias", data.item_title);
             }
 
@@ -122,6 +122,7 @@ const queries = {
                 const insertKeys = keys.join(", ");
                 const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
                 const sqlInsert = `INSERT INTO ${CONSTANTS.TBL_ROLES} (${insertKeys}) VALUES (${placeholders}) RETURNING role_id`;
+                console.log(sqlInsert);
                 const result = await query(sqlInsert, values);
                 roleId = result.rows[0].role_id;
             }
@@ -170,7 +171,9 @@ const queries = {
                 });
             }
         } catch (error) {
+            console.log("catch");
             await query("ROLLBACK");
+            console.log("Error",error);
             res.status(500).send({
                 success: CONSTANTS.FAIL_FLAG,
                 message: CONSTANTS.REQUEST_FAIL
@@ -181,7 +184,7 @@ const queries = {
         try {
             await query("BEGIN");
             if (req.headers.authorization?.startsWith("Bearer ")) {
-                data = await functions.addUserDataToRequest(req.headers.authorization, data);
+                //data = await functions.addUserDataToRequest(req.headers.authorization, data);
             }
             if (req.files?.user_photo?.length) {
                 data.user_photo = req.files.user_photo[0].filename;
@@ -201,7 +204,7 @@ const queries = {
 
             const keys = [];
             const values = [];
-
+            console.log("dddddddddd",data);
             for (const [key, value] of Object.entries(data)) {
                 if (key === "edit_id") continue;
 
@@ -239,7 +242,7 @@ const queries = {
             const insertKeys = keys.join(", ");
             const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
             const sqlInsert = `INSERT INTO users (${insertKeys}) VALUES (${placeholders}) RETURNING user_id`;
-
+            console.log("sqlInsert",sqlInsert);
             const insertResult = await query(sqlInsert, values);
             const userId = insertResult.rows[0].user_id;
 
@@ -283,7 +286,7 @@ const queries = {
             await query("BEGIN");
             let data = req.body;
             if (data.item_section_id == 0 && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-                data = await functions.addUserDataToRequest(req.headers.authorization,data);
+                //data = await functions.addUserDataToRequest(req.headers.authorization,data);
                 data.section_alias = await functions.get_item_alias("item_section","section_alias",data.section_title);
             }
 
