@@ -1,8 +1,6 @@
-cd ~/Documents/Projects/TestingProjects/nodejspostgre/src/logs && rm -rf * && cd ~/Documents/Projects/TestingProjects/nodejspostgre/ && echo "" > src/log/logs_fail.txt && echo "" > src/log/logs_request.txt && echo "" > src/log/logs_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
+cd ~/Documents/Projects/TestingProjects/nodejspostgre/src/logs && rm -rf * && cd ~/Documents/Projects/TestingProjects/nodejspostgre/ && echo "" > src/log/logs_fail.txt && echo "" > src/log/logs_request.txt && echo "" > src/log/logs_select_query.sql && echo "" > src/log/logs_insert_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
 /Documents/Projects/TestingProjects/nodejspostgre
-
-cd /Documents/Projects/TestingProjects/nodejspostgre/src/logs && rm -rf * && echo "" > /opt/lampp/htdocs/emandi/src/log/logs_fail.txt && echo "" > /opt/lampp/htdocs/emandi/src/log/logs_request.txt && echo "" > /opt/lampp/htdocs/emandi/src/log/logs_query.sql && echo "" > /opt/lampp/htdocs/emandi/src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
 Steps to integrate 
 - Git Clone.
