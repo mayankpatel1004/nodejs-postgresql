@@ -1674,8 +1674,9 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       for (const [config_name, rawValue] of entries) {
         const sanitizedValue = functions.sanitize(rawValue);
         let sqlUpdate = updateQueries.updateConfigurations();
-        logQueryToFile(functions.printQuery(sqlUpdate));
-        await query(sqlUpdate, [sanitizedValue, config_name]);
+        const params = [sanitizedValue, config_name];
+        await query(sqlUpdate, params);
+        logQueryToFile(functions.printQuery(sqlUpdate,params));
       }
     }
     res.send({

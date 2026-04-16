@@ -36,18 +36,33 @@ module.exports = {
             return res.send(responseData);
         } 
     },
-    printQuery: (sql, params) => {
+    printQuery : (sql, params = []) => {
+      // Detect if SQL uses $n placeholders (e.g., $1, $2)
+      if (/\$\d+/.test(sql)) {
+        return sql.replace(/\$(\d+)/g, (match, num) => {
+          const idx = parseInt(num, 10) - 1;
+          const val = params[idx];
+          if (val === null || val === undefined) return 'NULL';
+          if (typeof val === 'number') return val;
+          if (val instanceof Date) {
+            return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
+          }
+          return `'${val.toString().replace(/'/g, "''")}'`;
+        });
+      }
+
+      // Fallback to ? placeholders
       let index = 0;
-      const formattedQuery = sql.replace(/\?/g, () => {
-        if (index >= params.length) return "?";
+      return sql.replace(/\?/g, () => {
+        if (index >= params.length) return '?';
         const val = params[index++];
-        if (val === null || val === undefined) return "NULL";
-        if (typeof val === "number") return val;
-        if (val instanceof Date)
-          return `'${val.toISOString().slice(0, 19).replace("T", " ")}'`;
+        if (val === null || val === undefined) return 'NULL';
+        if (typeof val === 'number') return val;
+        if (val instanceof Date) {
+          return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
+        }
         return `'${val.toString().replace(/'/g, "''")}'`;
       });
-      return formattedQuery;
     },
     get_item_alias: async (table_name, column_name, title) => {
       try {
