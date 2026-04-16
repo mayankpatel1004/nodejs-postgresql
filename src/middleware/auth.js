@@ -6,17 +6,13 @@ const { CONSTANTS } = require("../helpers/constants");
 
 exports.attachCommonData = async (req, res, next) => {
   try {
-    if (!req.cookies.jwt) {
-      return res.redirect('/login');
-    }
-    //console.log("req.headers.authorization",req.headers.authorization);
     let decoded = '';
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       decoded = await functions.addUserDataToRequest(req.headers.authorization, []);
     } else {
       decoded = await promisify(jwt.verify)(req.cookies.jwt,process.env.JWT_SECRET);
     }
-    if(decoded && parseInt(decoded.login_id) > 0){
+    if(decoded && (parseInt(decoded.login_id) > 0 || parseInt(decoded.user_id) > 0)){
       const [sidebarMenu, metaDetails] = await Promise.all([
         functions.getSidebarMenu(req, decoded.user_role_id),
         functions.getMetaDetails(req, req.originalUrl)
@@ -39,7 +35,6 @@ exports.attachCommonData = async (req, res, next) => {
         roleAccess,
         partialsDir: [path.join(__dirname, '../views/partials')]
       };
-
       next();
     } else {
       res.send({
