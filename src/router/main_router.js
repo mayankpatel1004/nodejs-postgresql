@@ -348,7 +348,6 @@ router.get('/database_table', attachCommonData, async (req, res) => {
       let selectedTableStructure = [];
       let total_columns = 0;
       let sqlQuery = queries.getAllTables();
-      logQueryToFile(functions.printQuery(sqlQuery));
       const database_tables_result = await query(sqlQuery);
 
       if (req.query && req.query.tableName) {
