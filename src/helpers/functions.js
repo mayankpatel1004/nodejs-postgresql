@@ -218,6 +218,7 @@ async addUserDataToRequest(headers, data) {
     }
     const token = headers.split(" ")[1];
     const decoded = jwt.decode(token);
+    
     if (decoded) {
       return {
         ...data,
