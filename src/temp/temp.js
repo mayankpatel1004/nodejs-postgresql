@@ -38,7 +38,7 @@ let sqlUpdate = updateQueries.updateConfigurations();
 const params = [sanitizedValue, config_name];
 
 // Log the fully substituted query
-logQueryToFile(printQuery(sqlUpdate, params));
+logSelectQueryToFile(printQuery(sqlUpdate, params));
 
 // Execute the parameterized query (safe)
 await query(sqlUpdate, params);

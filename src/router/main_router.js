@@ -15,7 +15,7 @@ const multer = require("multer");
 const functions = require("../helpers/functions");
 const logToFile = require('../helpers/logs');
 const consoleLog = require('../helpers/logger');
-const logQueryToFile = require('../helpers/log_query');
+const logSelectQueryToFile = require('../helpers/log_query');
 const { createObjectCsvStringifier } = require("csv-writer");
 const { attachCommonData } = require("../middleware/auth");
 const { CONSTANTS } = require("../helpers/constants");
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   let allow_login = 0;
   try {
     let sqlQuery = queries.getLoginQuery(data.user_name);
-    logQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(functions.printQuery(sqlQuery));
     const resultColumns = await query(sqlQuery);
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
@@ -148,7 +148,7 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { user_email } = req.body;
     let sqlQuery = queries.getForgotPasswordQuery(user_email);
-    logQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(functions.printQuery(sqlQuery));
     const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {
       return res.send({
@@ -175,7 +175,7 @@ router.post("/forgot-password", async (req, res) => {
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
     let sqlUpdate = updateQueries.updateUserToken(user_token, user.user_id);
-    logQueryToFile(functions.printQuery(sqlUpdate));
+    logSelectQueryToFile(functions.printQuery(sqlUpdate));
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
       return res.send({
@@ -228,7 +228,7 @@ router.post("/password_token", async (req, res) => {
   try {
     const { email, token } = req.body;
     let sqlQuery = queries.getUserToken(email, token);
-    logQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(functions.printQuery(sqlQuery));
     const result1 = await query(sqlQuery);
     let result = result1.rows;
     if (!result || result.length === 0) {
@@ -360,7 +360,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
           filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
         }
         let sqlQuery = queries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by);
-        logQueryToFile(functions.printQuery(sqlQuery));
+        logSelectQueryToFile(functions.printQuery(sqlQuery));
         const resultColumns = await query(sqlQuery);
         selectedTableRows = resultColumns.rows;
 
@@ -1646,7 +1646,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!metaId) continue;
 
       let sqlQuery = updateQueries.updateMetaDetails(column);
-      logQueryToFile(functions.printQuery(sqlQuery));
+      logSelectQueryToFile(functions.printQuery(sqlQuery));
       const params = [data[key], metaId];
       await query(sqlQuery, params);
     }
@@ -1676,7 +1676,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
         let sqlUpdate = updateQueries.updateConfigurations();
         const params = [sanitizedValue, config_name];
         await query(sqlUpdate, params);
-        logQueryToFile(functions.printQuery(sqlUpdate,params));
+        logSelectQueryToFile(functions.printQuery(sqlUpdate,params));
       }
     }
     res.send({

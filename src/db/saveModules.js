@@ -5,7 +5,7 @@ const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const logToFile = require('../helpers/logs');
 const consoleLog = require('../helpers/logger');
-const logQueryToFile = require('../helpers/log_query');
+const logOnsertQueryToFile = require('../helpers/log_insert_query');
 
 const queries = {
     saveItemForm: async (req, res, data) => {
@@ -37,6 +37,7 @@ const queries = {
                 const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
                 const sqlUpdate = `UPDATE items SET ${setClause} WHERE item_id = $${keys.length + 1}`;
                 const params = [...values, itemId];
+                logOnsertQueryToFile(functions.printQuery(sqlUpdate,params));
                 await query(sqlUpdate, params);
 
                 if (itemId > 0 && data.item_sections_id) {
@@ -52,7 +53,7 @@ const queries = {
 
                 const sqlInsert = `INSERT INTO items (${insertKeys}) VALUES (${placeholders}) RETURNING item_id`;
                 const result = await query(sqlInsert, values);
-                consoleLog(functions.printQuery(sqlInsert, values));
+                logOnsertQueryToFile(functions.printQuery(sqlInsert,values));
                 itemId = result.rows[0].item_id;
                 if (parseInt(itemId) > 0) {
                     let item_alias = functions.getTitleAlias(data.item_title);

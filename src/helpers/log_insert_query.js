@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-function logSelectQueryToFile(message, flag, url = '') {
+function logInsertQueryToFile(message, flag, url = '') {
   if(process.env.ENABLE_CONSOLE_LOGS == 'Y'){
     let filePath = '';
-    filePath = path.join(__dirname, '../../src/log/logs_select_query.sql');
+    filePath = path.join(__dirname, '../../src/log/logs_insert_query.sql');
     const separator = '----------------------------------------';
     fs.appendFileSync(
       filePath,
@@ -13,4 +13,4 @@ function logSelectQueryToFile(message, flag, url = '') {
   }
 }
 
-module.exports = logSelectQueryToFile;
+module.exports = logInsertQueryToFile;
