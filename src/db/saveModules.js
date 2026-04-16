@@ -5,7 +5,7 @@ const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const logToFile = require('../helpers/logs');
 const consoleLog = require('../helpers/logger');
-const logOnsertQueryToFile = require('../helpers/log_insert_query');
+const logInsertQueryToFile = require('../helpers/log_insert_query');
 
 const queries = {
     saveItemForm: async (req, res, data) => {
@@ -37,41 +37,55 @@ const queries = {
                 const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
                 const sqlUpdate = `UPDATE items SET ${setClause} WHERE item_id = $${keys.length + 1}`;
                 const params = [...values, itemId];
-                logOnsertQueryToFile(functions.printQuery(sqlUpdate,params));
+                logInsertQueryToFile(functions.printQuery(sqlUpdate,params));
                 await query(sqlUpdate, params);
 
                 if (itemId > 0 && data.item_sections_id) {
                     const sections = data.item_sections_id.split(",").map(Number).filter(Boolean);
-                    await query(`DELETE FROM item_section_relation WHERE item_id = $1`, [itemId]);
+                    let sqlDelete = `DELETE FROM item_section_relation WHERE item_id = $1`;
+                    let params = [itemId]
+                    await query(sqlDelete,params);
+                    logInsertQueryToFile(functions.printQuery(sqlDelete,params));
                     for (const sectionId of sections) {
-                        await query(`INSERT INTO item_section_relation (item_id, section_id) VALUES ($1, $2)`, [itemId, sectionId]);
+                        let sqlInsert = `INSERT INTO item_section_relation (item_id, section_id) VALUES ($1, $2)`;
+                        let params = [itemId, sectionId];
+                        logInsertQueryToFile(functions.printQuery(sqlInsert,params));
+                        await query(sqlInsert, params);
                     }
                 }
             } else {
                 const insertKeys = keys.join(", ");
                 const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
-
                 const sqlInsert = `INSERT INTO items (${insertKeys}) VALUES (${placeholders}) RETURNING item_id`;
                 const result = await query(sqlInsert, values);
-                logOnsertQueryToFile(functions.printQuery(sqlInsert,values));
+                logInsertQueryToFile(functions.printQuery(sqlInsert,values));
                 itemId = result.rows[0].item_id;
                 if (parseInt(itemId) > 0) {
+                    logInsertQueryToFile(`item Insert ID = ${itemId}`);
                     let item_alias = functions.getTitleAlias(data.item_title);
                     const aliasCheckSql = `SELECT item_alias FROM items WHERE item_alias = $1`;
-                    const aliasCheckResult = await query(aliasCheckSql, [item_alias]);
+                    let params = [item_alias];
+                    const aliasCheckResult = await query(aliasCheckSql,params);
+                    logInsertQueryToFile(functions.printQuery(aliasCheckSql,params));
                     if (aliasCheckResult.rows.length > 0) {
                         item_alias += "-" + Math.floor(Date.now() / 1000);
                     }
                     const aliasUpdateSql = `UPDATE items SET item_alias = $1 WHERE item_id = $2`;
-                    await query(aliasUpdateSql, [item_alias, itemId]);
+                    let params1 = [item_alias, itemId]
+                    await query(aliasUpdateSql, params1);
+                    logInsertQueryToFile(functions.printQuery(aliasUpdateSql,params1));
                     if (data.item_sections_id) {
                         const sections = data.item_sections_id.split(",").map(Number).filter(Boolean);
-                        let sqlDelete = `DELETE FROM item_section_relation WHERE item_id = ${itemId}`;
-                        let queryDelete = await query(sqlDelete);
+                        let sqlDelete = `DELETE FROM item_section_relation WHERE item_id = $1`;
+                        let params2 = [itemId];
+                        let queryDelete = await query(sqlDelete,params2);
+                        logInsertQueryToFile(functions.printQuery(sqlDelete,params2));
                         if (queryDelete) {
                             for (const sectionId of sections) {
-                                let sqlInsertRelation = `INSERT INTO item_section_relation (item_id, section_id) VALUES (${itemId}, ${sectionId})`;
-                                await query(sqlInsertRelation);
+                                let sqlInsertRelation = `INSERT INTO item_section_relation (item_id, section_id) VALUES ($1,$2)`;
+                                let params3 = [itemId,sectionId]
+                                await query(sqlInsertRelation,params3);
+                                logInsertQueryToFile(functions.printQuery(sqlInsertRelation,params3));
                             }
                         }
                     }
@@ -117,19 +131,23 @@ const queries = {
                 const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
                 const sqlUpdate = `UPDATE ${CONSTANTS.TBL_ROLES} SET ${setClause} WHERE role_id = $${keys.length + 1}`;
                 const params = [...values, roleId];
+                logInsertQueryToFile(functions.printQuery(sqlUpdate,params));
                 await query(sqlUpdate, params);
             }
             else {
                 const insertKeys = keys.join(", ");
                 const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
                 const sqlInsert = `INSERT INTO ${CONSTANTS.TBL_ROLES} (${insertKeys}) VALUES (${placeholders}) RETURNING role_id`;
-                console.log(sqlInsert);
                 const result = await query(sqlInsert, values);
+                logInsertQueryToFile(functions.printQuery(sqlInsert,values));
                 roleId = result.rows[0].role_id;
+                logInsertQueryToFile(`role Insert ID = ${roleId}`);
             }
 
-            const sqlDelete = `DELETE FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${roleId}`;
-            await query(sqlDelete);
+            const sqlDelete = `DELETE FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = $1`;
+            let params = [roleId];
+            await query(sqlDelete,params);
+            logInsertQueryToFile(functions.printQuery(sqlDelete,params));
 
             if (Array.isArray(data.module_id) && Array.isArray(data.view) && data.module_id.length === data.view.length) {
                 const inserts = [];
@@ -156,6 +174,7 @@ const queries = {
                     const flatValues = inserts.flat();
                     const sqlBulk = `INSERT INTO ${CONSTANTS.TBL_ROLE_ACCESS} (role_id, module_id, grant_view, grant_add, grant_edit, grant_delete, display_status, display_order, created_at) VALUES ${valueStrings}`;
                     await query(sqlBulk, flatValues);
+                    logInsertQueryToFile(functions.printQuery(sqlBulk,flatValues));
                 }
             }
             await query("COMMIT");
@@ -192,7 +211,9 @@ const queries = {
             }
             if ((!data.edit_id || Number(data.edit_id) === 0) && CONSTANTS.USER_EMAIL_UNIQUE === "Y") {
                 const sqlCheck = `SELECT user_id FROM users WHERE user_email = $1 LIMIT 1`;
-                const checkResult = await query(sqlCheck, [data.user_email]);
+                let params = [data.user_email];
+                const checkResult = await query(sqlCheck, params);
+                logInsertQueryToFile(functions.printQuery(sqlCheck,params));
 
                 if (checkResult.rows.length > 0) {
                     await query("ROLLBACK");
@@ -205,7 +226,6 @@ const queries = {
 
             const keys = [];
             const values = [];
-            console.log("dddddddddd",data);
             for (const [key, value] of Object.entries(data)) {
                 if (key === "edit_id") continue;
 
@@ -226,6 +246,7 @@ const queries = {
                 const sqlUpdate = `UPDATE users SET ${setClause} WHERE user_id = $${keys.length + 1}`;
                 const params = [...values, data.edit_id];
                 const updateResult = await query(sqlUpdate, params);
+                logInsertQueryToFile(functions.printQuery(sqlUpdate,params));
                 if (updateResult.rowCount === 0) {
                     await query("ROLLBACK");
                     return res.send({
@@ -243,10 +264,10 @@ const queries = {
             const insertKeys = keys.join(", ");
             const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
             const sqlInsert = `INSERT INTO users (${insertKeys}) VALUES (${placeholders}) RETURNING user_id`;
-            console.log("sqlInsert",sqlInsert);
             const insertResult = await query(sqlInsert, values);
+            logInsertQueryToFile(functions.printQuery(sqlInsert,values));
             const userId = insertResult.rows[0].user_id;
-
+            logInsertQueryToFile(`user Insert ID = ${userId}`);
             if (data.user_email) {
                 const to = data.user_email;
                 const subject = `${CONSTANTS.WELCOME_SUBJECT_PREFIX} - ${CONSTANTS.COMPANY_NAME}`;
@@ -316,8 +337,8 @@ const queries = {
 
                 sqlSave = `UPDATE item_section SET ${setClause} WHERE item_section_id = $${keys.length + 1}`;
                 params = [...values, data.item_section_id];
-                consoleLog(functions.printQuery(sqlSave, params));
                 await query(sqlSave, params);
+                logInsertQueryToFile(functions.printQuery(sqlSave,params));
                 await query("COMMIT");
                 res.send({
                     success: CONSTANTS.SUCCESS_FLAG,
@@ -328,23 +349,23 @@ const queries = {
                 const insertKeys = keys.join(", ");
                 const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
                 sqlSave = `INSERT INTO item_section (${insertKeys}) VALUES (${placeholders}) RETURNING item_section_id`;
-                consoleLog(functions.printQuery(sqlSave, placeholders));
                 const insertResult = await query(sqlSave, values);
+                logInsertQueryToFile(functions.printQuery(sqlSave,values));
                 const insertedId = insertResult.rows[0].item_section_id;
+                logInsertQueryToFile(`Section Insert ID = ${insertedId}`);
                 if(insertedId > 0){
                     let section_alias = functions.getTitleAlias(data.section_title);
-                    
                     const aliasCheckSql = `SELECT section_alias FROM item_section WHERE section_alias = $1`;
-                    consoleLog(functions.printQuery(aliasCheckSql, [section_alias]));
-                    const aliasCheckResults = await query(aliasCheckSql, [section_alias]);
-
+                    let params = [section_alias];
+                    const aliasCheckResults = await query(aliasCheckSql, [params]);
+                    logInsertQueryToFile(functions.printQuery(aliasCheckSql,params));
                     if (aliasCheckResults.rows.length > 0) {
                         section_alias += "-" + Math.floor(Date.now() / 1000);
                     }
-
                     const aliasUpdateSql = `UPDATE item_section SET section_alias = $1 WHERE item_section_id = $2`;
-                    consoleLog(functions.printQuery(aliasUpdateSql, [section_alias, insertedId]));
-                    await query(aliasUpdateSql, [section_alias, insertedId]);
+                    let params2 = [section_alias, insertedId];
+                    await query(aliasUpdateSql,params2);
+                    logInsertQueryToFile(functions.printQuery(aliasUpdateSql,params2));
                     await query("COMMIT");
                     res.send({
                         success: CONSTANTS.SUCCESS_FLAG,

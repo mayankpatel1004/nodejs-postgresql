@@ -1516,7 +1516,7 @@ router.get("/user_form", attachCommonData, async (req, res) => {
 
     arrFields.push(
       {
-        type: "text",
+        type: "hidden",
         lbl: "Databse Name",
         nm: "site_db",
         val: edit_site_db,

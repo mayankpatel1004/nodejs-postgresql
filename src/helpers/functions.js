@@ -6,6 +6,7 @@ const query = util.promisify(db.query).bind(db);
 const jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer");
 const { CONSTANTS } = require("./constants");
+const logInsertQueryToFile = require('../helpers/log_insert_query');
 const {mailPassword,mailUser,mailHost,mailPort,mailSecure} = require("../helpers/email");
 let transporter = nodemailer.createTransport({
   host: mailHost,
@@ -413,6 +414,8 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
         html: completeHtml,
       };
       await transporter.verify();
+      logInsertQueryToFile(JSON.stringify(mailData));
+      logInsertQueryToFile(completeHtml);
       const results = await transporter.sendMail(mailData);
       return results;
     } catch (error) {
