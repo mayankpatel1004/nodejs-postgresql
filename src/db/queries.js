@@ -1,4 +1,8 @@
 const { CONSTANTS } = require("../helpers/constants");
+const functions = require("../helpers/functions");
+const logToFile = require('../helpers/logs');
+const consoleLog = require('../helpers/logger');
+const logQueryToFile = require('../helpers/log_query');
 
 const queries = {
     getAllTables: () => {
@@ -21,33 +25,38 @@ const queries = {
             WHERE t.table_type = 'BASE TABLE' 
                 AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
             ORDER BY t.table_schema, t.table_name`;
+            logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getTableStructure(table_name) {
         let sqlQuery = `SELECT column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_name = '${table_name}' ORDER BY ordinal_position`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getTableData: (table_name, filter_string, primary_key, sort_by) => {
         let sqlQuery = `SELECT * FROM ${table_name} WHERE 1=1 ${filter_string} ORDER BY ${primary_key ? primary_key : '1'} ${sort_by ? sort_by : 'ASC'}`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getLoginQuery: (user_name) => {
         let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_USERS} WHERE (user_email = '${user_name}' OR user_name = '${user_name}') AND DELETED_STATUS = 'N'`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getForgotPasswordQuery: (user_email) => {
         const sqlQuery = `
-      SELECT 
-        user_id,
-        user_firstname,
-        user_lastname,
-        active_status,
-        deleted_status 
-      FROM ${CONSTANTS.TBL_USERS} 
-      WHERE user_email = '${user_email}' 
-        AND deleted_status = 'N' 
-      ORDER BY user_id DESC 
-      LIMIT 1`;
+        SELECT 
+            user_id,
+            user_firstname,
+            user_lastname,
+            active_status,
+            deleted_status 
+        FROM ${CONSTANTS.TBL_USERS} 
+        WHERE user_email = '${user_email}' 
+            AND deleted_status = 'N' 
+        ORDER BY user_id DESC 
+        LIMIT 1`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getUserToken: (email, token) => {
@@ -55,6 +64,7 @@ const queries = {
         SELECT user_id, user_token, user_email 
         FROM ${CONSTANTS.TBL_USERS} 
         WHERE user_email = '${email}' AND user_token = '${token}'`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getItemsQuery: (searchKeywordString, orderByString, limitString) => {
@@ -87,6 +97,8 @@ const queries = {
               GROUP BY i.item_id
               ${orderByString}`;
         let sqlList = `${sqlTotalRecords} ${limitString}`;
+        logQueryToFile(functions.printQuery(sqlList));
+        logQueryToFile(functions.printQuery(sqlTotalRecords));
         return [sqlTotalRecords, sqlList];
     },
     getItemSectionQuery: (searchKeywordString, orderByString, limitString) => {
@@ -111,6 +123,8 @@ const queries = {
         AND deleted_status = 'N' 
         ${orderByString}`;
         let sqlList = `${sqlTotalRecords} ${limitString}`;
+        logQueryToFile(functions.printQuery(sqlList));
+        logQueryToFile(functions.printQuery(sqlTotalRecords));
         return [sqlTotalRecords, sqlList];
     },
     getRolesQuery: (searchKeywordString, orderByString, limitString) => {
@@ -129,6 +143,8 @@ const queries = {
         AND deleted_status = 'N' 
         ${orderByString}`;
         let sqlList = `${sqlTotalRecords} ${limitString}`;
+        logQueryToFile(functions.printQuery(sqlList));
+        logQueryToFile(functions.printQuery(sqlTotalRecords));
         return [sqlTotalRecords, sqlList];
     },
     getUsersQuery: (searchKeywordString, orderByString, limitString) => {
@@ -149,30 +165,37 @@ const queries = {
             ${orderByString}`;
 
         let sqlList = `${sqlTotalRecords} ${limitString}`;
+        logQueryToFile(functions.printQuery(sqlList));
+        logQueryToFile(functions.printQuery(sqlTotalRecords));
         return [sqlTotalRecords, sqlList];
     },
     getMetaDetails: () => {
-        let sqlMetaDetails = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id DESC`;
-        return sqlMetaDetails;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id DESC`;
+        logQueryToFile(functions.printQuery(sqlQuery));
+        return sqlQuery;
     },
     getSiteConfigurations: () => {
-        let sqlSiteConfigurations = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options
+        let sqlQuery = `SELECT p.site_config_parent_id,p.site_config_title,c.config_name,c.config_title,c.config_id,c.config_value,c.input_type,c.comments as options
         FROM ${CONSTANTS.TBL_SITE_CONFIG_PARENT} p
         LEFT JOIN ${CONSTANTS.TBL_SITE_CONFIG} c ON c.site_config_parent_id = p.site_config_parent_id
         WHERE p.deleted_status = 'N'
         ORDER BY p.site_config_parent_id`;
-        return sqlSiteConfigurations;
+        logQueryToFile(functions.printQuery(sqlQuery));
+        return sqlQuery;
     },
     getRoleById: (id) => {
-        let sqlSiteConfigurations = `SELECT * FROM ${CONSTANTS.TBL_ROLES} WHERE role_id = ${id}`;
-        return sqlSiteConfigurations;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLES} WHERE role_id = ${id}`;
+        logQueryToFile(functions.printQuery(sqlQuery));
+        return sqlQuery;
     },
     getRoleMetaDetails: () => {
         let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} WHERE is_module = 1 ORDER BY meta_id DESC`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getRoleAccess: (id) => {
         let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${id}`;
+        logQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
 };

@@ -467,9 +467,7 @@ router.post("/items", attachCommonData, async (req, res) => {
     
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
-      logQueryToFile(functions.printQuery(sqlTotalRecords));
       sqlList = arrTotalRecords_List[1];
-      logQueryToFile(functions.printQuery(sqlList));
     }
 
     let totalRecords1 = await query(sqlTotalRecords);
@@ -874,8 +872,6 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
-      logQueryToFile(functions.printQuery(sqlTotalRecords));
-      logQueryToFile(functions.printQuery(sqlList));
     }
 
     let totalRecords1 = await query(sqlTotalRecords);
@@ -1158,8 +1154,6 @@ router.post("/roles", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
-      logQueryToFile(functions.printQuery(sqlTotalRecords));
-      logQueryToFile(functions.printQuery(sqlList));
     }
 
     const results1 = await query(sqlList);
@@ -1407,8 +1401,6 @@ router.post("/users", attachCommonData, async (req, res) => {
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
-      logQueryToFile(functions.printQuery(sqlTotalRecords));
-      logQueryToFile(functions.printQuery(sqlList));
     }
 
     const results1 = await query(sqlList);
@@ -1625,7 +1617,6 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
   let viewDirectory = path.join(__dirname, "../") + "templates/views/metadetails/metadetails";
 
   let sqlMetaDetails = queries.getMetaDetails();
-  logQueryToFile(functions.printQuery(sqlMetaDetails));
   let metaRecords1 = await query(sqlMetaDetails);
   const metaRecords = metaRecords1.rows;
 
@@ -1705,7 +1696,6 @@ router.get("/configurations", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/configurations/configurations";
   let sqlSiteConfigurations = queries.getSiteConfigurations();
-  logQueryToFile(functions.printQuery(sqlSiteConfigurations));
   let configRecords1 = await query(sqlSiteConfigurations);
   const configRecords = configRecords1.rows;
   const parentsMap = new Map();
