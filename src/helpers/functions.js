@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer");
 const { CONSTANTS } = require("./constants");
 const logInsertQueryToFile = require('../helpers/log_insert_query');
+const logSelectQueryToFile = require('../helpers/log_query');
 const {mailPassword,mailUser,mailHost,mailPort,mailSecure} = require("../helpers/email");
 let transporter = nodemailer.createTransport({
   host: mailHost,
@@ -317,8 +318,10 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
   },
   getBlogCategory: async function (item_type) {
     try {
-      const sql = `SELECT item_section_id AS "ID", section_title AS "NAME" FROM item_section WHERE item_type = $1 AND deleted_status = 'N' ORDER BY item_section_id ASC`;
-      const result1 = await query(sql, [item_type]);
+      const sqlQuery = `SELECT item_section_id AS "ID", section_title AS "NAME" FROM item_section WHERE item_type IN ($1) AND deleted_status = 'N' ORDER BY item_section_id ASC`;
+      let params = [item_type];
+      const result1 = await query(sqlQuery, params);
+      logSelectQueryToFile(this.printQuery(sqlQuery, params));
       const result = result1.rows;
       return result;
     } catch (error) {
@@ -344,16 +347,12 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
   itemSectionTypes() {
     return [
       {
-        ID: "blog",
-        NAME: "Blog",
-      },
-      {
         ID: "default",
         NAME: "Default",
       },
       {
-        ID: "blog-category",
-        NAME: "Category",
+        ID: "blog",
+        NAME: "Blog",
       },
     ];
   },

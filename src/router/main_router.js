@@ -563,7 +563,7 @@ router.get("/item_form", attachCommonData, async (req, res) => {
       display_order = await functions.getItemsMaxNo(req, item_type);
     }
     
-    const blogCategories = ["default", "blog"].includes(item_type) ? await functions.getBlogCategory("blog-category") : [];
+    const blogCategories = ["default", "blog"].includes(item_type) ? await functions.getBlogCategory(item_type) : [];
     
     arrFields.push({
       type: "text",
@@ -963,7 +963,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
     });
 
     arrFields.push({
-      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      type: ["default", "blog"].includes(item_type) ? "text" : "hidden",
       lbl: "Item Description",
       nm: "description",
       val: description,
@@ -1015,7 +1015,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
     });
 
     arrFields.push({
-      type: ["default", "blog-category"].includes(item_type) ? "select" : "hidden",
+      type: ["default", "blog"].includes(item_type) ? "select" : "hidden",
       lbl: "Status",
       nm: "display_status",
       val: display_status,
@@ -1027,7 +1027,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
     });
 
     arrFields.push({
-      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      type: ["default", "blog"].includes(item_type) ? "text" : "hidden",
       lbl: "Meta Title",
       nm: "meta_title",
       val: meta_title,
@@ -1037,7 +1037,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
     });
 
     arrFields.push({
-      type: ["default", "blog-category"].includes(item_type) ? "text" : "hidden",
+      type: ["default", "blog"].includes(item_type) ? "text" : "hidden",
       lbl: "Meta Description",
       nm: "meta_description",
       val: meta_description,
