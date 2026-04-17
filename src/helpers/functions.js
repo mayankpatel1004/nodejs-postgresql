@@ -151,13 +151,7 @@ module.exports = {
     try {
       
       end_points = end_points.replace("&api=1", "");
-      let sqlPreQuery = `
-        SELECT * 
-        FROM meta_details 
-        WHERE end_points = $1 
-            AND deleted_status = 'N'
-        `;
-        
+      let sqlPreQuery = `SELECT * FROM meta_details WHERE end_points = $1 AND deleted_status = 'N'`;
       const sqlQuery = this.removeEditIdFromQuery(sqlPreQuery);
       let result = await query(sqlQuery, [end_points]);
       
@@ -167,6 +161,7 @@ module.exports = {
           !end_points.includes("edit_id") &&
           !end_points.includes("paged") &&
           !end_points.includes("api") &&
+          !end_points.includes("&") &&
           !end_points.includes("error")
         ) {
           const sqlInsert = `
