@@ -23,21 +23,9 @@ http://localhost:3900/database_table?tableName=item_section&pk=item_section_id&p
 clear && node src/migrations/migrations.js
 clear && node src/migrations/seeders.js
 
-
 How to call logs : 
 ==============================
 logToFile("Dashboard Screen Called..........","success","");
 logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
 logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
 consoleLog("Mayank Patel");
-
-
-
-action 
-
-action_id,
-record_id,
-table_name,
-record_name,
-created_at,
-updated_at
