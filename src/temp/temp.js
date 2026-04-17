@@ -1,44 +1,32 @@
-/**
- * Replaces SQL placeholders (? or $1, $2) with actual parameter values.
- * - For ? : positional, index-based
- * - For $n : 1‑based index (e.g., $1 -> params[0])
- * - Returns a readable SQL string for logging/debugging only.
- */
-printQuery : (sql, params = []) => {
-  // Detect if SQL uses $n placeholders (e.g., $1, $2)
-  if (/\$\d+/.test(sql)) {
-    return sql.replace(/\$(\d+)/g, (match, num) => {
-      const idx = parseInt(num, 10) - 1;
-      const val = params[idx];
-      if (val === null || val === undefined) return 'NULL';
-      if (typeof val === 'number') return val;
-      if (val instanceof Date) {
-        return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
-      }
-      return `'${val.toString().replace(/'/g, "''")}'`;
-    });
-  }
 
-  // Fallback to ? placeholders
-  let index = 0;
-  return sql.replace(/\?/g, () => {
-    if (index >= params.length) return '?';
-    const val = params[index++];
-    if (val === null || val === undefined) return 'NULL';
-    if (typeof val === 'number') return val;
-    if (val instanceof Date) {
-      return `'${val.toISOString().slice(0, 19).replace('T', ' ')}'`;
-    }
-    return `'${val.toString().replace(/'/g, "''")}'`;
-  });
-};
+ALTER DATABASE "Demonstration" OWNER TO mayankpatel104;
+GRANT ALL PRIVILEGES ON DATABASE "Demonstration" TO mayankpatel104;
 
-// Usage (unchanged from before)
-let sqlUpdate = updateQueries.updateConfigurations();
-const params = [sanitizedValue, config_name];
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mayankpatel104;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mayankpatel104;
 
-// Log the fully substituted query
-logSelectQueryToFile(printQuery(sqlUpdate, params));
 
-// Execute the parameterized query (safe)
-await query(sqlUpdate, params);
+
+
+psql -U postgres -d Demo -h localhost
+
+
+psql -U postgres -h localhost
+CREATE USER mayankpatel104 WITH PASSWORD 'Online@112018';
+CREATE DATABASE "Demonstration";
+ALTER DATABASE "Demonstration" OWNER TO mayankpatel104;
+GRANT ALL PRIVILEGES ON DATABASE "Demonstration" TO mayankpatel104;
+\c Demonstration
+GRANT ALL ON SCHEMA public TO mayankpatel104;
+
+
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT ALL ON TABLES TO mayankpatel104;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT ALL ON SEQUENCES TO mayankpatel104;
+
+psql -U mayankpatel104 -h localhost -d Demonstration
+
+ALTER USER postgres WITH PASSWORD 'Online@112018';
