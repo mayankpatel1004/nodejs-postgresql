@@ -4,7 +4,6 @@ clear && node src/migrations/dropalltables.js
 clear && node src/migrations/migrations.js 
 clear && node src/migrations/seeders.js 
 
-
 /Documents/Projects/TestingProjects/nodejspostgre
 
 Steps to integrate 
@@ -23,7 +22,7 @@ clear && node src/migrations/migrations.js
 clear && node src/migrations/seeders.js
 
 How to call logs : 
-==============================
+=====================
 logToFile("Dashboard Screen Called..........","success","");
 logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
 logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
