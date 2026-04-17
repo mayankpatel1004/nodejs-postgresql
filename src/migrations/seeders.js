@@ -1,4 +1,4 @@
-const db = require('../db/connection');
+const db = require('../../connection');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
 

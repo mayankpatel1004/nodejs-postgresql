@@ -1,5 +1,11 @@
 cd ~/Documents/Projects/TestingProjects/nodejspostgre/src/logs && rm -rf * && cd ~/Documents/Projects/TestingProjects/nodejspostgre/ && echo "" > src/log/logs_fail.txt && echo "" > src/log/logs_request.txt && echo "" > src/log/logs_select_query.sql && echo "" > src/log/logs_insert_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
+
+clear && node src/migrations/dropalltables.js 
+clear && node src/migrations/migrations.js 
+clear && node src/migrations/seeders.js 
+
+
 /Documents/Projects/TestingProjects/nodejspostgre
 
 Steps to integrate 

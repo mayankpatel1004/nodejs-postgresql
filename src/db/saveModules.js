@@ -1,6 +1,6 @@
 const { CONSTANTS } = require("../helpers/constants");
 const functions = require("../helpers/functions");
-const db = require('./connection');
+const db = require('../../connection');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const logToFile = require('../helpers/logs');
