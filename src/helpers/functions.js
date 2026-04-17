@@ -375,6 +375,15 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       throw error;
     }
   },
+  insertActionLog: async function (action, primary_key_id, table_name, login_id) {
+    const sqlInsertLog = `INSERT INTO action (action, record_id, table_name, created_by) VALUES ($1, $2, $3, $4) RETURNING action_id`;
+    const values = [action, primary_key_id, table_name, login_id];
+    console.log(sqlInsertLog, values);
+    const result = await query(sqlInsertLog, values);
+    const insertId = result.rows[0].action_id;
+    console.log("Inserted ID:", insertId);
+    return insertId;
+  },
   getTitleAlias(title, options = {}) {
     const { separator = "-", lowerCase = true, strict = true } = options;
     let alias = title;

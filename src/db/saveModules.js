@@ -41,6 +41,7 @@ const queries = {
                 await query(sqlUpdate, params);
 
                 if (itemId > 0 && data.item_sections_id) {
+                    functions.insertActionLog('Update',itemId,"items",data.user_id);
                     const sections = data.item_sections_id.split(",").map(Number).filter(Boolean);
                     let sqlDelete = `DELETE FROM item_section_relation WHERE item_id = $1`;
                     let params = [itemId]
@@ -61,6 +62,7 @@ const queries = {
                 logInsertQueryToFile(functions.printQuery(sqlInsert,values));
                 itemId = result.rows[0].item_id;
                 if (parseInt(itemId) > 0) {
+                    functions.insertActionLog('Insert',itemId,"items",data.user_id);
                     logInsertQueryToFile(`item Insert ID = ${itemId}`);
                     let item_alias = functions.getTitleAlias(data.item_title);
                     const aliasCheckSql = `SELECT item_alias FROM items WHERE item_alias = $1`;
