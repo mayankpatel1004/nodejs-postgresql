@@ -1032,7 +1032,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
       nm: "meta_title",
       val: meta_title,
       ph: "",
-      req: "Y",
+      req: "N",
       cls: "form-control formfields",
     });
 
@@ -1055,6 +1055,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
       req: "N",
       cls: "form-control formfields",
     });
+    
 
     if (item_section_id == 0) {
       arrFields.push({
@@ -1214,12 +1215,13 @@ router.get("/role_form", attachCommonData, async (req, res) => {
   try {
       const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
       const arrFields = [];
-
+    
       let edit_id = 0;
       let edit_role_title = "";
       let edit_item_alias = "";
       let edit_display_order = "";
       let edit_display_status = "";
+      let edit_created_by = decoded.user_id;
 
       if (req.query.edit_id && req.query.edit_id > 0) {
         edit_id = req.query.edit_id;
@@ -1234,6 +1236,7 @@ router.get("/role_form", attachCommonData, async (req, res) => {
             edit_item_alias = results[0].item_alias;
             edit_display_order = results[0].display_order;
             edit_display_status = results[0].display_status;
+            edit_created_by = results[0].created_by;
         }
       }
 
@@ -1291,6 +1294,15 @@ router.get("/role_form", attachCommonData, async (req, res) => {
             options: functions.displayStatus(),
             cls: "form-control js-example-basic-single formfields",
           },
+          {
+            type: "text",
+            lbl: "Created By",
+            nm: "created_by",
+            val: edit_created_by,
+            ph: "",
+            req: "N",
+            cls: "form-control formfields",
+          }
       );
 
       let sqlMetaDetails = queries.getRoleMetaDetails();

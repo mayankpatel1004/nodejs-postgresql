@@ -41,7 +41,7 @@ const queries = {
                 await query(sqlUpdate, params);
 
                 if (itemId > 0 && data.item_sections_id) {
-                    functions.insertActionLog('Update',itemId,"items",data.user_id);
+                    await functions.insertActionLog('Update',itemId,"items",data.user_id);
                     const sections = data.item_sections_id.split(",").map(Number).filter(Boolean);
                     let sqlDelete = `DELETE FROM item_section_relation WHERE item_id = $1`;
                     let params = [itemId]
@@ -62,7 +62,7 @@ const queries = {
                 logInsertQueryToFile(functions.printQuery(sqlInsert,values));
                 itemId = result.rows[0].item_id;
                 if (parseInt(itemId) > 0) {
-                    functions.insertActionLog('Insert',itemId,"items",data.user_id);
+                    await functions.insertActionLog('Insert',itemId,"items",data.user_id);
                     logInsertQueryToFile(`item Insert ID = ${itemId}`);
                     let item_alias = functions.getTitleAlias(data.item_title);
                     const aliasCheckSql = `SELECT item_alias FROM items WHERE item_alias = $1`;
@@ -134,6 +134,7 @@ const queries = {
                 const sqlUpdate = `UPDATE ${CONSTANTS.TBL_ROLES} SET ${setClause} WHERE role_id = $${keys.length + 1}`;
                 const params = [...values, roleId];
                 logInsertQueryToFile(functions.printQuery(sqlUpdate,params));
+                await functions.insertActionLog('Update',roleId,"role",data.created_by);
                 await query(sqlUpdate, params);
             }
             else {
@@ -143,6 +144,7 @@ const queries = {
                 const result = await query(sqlInsert, values);
                 logInsertQueryToFile(functions.printQuery(sqlInsert,values));
                 roleId = result.rows[0].role_id;
+                await functions.insertActionLog('Insert',roleId,"role",data.created_by);
                 logInsertQueryToFile(`role Insert ID = ${roleId}`);
             }
 
@@ -249,6 +251,8 @@ const queries = {
                 const params = [...values, data.edit_id];
                 const updateResult = await query(sqlUpdate, params);
                 logInsertQueryToFile(functions.printQuery(sqlUpdate,params));
+                
+                await functions.insertActionLog('Update',data.edit_id,"users",keys.length + 1);
                 if (updateResult.rowCount === 0) {
                     await query("ROLLBACK");
                     return res.send({
@@ -269,6 +273,7 @@ const queries = {
             const insertResult = await query(sqlInsert, values);
             logInsertQueryToFile(functions.printQuery(sqlInsert,values));
             const userId = insertResult.rows[0].user_id;
+            await functions.insertActionLog('Insert',userId,"users",userId);
             logInsertQueryToFile(`user Insert ID = ${userId}`);
             if (data.user_email) {
                 const to = data.user_email;
@@ -313,7 +318,6 @@ const queries = {
                 //data = await functions.addUserDataToRequest(req.headers.authorization,data);
                 data.section_alias = await functions.get_item_alias("item_section","section_alias",data.section_title);
             }
-
             if (req.files?.attachment1?.length) {
                 data.attachment1 = req.files.attachment1[0].filename;
             }
@@ -341,6 +345,7 @@ const queries = {
                 params = [...values, data.item_section_id];
                 await query(sqlSave, params);
                 logInsertQueryToFile(functions.printQuery(sqlSave,params));
+                await functions.insertActionLog('Update',data.item_section_id,"item_section",data.user_id);
                 await query("COMMIT");
                 res.send({
                     success: CONSTANTS.SUCCESS_FLAG,
@@ -354,6 +359,7 @@ const queries = {
                 const insertResult = await query(sqlSave, values);
                 logInsertQueryToFile(functions.printQuery(sqlSave,values));
                 const insertedId = insertResult.rows[0].item_section_id;
+                await functions.insertActionLog('Insert',insertedId,"item_section",data.user_id);
                 logInsertQueryToFile(`Section Insert ID = ${insertedId}`);
                 if(insertedId > 0){
                     let section_alias = functions.getTitleAlias(data.section_title);
