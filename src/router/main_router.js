@@ -1778,6 +1778,7 @@ router.post("/change-password", attachCommonData, async (req, res) => {
 
     let sqlUpdate = updateQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
     logToFile(functions.printQuery(sqlUpdate),"success");
+    await functions.insertActionLog('UpdatedPassword',user_id,"users",user_id);
     const result = await query(sqlUpdate);
 
     const rowCount = result.rowCount || result.affectedRows || (result.rows ? result.rows.length : 0);
