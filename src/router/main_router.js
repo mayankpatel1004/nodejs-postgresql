@@ -174,7 +174,7 @@ router.post("/forgot-password", async (req, res) => {
     }
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
-    let sqlUpdate = updateselectQueries.updateUserToken(user_token, user.user_id);
+    let sqlUpdate = updateQueries.updateUserToken(user_token, user.user_id);
     logSelectQueryToFile(common_functions.printQuery(sqlUpdate));
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
@@ -247,7 +247,7 @@ router.post("/password_token", async (req, res) => {
           data: [],
         });
       }
-      let sqlUpdate = updateselectQueries.updateUserToken("", user.user_id);
+      let sqlUpdate = updateQueries.updateUserToken("", user.user_id);
       await query(sqlUpdate);
       res.send({
         success: CONSTANTS.SUCCESS_FLAG,
@@ -268,7 +268,7 @@ router.post("/activate_account", async (req, res) => {
   try {
     const { id, password } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
-    let sqlUpdate = updateselectQueries.activateAccount(encryptPass, "", id);
+    let sqlUpdate = updateQueries.activateAccount(encryptPass, "", id);
     const result = await query(sqlUpdate);
     if (result.rowCount === 0) {
       return res.send({
@@ -444,9 +444,9 @@ router.post("/items", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateselectQueries.updateItemsTrash(data);
+      sqlUpdateStatus = updateQueries.updateItemsTrash(data);
     } else {
-      sqlUpdateStatus = updateselectQueries.updateItemsStatus(data);
+      sqlUpdateStatus = updateQueries.updateItemsStatus(data);
     }
     let results = await query(sqlUpdateStatus);
     res.send({
@@ -803,6 +803,7 @@ router.get("/item_section", attachCommonData, async (req, res) => {
   let viewDirectory = path.join(__dirname, "../") + "templates/views/item_section/item_section";
   const responseData = {
     ...req.commonData,
+    item_type: item_type,
     user_email: decoded.user_email,
     listUrl: common_functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
     formUrl: common_functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
@@ -847,9 +848,9 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateselectQueries.updateItemSectionTrash(data);
+      sqlUpdateStatus = updateQueries.updateItemSectionTrash(data);
     } else {
-      sqlUpdateStatus = updateselectQueries.updateItemSectionStatus(data);
+      sqlUpdateStatus = updateQueries.updateItemSectionStatus(data);
     }
     let results = await query(sqlUpdateStatus);
     if (results) {
@@ -1130,9 +1131,9 @@ router.post("/roles", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateselectQueries.updateRoleTrash(data);
+      sqlUpdateStatus = updateQueries.updateRoleTrash(data);
     } else {
-      sqlUpdateStatus = updateselectQueries.updateRoleStatus(data);
+      sqlUpdateStatus = updateQueries.updateRoleStatus(data);
     }
     const results = await query(sqlUpdateStatus);
     if (results) {
@@ -1384,9 +1385,9 @@ router.post("/users", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateselectQueries.updateUserTrash(data);
+      sqlUpdateStatus = updateQueries.updateUserTrash(data);
     } else {
-      sqlUpdateStatus = updateselectQueries.updateUserStatus(data);
+      sqlUpdateStatus = updateQueries.updateUserStatus(data);
     }
     const results = await query(sqlUpdateStatus);
     if (results) {
@@ -1657,7 +1658,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
 
-      let sqlQuery = updateselectQueries.updateMetaDetails(column);
+      let sqlQuery = updateQueries.updateMetaDetails(column);
       logSelectQueryToFile(common_functions.printQuery(sqlQuery));
       const params = [data[key], metaId];
       await query(sqlQuery, params);
@@ -1685,7 +1686,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
 
       for (const [config_name, rawValue] of entries) {
         const sanitizedValue = common_functions.sanitize(rawValue);
-        let sqlUpdate = updateselectQueries.updateConfigurations();
+        let sqlUpdate = updateQueries.updateConfigurations();
         const params = [sanitizedValue, config_name];
         await query(sqlUpdate, params);
         logSelectQueryToFile(common_functions.printQuery(sqlUpdate,params));
@@ -1697,9 +1698,10 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       data,
     });
   } catch (error) {
+    console.log("Error",error);
     res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
-      message: REQUEST_FAIL,
+      message: CONSTANTS.REQUEST_FAIL,
     });
   }
 });
@@ -1776,7 +1778,7 @@ router.post("/change-password", attachCommonData, async (req, res) => {
     const escapedUserId = user_id.replace(/'/g, "''");
     const escapedEmail = user_email.replace(/'/g, "''");
 
-    let sqlUpdate = updateselectQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
+    let sqlUpdate = updateQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
     logToFile(common_functions.printQuery(sqlUpdate),"success");
     await common_functions.insertActionLog('UpdatedPassword',user_id,"users",user_id);
     const result = await query(sqlUpdate);

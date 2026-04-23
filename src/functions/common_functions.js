@@ -385,7 +385,7 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     
     try {
       const mailData = {
-        from: `${process.env.AUTH_NAME} <${process.env.AUTH_USER}>`,
+        from: `${CONSTANTS.COMPANY_NAME} <${process.env.AUTH_USER}>`,
         to: to,
         subject: subject,
         text: text,

@@ -219,10 +219,10 @@ async function seed() {
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
       `;
       const itemsValues = [
-        [0, 'Home', 'home', 100, 'page', '24', 'description update', 'attachment1-1758612676875.png', 'attachment2-1758612676877.png', 'short description update', 3, 'controller', 'action', now, now, 'meta title update', 'meta description update', 1, 'Cloudswift Solutions', 1, 1, 'Y', 'N', 0, null, null, now, now],
-        [0, 'About Us', 'about-us', 0, 'page', null, 'About Us', null, '', '', 1, '', '', now, now, 'About Us', 'About Us', 1, 'Cloudswift Solutions', 1, 1, 'Y', 'N', 0, null, null, now, now],
-        [0, 'Terms & Conditions', 'terms-and-conditions', 0, 'page', null, 'Terms & Conditions', null, '', '', 1, '', '', now, now, 'Terms & Conditions', 'Terms & Conditions', 1, 'Cloudswift Solutions', 1, 2, 'Y', 'N', 0, null, null, now, now],
-        [0, 'Privacy Policy', 'privacy-policy', 0, 'page', null, 'Privacy Policy', null, '', '', 1, '', '', now, now, 'Privacy Policy', 'Privacy Policy', 1, 'Cloudswift Solutions', 1, 3, 'Y', 'N', 0, null, null, now, now]
+        [0, 'Home', 'home', 100, 'page', '24', 'description update', 'attachment1-1758612676875.png', 'attachment2-1758612676877.png', 'short description update', 3, 'controller', 'action', now, now, 'meta title update', 'meta description update', 1, 'Demonstration', 1, 1, 'Y', 'N', 0, null, null, now, now],
+        [0, 'About Us', 'about-us', 0, 'page', null, 'About Us', null, '', '', 1, '', '', now, now, 'About Us', 'About Us', 1, 'Demonstration', 1, 1, 'Y', 'N', 0, null, null, now, now],
+        [0, 'Terms & Conditions', 'terms-and-conditions', 0, 'page', null, 'Terms & Conditions', null, '', '', 1, '', '', now, now, 'Terms & Conditions', 'Terms & Conditions', 1, 'Demonstration', 1, 2, 'Y', 'N', 0, null, null, now, now],
+        [0, 'Privacy Policy', 'privacy-policy', 0, 'page', null, 'Privacy Policy', null, '', '', 1, '', '', now, now, 'Privacy Policy', 'Privacy Policy', 1, 'Demonstration', 1, 3, 'Y', 'N', 0, null, null, now, now]
       ];
       for (const row of itemsValues) await query(itemsSql, row);
       console.log("✅ Seeded 'items' table with", itemsValues.length, "records");
