@@ -1,4 +1,5 @@
 exports.CONSTANTS = {
+
     // Frontend Settings //
     APPLICATION_TITLE : "Demonstration Company",
     APPLICATION_META_TITLE : "Demonstration Company",
@@ -17,6 +18,18 @@ exports.CONSTANTS = {
     JWT_SECRET: "demonstration",
     JWT_EXPIRES_IN: "7d",
     JWT_COOKIE_EXPIRES: 7,
+
+    // Site Settings //
+    COMPANY_NAME: "Demonstration Company",
+    COMPANY_ADDRESS : "123 main street,",
+    COMPANY_ADDRESS2 : " second addrss",
+    COMPANY_CITY : "vadodara",
+    COMPANY_STATE: "GJ",
+    COMPANY_COUNTRY : "IN",
+    COMPANY_ZIPCODE: "390019",
+    COMPANY_EMAIL : "mayank.patel104@gmail.com",
+    COMPANY_WEBSITE : "www.cloudswiftsolutions.com",
+    COMPANY_CONTACT : "+91 9191919191",
 
     // Backend Settings //
     BACKEND_TITLE : "Administrator",
@@ -60,17 +73,7 @@ exports.CONSTANTS = {
     FROM_EMAIL_ADDRESS : "connect@cloudswiftsolutions.com",
     BCC_EMAIL : "mayank.patel104@gmail.com",
 
-    COMPANY_NAME: "Demonstration Company",
-    COMPANY_ADDRESS : "123 main street,",
-    COMPANY_ADDRESS2 : " second addrss",
-    COMPANY_CITY : "vadodara",
-    COMPANY_STATE: "GJ",
-    COMPANY_COUNTRY : "IN",
-    COMPANY_ZIPCODE: "390019",
-    COMPANY_EMAIL : "mayank.patel104@gmail.com",
-    COMPANY_WEBSITE : "www.cloudswiftsolutions.com",
-    COMPANY_CONTACT : "+91 9191919191",
-    
+    // Site Constants //
     USER_EMAIL_UNIQUE : "N",
     ACCOUNT_SUCCESSFULLY_CREATED: "Account Successfully Created",
     WELCOME_SUBJECT_PREFIX: "Welcome to",
@@ -97,6 +100,7 @@ exports.CONSTANTS = {
     CHANGEPASSWORD_SUBJECT : "Change Password ",
     PASSWORDUPDATED_SUBJECT : "Password Updated",
     
+    // DB Tables //
     TBL_USERS : "users",
     TBL_ROLES: "role",
     TBL_ROLE_ACCESS: "role_access",
