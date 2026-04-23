@@ -6,8 +6,8 @@ const query = util.promisify(db.query).bind(db);
 const jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer");
 const { CONSTANTS } = require("./constants");
-const logInsertQueryToFile = require('../helpers/log_insert_query');
-const logSelectQueryToFile = require('../helpers/log_query');
+const logInsertQueryToFile = require('../logs/log_insert_query');
+const logSelectQueryToFile = require('../logs/log_query');
 const {mailPassword,mailUser,mailHost,mailPort,mailSecure} = require("../helpers/email");
 let transporter = nodemailer.createTransport({
   host: mailHost,

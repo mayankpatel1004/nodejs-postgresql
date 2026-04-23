@@ -1,8 +1,8 @@
 const { CONSTANTS } = require("../helpers/constants");
 const functions = require("../helpers/functions");
-const logToFile = require('../helpers/logs');
-const consoleLog = require('../helpers/logger');
-const logSelectQueryToFile = require('../helpers/log_query');
+const logToFile = require('../logs/logs');
+const consoleLog = require('../logs/logger');
+const logSelectQueryToFile = require('../logs/log_query');
 
 const queries = {
     updateItemsTrash: (data) => {

@@ -3,9 +3,9 @@ const functions = require("../helpers/functions");
 const db = require('../../connection');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
-const logToFile = require('../helpers/logs');
-const consoleLog = require('../helpers/logger');
-const logInsertQueryToFile = require('../helpers/log_insert_query');
+const logToFile = require('../logs/logs');
+const consoleLog = require('../logs/logger');
+const logInsertQueryToFile = require('../logs/log_insert_query');
 
 const queries = {
     saveItemForm: async (req, res, data) => {

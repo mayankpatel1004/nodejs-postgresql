@@ -1,4 +1,4 @@
-cd ~/Documents/Projects/TestingProjects/nodejspostgre/src/logs && rm -rf * && cd ~/Documents/Projects/TestingProjects/nodejspostgre/ && echo "" > src/log/logs_fail.txt && echo "" > src/log/logs_request.txt && echo "" > src/log/logs_select_query.sql && echo "" > src/log/logs_insert_query.sql && echo "" > src/log/logs_success.txt && git add . && git commit -m "Updates" && git push origin main
+cd ~/Documents/Projects/TestingProjects/nodejspostgre/src/logs/log_files/individualfiles && rm -rf * && cd ~/Documents/Projects/TestingProjects/nodejspostgre/ && echo "" > src/logs/log_files/1logs_fail.txt && echo "" > src/logs/log_files/1logs_request.txt && echo "" > src/logs/log_files/1logs_select_query.sql && echo "" > src/logs/log_files/1logs_insert_query.sql && echo "" > src/logs/log_files/1logs_success.txt && git add . && git commit -m "Updates" && git push origin main
 
 clear && node src/migrations/dropalltables.js 
 clear && node src/migrations/migrations.js 
@@ -27,3 +27,10 @@ logToFile("Dashboard Screen Called..........","success","");
 logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
 logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
 consoleLog("Mayank Patel");
+
+
+
+Rename db folder to database operations 
+Create a folder logs inside this log insert, logger and logs.js
+Create a folder called functions and move functions there
+Create a folder for module fields and add separate files for each modules
