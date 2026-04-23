@@ -66,6 +66,25 @@ module.exports = {
         return `'${val.toString().replace(/'/g, "''")}'`;
       });
     },
+    displayStatus() {
+        return [
+          {ID: "Y",NAME: "Active"},
+          {ID: "N",NAME: "Inactive"},
+        ];
+    },
+    itemTypes() {
+      return [
+        {ID: "blog",NAME: "Blog"},
+        {ID: "default",NAME: "Default"},
+        {ID: "page",NAME: "Page"},
+      ];
+    },
+    itemSectionTypes() {
+      return [
+        {ID: "default",NAME: "Default"},
+        {ID: "blog",NAME: "Blog"},
+      ];
+    },
     get_item_alias: async (table_name, column_name, title) => {
       try {
         const a = "àáäâãèéëêìíïîòóöôùúüûñçßÿœæŕśńṕẃǵǹḿǘẍźḧ·/_,:;'";
@@ -99,18 +118,6 @@ module.exports = {
         console.error("Error in get_item_alias:", error);
         throw error;
       }
-    },
-    displayStatus() {
-      return [
-        {
-          ID: "Y",
-          NAME: "Active",
-        },
-        {
-          ID: "N",
-          NAME: "Inactive",
-        },
-      ];
     },
     sanitize(str) {
       return (str || "").replace(/'/g, "''"); // Double up single quotes
@@ -322,34 +329,6 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     } catch (error) {
       throw error;
     }
-  },
-  itemTypes() {
-    return [
-      {
-        ID: "blog",
-        NAME: "Blog",
-      },
-      {
-        ID: "default",
-        NAME: "Default",
-      },
-      {
-        ID: "page",
-        NAME: "Page",
-      },
-    ];
-  },
-  itemSectionTypes() {
-    return [
-      {
-        ID: "default",
-        NAME: "Default",
-      },
-      {
-        ID: "blog",
-        NAME: "Blog",
-      },
-    ];
   },
   getItemsMaxNo: async function (req, item_type = "page") {
     try {
