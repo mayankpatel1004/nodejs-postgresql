@@ -1,24 +1,38 @@
-try {
-    let sqlQuery = `
-        CREATE TABLE IF NOT EXISTS action (
-            action_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-            record_id INT NOT NULL DEFAULT 0,
-            table_name VARCHAR(255) DEFAULT NULL,
-            record_name VARCHAR(255) DEFAULT NULL,
-            created_by INT NOT NULL DEFAULT 0,
-            created_by_name VARCHAR(255) DEFAULT NULL,
-            created_by_role INT NOT NULL DEFAULT 0,
-            display_order INT NOT NULL DEFAULT 0,
-            display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-            deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-            deleted_by INT NOT NULL DEFAULT 0,
-            deleted_by_name VARCHAR(255) DEFAULT NULL,
-            deleted_time TIMESTAMP DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`;
-      await query(sqlQuery);
-      console.log("✅ Table 'action' created successfully");
-    } catch (err) {
-      console.error("❌ Failed to create table 'action':", err.message);
-    }
+const configValues = [
+        [1, 0, 'Application Title', 'FRONT_APPLICATION_TITLE', 'CMS123', 'text', 100, 100, 'Please enter your application name for display on frontend side as title', 'form-control', 'Y', 1, null, 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 13:00:00', '2026-01-30 09:34:40'],
+        [2, 0, 'Records per page', 'FRONT_RECORD_PER_PAGE', '16', 'select', 100, 60, 'Records per page', 'form-control', 'Y', 5, '8@=16@=24@=32@=40@=80', 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [7, 0, 'Maintenance Mode', 'SITE_CONSTRUCTION', 'No', 'select', 100, 60, 'Site Under Construction Status', 'form-control', 'Y', 12, 'Yes@=No', 'Y', null, 'Y', 'N', 1, 'N', 'N', '2019-04-11 13:00:00', '2021-12-07 22:07:04'],
+        [8, 0, 'Default Timezone', 'FRONT_DEFAULT_TIMEZONE', 'Asia/Kolkata', 'select', 100, 60, 'Default Timezone', 'form-control', 'Y', 13, 'America/Chicago@=Asia/Kolkata@=Europe/London@=Australia/Perth', 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [9, 0, 'Backend application Title', 'BACKEND_APPLICATION_TITLE', 'Cloudswift :: Administrator', 'text', 100, 60, 'Application Title', 'form-control', 'Y', 14, null, 'Y', null, 'Y', 'N', 2, 'N', 'N', '2019-04-11 13:00:00', '2019-10-14 07:08:57'],
+        [14, 0, 'Meta Description', 'FRONT_META_DESCRIPTION', 'We are the leading Custom Software Solution Company in Vadodara, Gujarat, India who servered more then 50 Clients across World.', 'text', 100, 60, 'Meta Description', 'form-control', 'Y', 1, null, 'Y', null, 'N', 'N', 1, 'N', 'N', '2019-04-11 13:00:00', '2020-04-17 01:06:07'],
+        [15, 0, 'Default Robots', 'FRONT_DEFAULT_ROBOTS', 'INDEX,FOLLOW', 'select', 100, 60, 'Default Robots', 'form-control', 'Y', 25, 'INDEX,FOLLOW@=NOINDEX@=NOFOLLOW@=NOINDEX,NOFOLLOW', 'Y', null, 'Y', 'Y', 3, 'N', 'N', '2019-04-11 13:00:00', '2019-10-17 08:06:12'],
+        [38, 0, 'Company Name', 'COMPANY_NAME', 'Cloudswift Solutions Pvt. Ltd.', 'text', 100, 60, 'Company Name', 'form-control', 'Y', 64, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-11-07 22:26:19'],
+        [39, 0, 'Company Address', 'COMPANY_ADDRESS1', 'Sama, Near Chanikya crossing', 'text', 100, 60, 'Company Address', 'form-control', 'Y', 65, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [40, 0, 'Company Address 2', 'COMPANY_ADDRESS2', '', 'text', 100, 60, 'Company Address 2', 'form-control', 'Y', 66, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-09-24 08:43:53'],
+        [41, 0, 'City', 'COMPANY_CITY', 'Vadodara', 'text', 100, 60, 'City', 'form-control', 'Y', 67, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [42, 0, 'State', 'COMPANY_STATE', 'GJ', 'text', 100, 60, 'State', 'form-control', 'Y', 68, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [43, 0, 'Country', 'COMPANY_COUNTRY', 'INN', 'text', 100, 60, 'Country', 'form-control', 'Y', 69, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [44, 0, 'Zipcode', 'COMPANY_ZIPCODE', '390009', 'text', 100, 60, 'Zipcode', 'form-control', 'Y', 70, 'max six digits', 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [45, 0, 'Contact Number', 'COMPANY_CONTACT_NUMBER', '886-630-3621', 'text', 100, 60, 'Contact Number', 'form-control', 'Y', 71, null, 'Y', null, 'N', 'Y', 7, 'N', 'N', '2019-04-11 13:00:00', '2020-04-13 11:50:21'],
+        [47, 0, 'Contact us email address', 'COMPANY_EMAIL', 'connect@cloudswiftsolutions.com', 'email', 100, 60, 'Contact us email address', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 13:00:00', '2021-08-13 00:40:23'],
+        [48, 0, 'Contact us person name', 'COMPANY_CONTACT_PERSON', 'CloudSwift Solutions', 'text', 100, 60, 'Contact us person name', 'form-control', 'Y', 75, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 13:00:00', '2021-08-13 01:15:54'],
+        [53, 0, 'Allow Sending emails', 'ALLOW_SENDING_EMAIL', 'Yes', 'select', 100, 5, 'Allow to send email throughout site? If no, not a single email will execute in this project.', 'form-control', 'Y', 82, 'Yes@=No', 'Y', null, 'N', 'N', 9, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [67, 0, 'Order email name', 'ORDER_CONTACT_PERSON', 'Cloud Swift Solutions', 'text', 100, 60, 'order person name', 'form-control', 'Y', 75, null, 'Y', null, 'N', 'N', 8, 'N', 'N', '2019-04-11 13:00:00', '2019-11-18 20:14:30'],
+        [75, 0, 'From email address', 'FROM_EMAIL_ADDRESS', 'notifications@cloudswiftsolutions.com', 'email', 100, 60, 'from email address', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 13:00:00', '2021-06-21 21:54:54'],
+        [76, 0, 'Backend Logo title display', 'BACKEND_LOGO_TITLE_DISPLAY', 'Administrator', 'text', 100, 60, 'backend_logo_title_display', 'form-control', 'Y', 8, '', 'Y', null, 'N', 'Y', 2, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [83, 0, 'Content to display before end of body tag', 'CONTENT_BEFORE_BODY_TAG', '', 'textarea', 100, 6000, 'Please enter content that will before close of body tag.', 'form-control', 'N', 26, null, 'Y', null, 'N', 'Y', 9, 'N', 'N', '2019-04-11 13:00:00', '2019-09-24 09:24:46'],
+        [86, 0, 'Script after begin head tag', 'AFTER_HEAD_TAG', '', 'text', 100, 60, 'After head tag javacript script', 'form-control', 'N', 39, null, 'Y', null, 'N', 'Y', 3, 'N', 'N', '2019-04-11 13:00:00', '2019-09-24 08:43:53'],
+        [88, 0, 'Application json script', 'APPLICATION_JSON_SCRIPT', '', 'textarea', 100, 6000, 'Application json script', 'form-control', 'N', 26, null, 'Y', null, 'N', 'Y', 3, 'N', 'N', '2019-04-11 13:00:00', '2019-09-24 09:24:46'],
+        [97, 0, 'Upload Max Size', 'UPLOAD_MAX_FILESIZE', '2M', 'select', 100, 60, 'Upload Max Size', 'form-control', 'Y', 44, '2M@=8M@=16M@=24M', 'Y', null, 'N', 'N', 4, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [102, 0, 'Facebook', 'FACEBOOK_URL', 'https://www.facebook.com/cloudswiftsolutions/', 'text', 100, 60, 'Please enter your facebook page url', 'form-control', 'N', 40, null, 'Y', null, 'N', 'Y', 10, 'N', 'N', '2019-04-11 13:00:00', '2019-10-14 07:58:52'],
+        [103, 0, 'Twitter', 'TWITTER_URL', 'https://twitter.com/cloudswiftsolutions', 'text', 100, 60, 'Please enter your twitter page url', 'form-control', 'N', 40, null, 'Y', null, 'N', 'Y', 10, 'N', 'N', '2019-04-11 13:00:00', '2019-10-14 07:59:00'],
+        [104, 0, 'Linkedin', 'LINKEDIN_URL', 'https://www.linkedin.com/company/cloudswiftsolutions/', 'text', 100, 60, 'Please enter your Linkedin page url', 'form-control', 'N', 40, null, 'Y', null, 'N', 'Y', 10, 'N', 'N', '2019-04-11 13:00:00', '2019-10-14 07:59:06'],
+        [197, 0, 'Allow to sent email to admin for contact,feedback,etc.', 'ALLOW_CONTACT_EMAIL', 'Y', 'select', 100, 60, 'Please select option', 'form-control', 'Y', 5, 'Y@=N', 'Y', null, 'Y', 'N', 8, 'N', 'N', '2019-04-11 13:00:00', '2019-04-11 21:45:59'],
+        [211, 0, 'Application Name', 'FRONT_APPLICATION_NAME', 'Cloudswift Solutions', 'text', 100, 100, 'Please enter your application name for display on frontend side as name', 'form-control', 'Y', 1, null, 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 18:30:00', '2019-10-14 13:22:59'],
+        [236, 0, 'Closed Store Status', 'CLOSED_STORE_STATUS', 'N', 'select', 100, 100, 'This store is closed at present.', 'form-control', 'Y', 1, 'Y@=N', 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 18:30:00', '2021-08-02 10:54:46'],
+        [237, 0, 'Closed Store Message', 'CLOSED_STORE_MESSAGE', 'Store is Under Construction', 'text', 100, 100, 'Closed Store Message', 'form-control', 'Y', 1, null, 'Y', null, 'Y', 'Y', 1, 'N', 'N', '2019-04-11 18:30:00', '2021-08-02 10:52:45'],
+        [241, 0, 'BCC Email 1', 'BCC_EMAIL_1', 'bcc', 'email', 100, 60, 'BCC Email', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 18:30:00', '2026-01-29 15:39:46'],
+        [243, 0, 'SMTP HOST', 'SMTP_HOST', 'smtp.hostinger.com', 'text', 100, 60, 'SMTP HOST', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 18:30:00', '2021-08-13 06:20:26'],
+        [244, 0, 'SMTP PORT', 'SMTP_PORT', '587', 'text', 100, 60, 'SMTP Port', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 18:30:00', '2023-09-16 22:32:56'],
+        [245, 0, 'SMTP PASSWORD', 'SMTP_PASSWORD', 'Cloud@112018', 'email', 100, 60, 'SMTP PASSWORD', 'form-control', 'Y', 74, null, 'Y', null, 'N', 'Y', 8, 'N', 'N', '2019-04-11 18:30:00', '2021-08-13 06:20:26']
+      ];
