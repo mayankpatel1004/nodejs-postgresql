@@ -1,4 +1,4 @@
-const { CONSTANTS } = require("../helpers/constants");
+const { CONSTANTS } = require("../constants");
 const functions = require("../helpers/functions");
 const logToFile = require('../logs/logs');
 const consoleLog = require('../logs/logger');
