@@ -130,7 +130,6 @@ module.exports = {
         WHERE is_module = 1
             AND deleted_status = 'N'
         ORDER BY sidebar_order ASC`;
-      
       const resultsSidebar = await query(sidebarModule);
       const sidebarRows = resultsSidebar.rows;
       
