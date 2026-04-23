@@ -12,7 +12,7 @@ const updateQueries = require('../database_operation/updateQueries');
 const saveModulesData = require('../database_operation/saveModules');
 const fs = require('node:fs');
 const multer = require("multer");
-const functions = require("../functions/functions");
+const common_functions = require("../functions/common_functions");
 const logToFile = require('../logs/logs');
 const consoleLog = require('../logs/logger');
 const logSelectQueryToFile = require('../logs/log_query');
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   let allow_login = 0;
   try {
     let sqlQuery = selectQueries.getLoginQuery(data.user_name);
-    logSelectQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(common_functions.printQuery(sqlQuery));
     const resultColumns = await query(sqlQuery);
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
@@ -148,7 +148,7 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { user_email } = req.body;
     let sqlQuery = selectQueries.getForgotPasswordQuery(user_email);
-    logSelectQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(common_functions.printQuery(sqlQuery));
     const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {
       return res.send({
@@ -175,7 +175,7 @@ router.post("/forgot-password", async (req, res) => {
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
     let sqlUpdate = updateselectQueries.updateUserToken(user_token, user.user_id);
-    logSelectQueryToFile(functions.printQuery(sqlUpdate));
+    logSelectQueryToFile(common_functions.printQuery(sqlUpdate));
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
       return res.send({
@@ -197,7 +197,7 @@ router.post("/forgot-password", async (req, res) => {
       </tr>`;
 
     const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
-    await functions.sentAnEmail(user_email, subject, "", html);
+    await common_functions.sentAnEmail(user_email, subject, "", html);
     return res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.EMAIL_SUCCESS_SENT,
@@ -228,7 +228,7 @@ router.post("/password_token", async (req, res) => {
   try {
     const { email, token } = req.body;
     let sqlQuery = selectQueries.getUserToken(email, token);
-    logSelectQueryToFile(functions.printQuery(sqlQuery));
+    logSelectQueryToFile(common_functions.printQuery(sqlQuery));
     const result1 = await query(sqlQuery);
     let result = result1.rows;
     if (!result || result.length === 0) {
@@ -325,7 +325,7 @@ router.get('/', attachCommonData, async (req, res) => {
       data: decoded,
       partialsDir: [path.join(__dirname, 'views/partials')]
     };
-    functions.renderData(req, res, responseData, "index", decoded);
+    common_functions.renderData(req, res, responseData, "index", decoded);
   } catch (err) {
     res.status(500).json({ 
       success: CONSTANTS.FAIL_FLAG,
@@ -337,7 +337,7 @@ router.get('/', attachCommonData, async (req, res) => {
 router.get('/database_table', attachCommonData, async (req, res) => {
   try {
     logToFile("Dashboard Screen Called..........","success","");
-    logToFile("Database Screen Called..........",'request',functions.getHostUrl(req));
+    logToFile("Database Screen Called..........",'request',common_functions.getHostUrl(req));
     logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
     consoleLog("Developer Log");
     const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
@@ -360,7 +360,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
           filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
         }
         let sqlQuery = selectQueries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by);
-        logSelectQueryToFile(functions.printQuery(sqlQuery));
+        logSelectQueryToFile(common_functions.printQuery(sqlQuery));
         const resultColumns = await query(sqlQuery);
         selectedTableRows = resultColumns.rows;
 
@@ -381,7 +381,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
         total_columns: total_columns,
         partialsDir: [path.join(__dirname, 'views/partials')]
       };
-      functions.renderData(req, res, responseData, "database_table", decoded);
+      common_functions.renderData(req, res, responseData, "database_table", decoded);
   } catch (err) {
     res.status(500).send({ 
       success: CONSTANTS.FAIL_FLAG,
@@ -403,11 +403,11 @@ router.get("/items", attachCommonData, async (req, res) => {
     ...req.commonData,
     item_type: item_type,
     user_email: decoded.user_email,
-    listUrl: functions.getHostUrl(req) + "/items?item_type=" + item_type,
-    formUrl: functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
+    listUrl: common_functions.getHostUrl(req) + "/items?item_type=" + item_type,
+    formUrl: common_functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/items", attachCommonData, async (req, res) => {
@@ -440,7 +440,7 @@ router.post("/items", attachCommonData, async (req, res) => {
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+      data = await common_functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -560,10 +560,10 @@ router.get("/item_form", attachCommonData, async (req, res) => {
         display_status = row.display_status;
       }
     } else {
-      display_order = await functions.getItemsMaxNo(req, item_type);
+      display_order = await common_functions.getItemsMaxNo(req, item_type);
     }
     
-    const blogCategories = ["default", "blog"].includes(item_type) ? await functions.getBlogCategory(item_type) : [];
+    const blogCategories = ["default", "blog"].includes(item_type) ? await common_functions.getBlogCategory(item_type) : [];
     
     arrFields.push({
       type: "text",
@@ -670,7 +670,7 @@ router.get("/item_form", attachCommonData, async (req, res) => {
       req: "N",
       is_multiple: "N",
       cls: "form-control formfields",
-      options: functions.displayStatus(),
+      options: common_functions.displayStatus(),
     });
 
     arrFields.push({
@@ -692,7 +692,7 @@ router.get("/item_form", attachCommonData, async (req, res) => {
       req: "N",
       is_multiple: "N",
       cls: "form-control formfields",
-      options: functions.itemTypes(),
+      options: common_functions.itemTypes(),
     });
 
     arrFields.push({
@@ -772,14 +772,14 @@ router.get("/item_form", attachCommonData, async (req, res) => {
       ...req.commonData,
       fields: arrFields,
       view_path: viewDirectory,
-      listUrl: functions.getHostUrl(req) + "/items?item_type=" + item_type,
-      formUrl: functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
+      listUrl: common_functions.getHostUrl(req) + "/items?item_type=" + item_type,
+      formUrl: common_functions.getHostUrl(req) + "/item_form?item_type=" + item_type,
       edit_id,
       item_sections_id,
       partialsDir: [path.join(__dirname, "views/partials")],
     };
 
-    functions.renderData(req, res, responseData, viewDirectory,decoded);
+    common_functions.renderData(req, res, responseData, viewDirectory,decoded);
   } catch (error) {
     res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
@@ -804,11 +804,11 @@ router.get("/item_section", attachCommonData, async (req, res) => {
   const responseData = {
     ...req.commonData,
     user_email: decoded.user_email,
-    listUrl: functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
-    formUrl: functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
+    listUrl: common_functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
+    formUrl: common_functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/item_section", attachCommonData, async (req, res) => {
@@ -843,7 +843,7 @@ router.post("/item_section", attachCommonData, async (req, res) => {
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+      data = await common_functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -949,7 +949,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
         created_at = row.created_at;
       }
     } else {
-      display_order = await functions.getSectionMaxNo(req, item_type);
+      display_order = await common_functions.getSectionMaxNo(req, item_type);
     }
 
     arrFields.push({
@@ -1010,7 +1010,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
       ph: "",
       req: "N",
       is_multiple: "N",
-      options: functions.itemSectionTypes(),
+      options: common_functions.itemSectionTypes(),
       cls: "form-control js-example-basic-single formfields",
     });
 
@@ -1022,7 +1022,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
       ph: "",
       req: "N",
       is_multiple: "N",
-      options: functions.displayStatus(),
+      options: common_functions.displayStatus(),
       cls: "form-control js-example-basic-single formfields",
     });
 
@@ -1075,11 +1075,11 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
       ...req.commonData,
       fields: arrFields,
       view_path: viewDirectory,
-      listUrl: functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
-      formUrl: functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
+      listUrl: common_functions.getHostUrl(req) + "/item_section?item_type=" + item_type,
+      formUrl: common_functions.getHostUrl(req) + "/item_section_form?item_type=" + item_type,
       partialsDir: [path.join(__dirname, "views/partials")],
     };
-    functions.renderData(req, res, responseData, viewDirectory,decoded);
+    common_functions.renderData(req, res, responseData, viewDirectory,decoded);
   } catch (error) {
     console.error("Error loading item_section_form:", error);
     res.status(500).send("Internal Server Error");
@@ -1099,11 +1099,11 @@ router.get("/roles", attachCommonData, async (req, res) => {
   const responseData = {
     ...req.commonData,
     user_email: decoded.user_email,
-    listUrl: functions.getHostUrl(req) + "/roles",
-    formUrl: functions.getHostUrl(req) + "/role_form",
+    listUrl: common_functions.getHostUrl(req) + "/roles",
+    formUrl: common_functions.getHostUrl(req) + "/role_form",
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/roles", attachCommonData, async (req, res) => {
@@ -1126,7 +1126,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+      data = await common_functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -1291,7 +1291,7 @@ router.get("/role_form", attachCommonData, async (req, res) => {
             ph: "",
             req: "N",
             is_multiple: "N",
-            options: functions.displayStatus(),
+            options: common_functions.displayStatus(),
             cls: "form-control js-example-basic-single formfields",
           },
           {
@@ -1321,12 +1321,12 @@ router.get("/role_form", attachCommonData, async (req, res) => {
           fields: arrFields,
           role_access: roleAccessRecords,
           view_path: viewDirectory,
-          listUrl: functions.getHostUrl(req) + "/roles",
-          formUrl: functions.getHostUrl(req) + "/role_form",
+          listUrl: common_functions.getHostUrl(req) + "/roles",
+          formUrl: common_functions.getHostUrl(req) + "/role_form",
           partialsDir: [path.join(__dirname, "views/partials")],
       };
 
-      functions.renderData(req, res, responseData, viewDirectory, decoded);
+      common_functions.renderData(req, res, responseData, viewDirectory, decoded);
   } catch (error) {
       res.status(500).send({
         success: CONSTANTS.FAIL_FLAG,
@@ -1351,12 +1351,12 @@ router.get("/users", attachCommonData, async (req, res) => {
     ...req.commonData,
     search_keyword: "Search By Name/ Email",
     view_path: viewDirectory,
-    js_path: functions.getHostUrl(req) + "/templates/views/users/users/users.js",
-    listUrl: functions.getHostUrl(req) + "/users",
-    formUrl: functions.getHostUrl(req) + "/user_form",
+    js_path: common_functions.getHostUrl(req) + "/templates/views/users/users/users.js",
+    listUrl: common_functions.getHostUrl(req) + "/users",
+    formUrl: common_functions.getHostUrl(req) + "/user_form",
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/users", attachCommonData, async (req, res) => {
@@ -1380,7 +1380,7 @@ router.post("/users", attachCommonData, async (req, res) => {
 
   if (data.action == "update_status" && ["Y", "N", "T"].includes(data.status)) {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-      data = await functions.addUserDataToRequest(req.headers.authorization, data);
+      data = await common_functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
@@ -1580,7 +1580,7 @@ router.get("/user_form", attachCommonData, async (req, res) => {
         ph: "",
         req: "N",
         is_multiple: "N",
-        options: functions.displayStatus(),
+        options: common_functions.displayStatus(),
         cls: "form-control js-example-basic-single formfields",
       },
       {
@@ -1591,7 +1591,7 @@ router.get("/user_form", attachCommonData, async (req, res) => {
         ph: "",
         req: "Y",
         is_multiple: "N",
-        options: await functions.getAllRoles(),
+        options: await common_functions.getAllRoles(),
         cls: "form-control js-example-basic-single formfields",
       }
     );
@@ -1602,12 +1602,12 @@ router.get("/user_form", attachCommonData, async (req, res) => {
       ...req.commonData,
       fields: arrFields,
       view_path: viewDirectory,
-      listUrl: functions.getHostUrl(req) + "/users",
-      formUrl: functions.getHostUrl(req) + "/user_form",
+      listUrl: common_functions.getHostUrl(req) + "/users",
+      formUrl: common_functions.getHostUrl(req) + "/user_form",
       partialsDir: [path.join(__dirname, "views/partials")],
     };
 
-    functions.renderData(req, res, responseData, viewDirectory,decoded);
+    common_functions.renderData(req, res, responseData, viewDirectory,decoded);
   } catch (error) {
     res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
@@ -1637,7 +1637,7 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
     metadetails: metaRecords,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/metadetails", attachCommonData, async (req, res) => {
@@ -1658,7 +1658,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!metaId) continue;
 
       let sqlQuery = updateselectQueries.updateMetaDetails(column);
-      logSelectQueryToFile(functions.printQuery(sqlQuery));
+      logSelectQueryToFile(common_functions.printQuery(sqlQuery));
       const params = [data[key], metaId];
       await query(sqlQuery, params);
     }
@@ -1684,11 +1684,11 @@ router.post("/configurations", attachCommonData, async (req, res) => {
       const entries = Object.entries(data);
 
       for (const [config_name, rawValue] of entries) {
-        const sanitizedValue = functions.sanitize(rawValue);
+        const sanitizedValue = common_functions.sanitize(rawValue);
         let sqlUpdate = updateselectQueries.updateConfigurations();
         const params = [sanitizedValue, config_name];
         await query(sqlUpdate, params);
-        logSelectQueryToFile(functions.printQuery(sqlUpdate,params));
+        logSelectQueryToFile(common_functions.printQuery(sqlUpdate,params));
       }
     }
     res.send({
@@ -1749,7 +1749,7 @@ router.get("/configurations", attachCommonData, async (req, res) => {
     configurations: parents,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 /********************* Configurations Modules Over *********************/
@@ -1763,7 +1763,7 @@ router.get("/change-password", attachCommonData, async (req, res) => {
     user_email: decoded.user_email,
     partialsDir: [path.join(__dirname, "views/partials")],
   };
-  functions.renderData(req, res, responseData, viewDirectory, decoded);
+  common_functions.renderData(req, res, responseData, viewDirectory, decoded);
 });
 
 router.post("/change-password", attachCommonData, async (req, res) => {
@@ -1777,8 +1777,8 @@ router.post("/change-password", attachCommonData, async (req, res) => {
     const escapedEmail = user_email.replace(/'/g, "''");
 
     let sqlUpdate = updateselectQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
-    logToFile(functions.printQuery(sqlUpdate),"success");
-    await functions.insertActionLog('UpdatedPassword',user_id,"users",user_id);
+    logToFile(common_functions.printQuery(sqlUpdate),"success");
+    await common_functions.insertActionLog('UpdatedPassword',user_id,"users",user_id);
     const result = await query(sqlUpdate);
 
     const rowCount = result.rowCount || result.affectedRows || (result.rows ? result.rows.length : 0);
