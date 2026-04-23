@@ -7,7 +7,7 @@ const { promisify } = require('util');
 const moment = require('moment');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
-const queries = require('../database_operation/queries');
+const selectQueries = require('../database_operation/selectQueries');
 const updateQueries = require('../database_operation/updateQueries');
 const saveModulesData = require('../database_operation/saveModules');
 const fs = require('node:fs');
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
   let results = [];
   let allow_login = 0;
   try {
-    let sqlQuery = queries.getLoginQuery(data.user_name);
+    let sqlQuery = selectQueries.getLoginQuery(data.user_name);
     logSelectQueryToFile(functions.printQuery(sqlQuery));
     const resultColumns = await query(sqlQuery);
     if (resultColumns && resultColumns.rows.length > 0) {
@@ -147,7 +147,7 @@ router.get('/forgot-password', (req, res) => {
 router.post("/forgot-password", async (req, res) => {
   try {
     const { user_email } = req.body;
-    let sqlQuery = queries.getForgotPasswordQuery(user_email);
+    let sqlQuery = selectQueries.getForgotPasswordQuery(user_email);
     logSelectQueryToFile(functions.printQuery(sqlQuery));
     const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {
@@ -174,7 +174,7 @@ router.post("/forgot-password", async (req, res) => {
     }
     let user_token_random = Math.floor(1000 + Math.random() * 9000);
     let user_token = `${user_token_random}${user.user_id}`;
-    let sqlUpdate = updateQueries.updateUserToken(user_token, user.user_id);
+    let sqlUpdate = updateselectQueries.updateUserToken(user_token, user.user_id);
     logSelectQueryToFile(functions.printQuery(sqlUpdate));
     const updateResult = await query(sqlUpdate);
     if (updateResult.rowCount === 0) {
@@ -227,7 +227,7 @@ router.get("/password-token", async (req, res) => {
 router.post("/password_token", async (req, res) => {
   try {
     const { email, token } = req.body;
-    let sqlQuery = queries.getUserToken(email, token);
+    let sqlQuery = selectQueries.getUserToken(email, token);
     logSelectQueryToFile(functions.printQuery(sqlQuery));
     const result1 = await query(sqlQuery);
     let result = result1.rows;
@@ -247,7 +247,7 @@ router.post("/password_token", async (req, res) => {
           data: [],
         });
       }
-      let sqlUpdate = updateQueries.updateUserToken("", user.user_id);
+      let sqlUpdate = updateselectQueries.updateUserToken("", user.user_id);
       await query(sqlUpdate);
       res.send({
         success: CONSTANTS.SUCCESS_FLAG,
@@ -268,7 +268,7 @@ router.post("/activate_account", async (req, res) => {
   try {
     const { id, password } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
-    let sqlUpdate = updateQueries.activateAccount(encryptPass, "", id);
+    let sqlUpdate = updateselectQueries.activateAccount(encryptPass, "", id);
     const result = await query(sqlUpdate);
     if (result.rowCount === 0) {
       return res.send({
@@ -347,7 +347,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
       let selectedTableRows = [];
       let selectedTableStructure = [];
       let total_columns = 0;
-      let sqlQuery = queries.getAllTables();
+      let sqlQuery = selectQueries.getAllTables();
       const database_tables_result = await query(sqlQuery);
 
       if (req.query && req.query.tableName) {
@@ -359,12 +359,12 @@ router.get('/database_table', attachCommonData, async (req, res) => {
         if (primary_key_column && primary_key_value) {
           filter_string += ` AND ${primary_key_column} = '${primary_key_value}'`;
         }
-        let sqlQuery = queries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by);
+        let sqlQuery = selectQueries.getTableData(table_name, filter_string, primary_key_column, selected_sort_by);
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         const resultColumns = await query(sqlQuery);
         selectedTableRows = resultColumns.rows;
 
-        const resultStructure = await query(queries.getTableStructure(table_name));
+        const resultStructure = await query(selectQueries.getTableStructure(table_name));
         selectedTableStructure = resultStructure.rows;
         total_columns = selectedTableStructure.length;
       }
@@ -444,9 +444,9 @@ router.post("/items", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateQueries.updateItemsTrash(data);
+      sqlUpdateStatus = updateselectQueries.updateItemsTrash(data);
     } else {
-      sqlUpdateStatus = updateQueries.updateItemsStatus(data);
+      sqlUpdateStatus = updateselectQueries.updateItemsStatus(data);
     }
     let results = await query(sqlUpdateStatus);
     res.send({
@@ -462,7 +462,7 @@ router.post("/items", attachCommonData, async (req, res) => {
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getItemsQuery(searchKeywordString, orderByString, limitString);
+    let arrTotalRecords_List = selectQueries.getItemsQuery(searchKeywordString, orderByString, limitString);
     
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
@@ -847,9 +847,9 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateQueries.updateItemSectionTrash(data);
+      sqlUpdateStatus = updateselectQueries.updateItemSectionTrash(data);
     } else {
-      sqlUpdateStatus = updateQueries.updateItemSectionStatus(data);
+      sqlUpdateStatus = updateselectQueries.updateItemSectionStatus(data);
     }
     let results = await query(sqlUpdateStatus);
     if (results) {
@@ -867,7 +867,7 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getItemSectionQuery(searchKeywordString, orderByString, limitString);
+    let arrTotalRecords_List = selectQueries.getItemSectionQuery(searchKeywordString, orderByString, limitString);
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
@@ -1130,9 +1130,9 @@ router.post("/roles", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateQueries.updateRoleTrash(data);
+      sqlUpdateStatus = updateselectQueries.updateRoleTrash(data);
     } else {
-      sqlUpdateStatus = updateQueries.updateRoleStatus(data);
+      sqlUpdateStatus = updateselectQueries.updateRoleStatus(data);
     }
     const results = await query(sqlUpdateStatus);
     if (results) {
@@ -1150,7 +1150,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getRolesQuery(searchKeywordString, orderByString, limitString);
+    let arrTotalRecords_List = selectQueries.getRolesQuery(searchKeywordString, orderByString, limitString);
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
@@ -1226,7 +1226,7 @@ router.get("/role_form", attachCommonData, async (req, res) => {
       if (req.query.edit_id && req.query.edit_id > 0) {
         edit_id = req.query.edit_id;
 
-        let sqlUser = queries.getRoleById(edit_id);
+        let sqlUser = selectQueries.getRoleById(edit_id);
         let results1 = await query(sqlUser);
         const results = results1.rows;
 
@@ -1305,11 +1305,11 @@ router.get("/role_form", attachCommonData, async (req, res) => {
           }
       );
 
-      let sqlMetaDetails = queries.getRoleMetaDetails();
+      let sqlMetaDetails = selectQueries.getRoleMetaDetails();
       let metaRecords1 = await query(sqlMetaDetails);
       const metaRecords = metaRecords1.rows;
 
-      let sqlUserRolesAccess = queries.getRoleAccess(edit_id);
+      let sqlUserRolesAccess = selectQueries.getRoleAccess(edit_id);
       let roleAccessRecords1 = await query(sqlUserRolesAccess);
       const roleAccessRecords = roleAccessRecords1.rows;
 
@@ -1384,9 +1384,9 @@ router.post("/users", attachCommonData, async (req, res) => {
     }
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
-      sqlUpdateStatus = updateQueries.updateUserTrash(data);
+      sqlUpdateStatus = updateselectQueries.updateUserTrash(data);
     } else {
-      sqlUpdateStatus = updateQueries.updateUserStatus(data);
+      sqlUpdateStatus = updateselectQueries.updateUserStatus(data);
     }
     const results = await query(sqlUpdateStatus);
     if (results) {
@@ -1408,7 +1408,7 @@ router.post("/users", attachCommonData, async (req, res) => {
     let sqlTotalRecords = [];
     let sqlList = [];
 
-    let arrTotalRecords_List = queries.getUsersQuery(searchKeywordString, orderByString, limitString);
+    let arrTotalRecords_List = selectQueries.getUsersQuery(searchKeywordString, orderByString, limitString);
     if (arrTotalRecords_List && arrTotalRecords_List.length > 0) {
       sqlTotalRecords = arrTotalRecords_List[0];
       sqlList = arrTotalRecords_List[1];
@@ -1627,7 +1627,7 @@ router.get("/metadetails", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/metadetails/metadetails";
 
-  let sqlMetaDetails = queries.getMetaDetails();
+  let sqlMetaDetails = selectQueries.getMetaDetails();
   let metaRecords1 = await query(sqlMetaDetails);
   const metaRecords = metaRecords1.rows;
 
@@ -1657,7 +1657,7 @@ router.post("/metadetails", attachCommonData, async (req, res) => {
       if (!allowedColumns.has(column)) continue;
       if (!metaId) continue;
 
-      let sqlQuery = updateQueries.updateMetaDetails(column);
+      let sqlQuery = updateselectQueries.updateMetaDetails(column);
       logSelectQueryToFile(functions.printQuery(sqlQuery));
       const params = [data[key], metaId];
       await query(sqlQuery, params);
@@ -1685,7 +1685,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
 
       for (const [config_name, rawValue] of entries) {
         const sanitizedValue = functions.sanitize(rawValue);
-        let sqlUpdate = updateQueries.updateConfigurations();
+        let sqlUpdate = updateselectQueries.updateConfigurations();
         const params = [sanitizedValue, config_name];
         await query(sqlUpdate, params);
         logSelectQueryToFile(functions.printQuery(sqlUpdate,params));
@@ -1707,7 +1707,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
 router.get("/configurations", attachCommonData, async (req, res) => {
   const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/configurations/configurations";
-  let sqlSiteConfigurations = queries.getSiteConfigurations();
+  let sqlSiteConfigurations = selectQueries.getSiteConfigurations();
   let configRecords1 = await query(sqlSiteConfigurations);
   const configRecords = configRecords1.rows;
   const parentsMap = new Map();
@@ -1776,7 +1776,7 @@ router.post("/change-password", attachCommonData, async (req, res) => {
     const escapedUserId = user_id.replace(/'/g, "''");
     const escapedEmail = user_email.replace(/'/g, "''");
 
-    let sqlUpdate = updateQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
+    let sqlUpdate = updateselectQueries.updateChangePassword(escapedPassword,escapedUserId,escapedEmail);
     logToFile(functions.printQuery(sqlUpdate),"success");
     await functions.insertActionLog('UpdatedPassword',user_id,"users",user_id);
     const result = await query(sqlUpdate);
