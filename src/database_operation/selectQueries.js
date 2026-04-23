@@ -171,7 +171,7 @@ const queries = {
         return [sqlTotalRecords, sqlList];
     },
     getMetaDetails: () => {
-        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id DESC`;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} ORDER BY meta_id ASC`;
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
@@ -185,17 +185,17 @@ const queries = {
         return sqlQuery;
     },
     getRoleById: (id) => {
-        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLES} WHERE role_id = ${id}`;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLES} WHERE role_id = ${id} ORDER BY role_id ASC`;
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getRoleMetaDetails: () => {
-        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} WHERE is_module = 1 ORDER BY meta_id DESC`;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_META_DETAILS} WHERE is_module = 1 ORDER BY meta_id ASC`;
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
     getRoleAccess: (id) => {
-        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${id}`;
+        let sqlQuery = `SELECT * FROM ${CONSTANTS.TBL_ROLE_ACCESS} WHERE role_id = ${id} ORDER BY role_access_id ASC`;
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },

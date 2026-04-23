@@ -138,11 +138,10 @@ module.exports = {
         SELECT module_id
         FROM role_access
         WHERE role_id = $1
-            AND grant_view = 'Y'`;
+            AND grant_view = 'Y' ORDER BY module_id ASC`;
       
       const resultRoles = await query(sqlAccessModules, [userRoleId]);
       const resultRolesRows = resultRoles.rows;
-      
       const sidebarMenu = sidebarRows.filter((sidebarItem) =>
         resultRolesRows.some((role) => role.module_id === sidebarItem.module_id)
       );
