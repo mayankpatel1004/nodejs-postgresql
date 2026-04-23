@@ -10,7 +10,7 @@ exports.attachCommonData = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       decoded = await functions.addUserDataToRequest(req.headers.authorization, []);
     } else {
-      decoded = await promisify(jwt.verify)(req.cookies.jwt,process.env.JWT_SECRET);
+      decoded = await promisify(jwt.verify)(req.cookies.jwt,CONSTANTS.JWT_SECRET);
     }
     if(decoded && (parseInt(decoded.login_id) > 0 || parseInt(decoded.user_id) > 0)){
       const [sidebarMenu, metaDetails] = await Promise.all([

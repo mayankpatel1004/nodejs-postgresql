@@ -175,9 +175,9 @@ module.exports = {
             `;
           await query(sqlInsert, [
             end_points,
-            CONSTANTS.DEFAULT_TITLE,
-            CONSTANTS.DEFAULT_META_TITLE,
-            CONSTANTS.DEFAULT_META_DESCRIPTION,
+            CONSTANTS.APPLICATION_TITLE,
+            CONSTANTS.APPLICATION_META_TITLE,
+            CONSTANTS.APPLICATION_META_DESCRIPTION,
           ]);
           result = await query(sqlQuery, [end_points]);
         }
@@ -187,16 +187,16 @@ module.exports = {
           {
             meta_id: resultRows[0].meta_id,
             page_title: resultRows[0].page_title,
-            meta_title: `${resultRows[0].meta_title} - ${CONSTANTS.DEFAULT_META_TITLE}`,
+            meta_title: `${resultRows[0].meta_title} - ${CONSTANTS.APPLICATION_META_TITLE}`,
             meta_description: resultRows[0].meta_description,
           },
         ];
       }
       return [
         {
-          page_title: CONSTANTS.DEFAULT_TITLE,
-          meta_title: CONSTANTS.DEFAULT_META_TITLE,
-          meta_description: CONSTANTS.DEFAULT_META_DESCRIPTION,
+          page_title: CONSTANTS.APPLICATION_TITLE,
+          meta_title: CONSTANTS.APPLICATION_META_TITLE,
+          meta_description: CONSTANTS.APPLICATION_META_DESCRIPTION,
         },
       ];
     } catch (err) {

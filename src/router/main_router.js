@@ -89,10 +89,10 @@ router.post('/login', async (req, res) => {
             web_or_app: results[0].web_or_app,
             active_status: results[0].active_status
           },
-          process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }
+          CONSTANTS.JWT_SECRET, { expiresIn: CONSTANTS.JWT_EXPIRES_IN }
         );
         const cookieOptions = {
-          expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
+          expires: new Date(Date.now() + CONSTANTS.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000),
           httpOnly: true
         };
         if (token) {
@@ -317,7 +317,7 @@ router.get("/reset-password", async (req, res) => {
 router.get('/', attachCommonData, async (req, res) => {
   try {
     
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
     let responseData = {
       success: 1,
       message: CONSTANTS.WELCOME_TO_API,
@@ -340,7 +340,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
     logToFile("Database Screen Called..........",'request',common_functions.getHostUrl(req));
     logToFile({"name":"John Doe","age":30,"isEmployee":true,"skills":["JavaScript","Python"],"address":{"city":"New York","zip":"10001"}},"fail");
     consoleLog("Developer Log");
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
       let table_name = '';
       let primary_key_column = '';
       let selected_sort_by = '';
@@ -392,7 +392,7 @@ router.get('/database_table', attachCommonData, async (req, res) => {
 
 /********************* Items Modules Start *********************/
 router.get("/items", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let item_type = "page";
   if (req.query && typeof req.query.item_type !== "undefined") {
     item_type = req.query.item_type;
@@ -506,7 +506,7 @@ router.post("/items", attachCommonData, async (req, res) => {
 
 router.get("/item_form", attachCommonData, async (req, res) => {
   try {
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
     const arrFields = [];
 
     let item_id = 0;
@@ -795,7 +795,7 @@ router.post("/item_form", itemImageUpload, async (req, res) => {
 
 /********************* Item Section Modules Start *********************/
 router.get("/item_section", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let item_type = "page";
   if (req.query && typeof req.query.item_type !== "undefined") {
     item_type = req.query.item_type;
@@ -912,7 +912,7 @@ router.post("/item_section", attachCommonData, async (req, res) => {
 
 router.get("/item_section_form", attachCommonData, async (req, res) => {
   try {
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
     const arrFields = [];
 
     let item_section_id = 0;
@@ -1095,7 +1095,7 @@ router.post("/item_section_form", sectionImageUpload, async (req, res) => {
 
 /********************* Roles Modules Start *********************/
 router.get("/roles", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/roles/roles";
   const responseData = {
     ...req.commonData,
@@ -1214,7 +1214,7 @@ router.post("/roles", attachCommonData, async (req, res) => {
 
 router.get("/role_form", attachCommonData, async (req, res) => {
   try {
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
       const arrFields = [];
     
       let edit_id = 0;
@@ -1346,7 +1346,7 @@ router.post("/role_form", userImageUpload, async (req, res) => {
 
 /********************* User Modules Start *********************/
 router.get("/users", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/users/users";
   const responseData = {
     ...req.commonData,
@@ -1470,7 +1470,7 @@ router.post("/users", attachCommonData, async (req, res) => {
 
 router.get("/user_form", attachCommonData, async (req, res) => {
   try {
-    const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+    const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
     const arrFields = [];
 
     let edit_id = 0;
@@ -1625,7 +1625,7 @@ router.post("/user_form", userImageUpload, async (req, res) => {
 
 /******************** Meta Details Start ***********/
 router.get("/metadetails", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/metadetails/metadetails";
 
   let sqlMetaDetails = selectQueries.getMetaDetails();
@@ -1707,7 +1707,7 @@ router.post("/configurations", attachCommonData, async (req, res) => {
 });
 
 router.get("/configurations", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/configurations/configurations";
   let sqlSiteConfigurations = selectQueries.getSiteConfigurations();
   let configRecords1 = await query(sqlSiteConfigurations);
@@ -1758,7 +1758,7 @@ router.get("/configurations", attachCommonData, async (req, res) => {
 
 /**** Change Password Start *****/
 router.get("/change-password", attachCommonData, async (req, res) => {
-  const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(req.cookies.jwt, CONSTANTS.JWT_SECRET);
   let viewDirectory = path.join(__dirname, "../") + "templates/views/change-password/change-password";
   const responseData = {
     ...req.commonData,
