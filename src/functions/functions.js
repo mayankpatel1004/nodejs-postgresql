@@ -8,14 +8,13 @@ const nodemailer = require("nodemailer");
 const { CONSTANTS } = require("../constants");
 const logInsertQueryToFile = require('../logs/log_insert_query');
 const logSelectQueryToFile = require('../logs/log_query');
-const {mailPassword,mailUser,mailHost,mailPort,mailSecure} = require("../helpers/email");
 let transporter = nodemailer.createTransport({
-  host: mailHost,
-  port: mailPort,
-  secure: mailSecure,
+  host: "smtp.hostinger.com",//process.env.HOST
+  port: process.env.PORT,
+  secure: process.env.SECURE,
   auth: {
-    user: mailUser,
-    pass: mailPassword,
+    user: process.env.AUTH_USER,
+    pass: process.env.AUTH_PASS,
   },
 });
 

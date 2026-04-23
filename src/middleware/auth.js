@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { promisify } = require('util');
 const path = require('path');
-const functions = require('../helpers/functions');
+const functions = require('../functions/functions');
 const { CONSTANTS } = require("../constants");
 
 exports.attachCommonData = async (req, res, next) => {

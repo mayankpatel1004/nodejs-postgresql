@@ -1,5 +1,5 @@
 const { CONSTANTS } = require("../constants");
-const functions = require("../helpers/functions");
+const functions = require("../functions/functions");
 const logToFile = require('../logs/logs');
 const consoleLog = require('../logs/logger');
 const logSelectQueryToFile = require('../logs/log_query');

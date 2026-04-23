@@ -14,9 +14,9 @@ const { json, response } = require('express');
 const { decode } = require('punycode');
 const { url } = require('inspector');
 const e = require('express');
-const custom_helpers = require('../src/helpers/custom_helpers');
+const handlebar_functions = require('./functions/handlebar_functions');
 var helpers = require('handlebars-helpers')();
-    
+
 const staticPath = path.join(__dirname, "./public");
 const templatePath = path.join(__dirname, "./templates/views");
 const partialsPath = path.join(__dirname, "./templates/partials");

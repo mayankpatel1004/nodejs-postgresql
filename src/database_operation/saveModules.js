@@ -1,5 +1,5 @@
 const { CONSTANTS } = require("../constants");
-const functions = require("../helpers/functions");
+const functions = require("../functions/functions");
 const db = require('../../connection');
 const util = require("util");
 const query = util.promisify(db.query).bind(db);
