@@ -255,7 +255,6 @@ router.post("/password_token", async (req, res) => {
         data: user,
       });
     }
-
   } catch (error) {
     res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
