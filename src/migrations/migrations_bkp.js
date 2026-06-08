@@ -37,7 +37,7 @@ async function migrate() {
           deleted_time TIMESTAMP DEFAULT NULL,
           created_at TIMESTAMP DEFAULT NULL,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'items' created successfully");
@@ -49,23 +49,21 @@ async function migrate() {
     try {
     let sqlQuery = `
         CREATE TABLE IF NOT EXISTS action (
-          action_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-          action VARCHAR(255) DEFAULT NULL,
-          record_id INT NOT NULL DEFAULT 0,
-          table_name VARCHAR(255) DEFAULT NULL,
-          record_name VARCHAR(255) DEFAULT NULL,
-          display_order INT NOT NULL DEFAULT 0,
-          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-          created_by INT NOT NULL DEFAULT 0,
-          created_by_name VARCHAR(255) DEFAULT NULL,
-          created_by_role INT NOT NULL DEFAULT 0,
-          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-          deleted_by INT NOT NULL DEFAULT 0,
-          deleted_by_name VARCHAR(255) DEFAULT NULL,
-          deleted_time TIMESTAMP DEFAULT NULL,
-          created_at TIMESTAMP DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`;
+            action_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            action VARCHAR(255) DEFAULT NULL,
+            record_id INT NOT NULL DEFAULT 0,
+            table_name VARCHAR(255) DEFAULT NULL,
+            record_name VARCHAR(255) DEFAULT NULL,
+            created_by INT NOT NULL DEFAULT 0,
+            display_order INT NOT NULL DEFAULT 0,
+            display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+            deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+            deleted_by INT NOT NULL DEFAULT 0,
+            deleted_by_name VARCHAR(255) DEFAULT NULL,
+            deleted_time TIMESTAMP DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
       await query(sqlQuery);
       console.log("✅ Table 'action' created successfully");
     } catch (err) {
@@ -76,29 +74,29 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS item_section (
-    item_section_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    item_section_parent_id INT NOT NULL DEFAULT 0,
-    section_title VARCHAR(255) DEFAULT NULL,
-    section_alias VARCHAR(255) DEFAULT NULL,
-    item_type VARCHAR(255) DEFAULT NULL,
-    description TEXT DEFAULT NULL,
-    attachment1 VARCHAR(255) DEFAULT NULL,
-    user_id INTEGER DEFAULT 0,
-    meta_title VARCHAR(255) DEFAULT NULL,
-    meta_description TEXT DEFAULT NULL,
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+          item_section_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          item_section_parent_id INT NOT NULL DEFAULT 0,
+          section_title VARCHAR(255) DEFAULT NULL,
+          section_alias VARCHAR(255) DEFAULT NULL,
+          item_type VARCHAR(255) DEFAULT NULL,
+          description TEXT DEFAULT NULL,
+          attachment1 VARCHAR(255) DEFAULT NULL,
+          user_id INT DEFAULT 0,
+          display_order INT DEFAULT 0,
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          meta_title VARCHAR(255) DEFAULT NULL,
+          meta_description TEXT DEFAULT NULL,
+          created_by INT NOT NULL DEFAULT 0,
+          created_by_name VARCHAR(255) DEFAULT NULL,
+          created_by_role INT NOT NULL DEFAULT 0,
+          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+          deleted_by INT NOT NULL DEFAULT 0,
+          deleted_by_name VARCHAR(255) DEFAULT NULL,
+          deleted_time TIMESTAMP DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'item_section' created successfully");
@@ -110,22 +108,14 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS item_section_relation (
-    item_section_relation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    item_id BIGINT NOT NULL DEFAULT 0,
-    section_id BIGINT NOT NULL DEFAULT 0,
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+          item_section_relation_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          item_id BIGINT NOT NULL DEFAULT 0,
+          section_id BIGINT NOT NULL DEFAULT 0,
+          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+          deleted_by INT NOT NULL DEFAULT 0,
+          deleted_time TIMESTAMP DEFAULT NULL
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'item_section_relation' created successfully");
@@ -137,30 +127,21 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS meta_details (
-    meta_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    parent_id INT NOT NULL DEFAULT 0,
-    end_points VARCHAR(255) DEFAULT NULL,
-    page_title VARCHAR(255) DEFAULT NULL,
-    meta_title VARCHAR(255) DEFAULT NULL,
-    meta_description VARCHAR(255) DEFAULT NULL,
-    sidebar_title VARCHAR(255) DEFAULT NULL,
-    sidebar_icon VARCHAR(255) DEFAULT NULL,
-    sidebar_order INT NOT NULL DEFAULT 0,
-    params VARCHAR(255) DEFAULT NULL,
-    is_module SMALLINT NOT NULL DEFAULT 0,
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)`;
+          meta_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          parent_id INT NOT NULL DEFAULT 0,
+          end_points VARCHAR(255) DEFAULT NULL,
+          page_title VARCHAR(255) DEFAULT NULL,
+          meta_title VARCHAR(255) DEFAULT NULL,
+          meta_description VARCHAR(255) DEFAULT NULL,
+          sidebar_title VARCHAR(255) DEFAULT NULL,
+          sidebar_icon VARCHAR(255) DEFAULT NULL,
+          sidebar_order INT NOT NULL DEFAULT 0,
+          params VARCHAR(255) DEFAULT NULL,
+          is_module SMALLINT NOT NULL DEFAULT 0,
+          deleted_status VARCHAR(4) NOT NULL DEFAULT 'N'
+        )
+      `;
       await query(sqlQuery);
       console.log("✅ Table 'meta_details' created successfully");
     } catch (err) {
@@ -170,27 +151,25 @@ async function migrate() {
     // Table: role
     try {
       sqlQuery = `
-        CREATE TABLE IF NOT EXISTS "role" (
+        CREATE TABLE IF NOT EXISTS role (
           role_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
           site_id INT NOT NULL DEFAULT 0,
           role_title VARCHAR(255) DEFAULT NULL,
           item_alias VARCHAR(255) DEFAULT NULL,
           item_type VARCHAR(255) NOT NULL DEFAULT 'role',
+          display_order INT NOT NULL DEFAULT 0,
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
           display_on_listing VARCHAR(1) NOT NULL DEFAULT 'Y',
           show_action_checkbox VARCHAR(1) NOT NULL DEFAULT 'Y',
           allow_delete VARCHAR(1) NOT NULL DEFAULT 'Y',
-          display_order INT NOT NULL DEFAULT 0,
-          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
           created_by INT NOT NULL DEFAULT 0,
-          created_by_name VARCHAR(255) DEFAULT NULL,
-          created_by_role INT NOT NULL DEFAULT 0,
           deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
           deleted_by INT NOT NULL DEFAULT 0,
           deleted_by_name VARCHAR(255) DEFAULT NULL,
           deleted_time TIMESTAMP DEFAULT NULL,
           created_at TIMESTAMP DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'role' created successfully");
@@ -202,26 +181,20 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS role_access (
-    role_access_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    role_id INTEGER DEFAULT 0,
-    module_id INTEGER DEFAULT 0,
-    grant_add VARCHAR(1) NOT NULL DEFAULT 'N',
-    grant_edit VARCHAR(1) NOT NULL DEFAULT 'N',
-    grant_delete VARCHAR(1) NOT NULL DEFAULT 'N',
-    grant_view VARCHAR(1) NOT NULL DEFAULT 'N',
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)`;
+          role_access_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          role_id INT DEFAULT 0,
+          module_id INT DEFAULT 0,
+          grant_add VARCHAR(1) NOT NULL DEFAULT 'N',
+          grant_edit VARCHAR(1) NOT NULL DEFAULT 'N',
+          grant_delete VARCHAR(1) NOT NULL DEFAULT 'N',
+          grant_view VARCHAR(1) NOT NULL DEFAULT 'N',
+          display_order INT NOT NULL DEFAULT 0,
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`;
       await query(sqlQuery);
       console.log("✅ Table 'role_access' created successfully");
     } catch (err) {
@@ -232,35 +205,29 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS site_config (
-    config_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    config_title VARCHAR(1024) DEFAULT NULL,
-    config_name VARCHAR(1024) DEFAULT NULL,
-    config_value TEXT DEFAULT NULL,
-    input_type VARCHAR(15) DEFAULT NULL,
-    size INTEGER NOT NULL DEFAULT 100,
-    maxlength INTEGER NOT NULL DEFAULT 100,
-    input_type_title VARCHAR(100) DEFAULT NULL,
-    classname VARCHAR(100) DEFAULT 'textbox',
-    required VARCHAR(1) DEFAULT 'O',
-    comments VARCHAR(255) DEFAULT NULL,
-    additional VARCHAR(100) DEFAULT NULL,
-    display_on_dashboard VARCHAR(1) NOT NULL DEFAULT 'N',
-    display_on_third_party VARCHAR(1) NOT NULL DEFAULT 'N',
-    site_config_parent_id SMALLINT NOT NULL DEFAULT 0,
-    root_user_only VARCHAR(1) NOT NULL DEFAULT 'N',
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+          config_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          config_title VARCHAR(1024) DEFAULT NULL,
+          config_name VARCHAR(1024) DEFAULT NULL,
+          config_value TEXT DEFAULT NULL,
+          input_type VARCHAR(15) DEFAULT NULL,
+          size INT NOT NULL DEFAULT 100,
+          maxlength INT NOT NULL DEFAULT 100,
+          input_type_title VARCHAR(100) DEFAULT NULL,
+          class VARCHAR(100) DEFAULT 'textbox',
+          required VARCHAR(1) DEFAULT 'O',
+          display_order INT NOT NULL DEFAULT 0,
+          comments VARCHAR(255) DEFAULT NULL,
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          additional VARCHAR(100) DEFAULT NULL,
+          display_on_dashboard VARCHAR(1) NOT NULL DEFAULT 'N',
+          display_on_third_party VARCHAR(1) NOT NULL DEFAULT 'N',
+          site_config_parent_id SMALLINT NOT NULL DEFAULT 0,
+          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+          root_user_only VARCHAR(1) NOT NULL DEFAULT 'N',
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'site_config' created successfully");
@@ -272,23 +239,17 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS site_config_parent (
-            site_config_parent_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-            site_id INTEGER NOT NULL,
-            site_config_title VARCHAR(191) NOT NULL,
-            classname VARCHAR(191) NOT NULL,
-            root_user_only VARCHAR(1) NOT NULL,
-            display_order INT NOT NULL DEFAULT 0,
-            display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-            created_by INT NOT NULL DEFAULT 0,
-            created_by_name VARCHAR(255) DEFAULT NULL,
-            created_by_role INT NOT NULL DEFAULT 0,
-            deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-            deleted_by INT NOT NULL DEFAULT 0,
-            deleted_by_name VARCHAR(255) DEFAULT NULL,
-            deleted_time TIMESTAMP DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+          site_config_parent_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL,
+          site_config_title VARCHAR(191) NOT NULL,
+          display_order INT NOT NULL,
+          display_status VARCHAR(1) NOT NULL,
+          class VARCHAR(191) NOT NULL,
+          deleted_status VARCHAR(1) NOT NULL,
+          root_user_only VARCHAR(1) NOT NULL,
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP DEFAULT NULL
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'site_config_parent' created successfully");
@@ -300,33 +261,30 @@ async function migrate() {
     try {
       sqlQuery = `
         CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_id INT NOT NULL DEFAULT 0,
-    site_db VARCHAR(255) DEFAULT NULL,
-    user_firstname VARCHAR(255) DEFAULT NULL,
-    user_lastname VARCHAR(255) DEFAULT NULL,
-    user_name VARCHAR(255) DEFAULT NULL,
-    user_email VARCHAR(255) DEFAULT NULL,
-    user_password VARCHAR(255) DEFAULT NULL,
-    user_token VARCHAR(255) DEFAULT NULL,
-    user_photo VARCHAR(255) DEFAULT NULL,
-    user_role_id SMALLINT NOT NULL DEFAULT 0,
-    is_developer_account VARCHAR(1) NOT NULL DEFAULT 'N',
-    allow_delete VARCHAR(1) NOT NULL DEFAULT 'Y',
-    web_or_app VARCHAR(4) NOT NULL DEFAULT 'App',
-    active_status VARCHAR(25) NOT NULL DEFAULT 'N',
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+          user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          site_id INT NOT NULL DEFAULT 0,
+          site_db VARCHAR(255) DEFAULT NULL,
+          user_firstname VARCHAR(255) DEFAULT NULL,
+          user_lastname VARCHAR(255) DEFAULT NULL,
+          user_name VARCHAR(255) DEFAULT NULL,
+          user_email VARCHAR(255) DEFAULT NULL,
+          user_password VARCHAR(255) DEFAULT NULL,
+          user_token VARCHAR(255) DEFAULT NULL,
+          user_photo VARCHAR(255) DEFAULT NULL,
+          user_role_id SMALLINT NOT NULL DEFAULT 0,
+          is_developer_account VARCHAR(1) NOT NULL DEFAULT 'N',
+          allow_delete VARCHAR(1) NOT NULL DEFAULT 'Y',
+          created_by INT NOT NULL DEFAULT 0,
+          created_by_name VARCHAR(255) DEFAULT NULL,
+          created_by_role INT NOT NULL DEFAULT 0,
+          web_or_app VARCHAR(4) NOT NULL DEFAULT 'App',
+          active_status VARCHAR(25) NOT NULL DEFAULT 'N',
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          deleted_time TIMESTAMP DEFAULT NULL,
+          deleted_status VARCHAR(4) NOT NULL DEFAULT 'N',
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
       `;
       await query(sqlQuery);
       console.log("✅ Table 'users' created successfully");
@@ -350,51 +308,48 @@ async function migrate() {
     try {
       let sqlQuery = `
         CREATE TABLE IF NOT EXISTS customers (
-    customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    cart_id_pk INTEGER DEFAULT 0,
-    cart_customer_id VARCHAR(255) DEFAULT NULL,
-    customer_pin INT NOT NULL DEFAULT 0,
-    pos_customer VARCHAR(1) NOT NULL DEFAULT 'N',
-    name VARCHAR(255) DEFAULT NULL,
-    first_name VARCHAR(191) DEFAULT NULL,
-    last_name VARCHAR(191) DEFAULT NULL,
-    email VARCHAR(100) UNIQUE DEFAULT NULL,
-    password VARCHAR(191) DEFAULT NULL,
-    birth_date DATE DEFAULT NULL,
-    role_id INT NOT NULL DEFAULT 0,
-    guest_customer VARCHAR(1) NOT NULL DEFAULT '0',
-    access_token VARCHAR(255) DEFAULT NULL,
-    security_question_id INT NOT NULL DEFAULT 0,
-    security_answer VARCHAR(191) DEFAULT NULL,
-    user_address1 VARCHAR(191) DEFAULT NULL,
-    user_address2 VARCHAR(191) DEFAULT NULL,
-    user_city VARCHAR(191) DEFAULT NULL,
-    user_state VARCHAR(191) DEFAULT NULL,
-    user_zipcode VARCHAR(191) DEFAULT NULL,
-    user_country VARCHAR(191) DEFAULT NULL,
-    contact_number VARCHAR(191) DEFAULT NULL,
-    display_on_listing VARCHAR(1) NOT NULL DEFAULT 'Y',
-    show_action_checkbox VARCHAR(1) NOT NULL DEFAULT 'Y',
-    web_token VARCHAR(255) DEFAULT NULL,
-    api_token VARCHAR(255) DEFAULT NULL,
-    session_id VARCHAR(255) DEFAULT NULL,
-    device_id VARCHAR(255) DEFAULT NULL,
-    device_name VARCHAR(255) DEFAULT NULL,
-    item_type VARCHAR(25) NOT NULL DEFAULT 'users',
-    wallet_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    blocked VARCHAR(1) NOT NULL DEFAULT 'N',
-    display_order INT NOT NULL DEFAULT 0,
-    display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
-    created_by INT NOT NULL DEFAULT 0,
-    created_by_name VARCHAR(255) DEFAULT NULL,
-    created_by_role INT NOT NULL DEFAULT 0,
-    deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
-    deleted_by INT NOT NULL DEFAULT 0,
-    deleted_by_name VARCHAR(255) DEFAULT NULL,
-    deleted_time TIMESTAMP DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+          customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          cart_id_pk INT DEFAULT 0,
+          cart_customer_id VARCHAR(255) DEFAULT NULL,
+          customer_pin INT NOT NULL DEFAULT 0,
+          pos_customer VARCHAR(1) NOT NULL DEFAULT 'N',
+          name VARCHAR(255) DEFAULT NULL,
+          first_name VARCHAR(191) DEFAULT NULL,
+          last_name VARCHAR(191) DEFAULT NULL,
+          email VARCHAR(100) UNIQUE DEFAULT NULL,
+          password VARCHAR(191) DEFAULT NULL,
+          birth_date DATE DEFAULT NULL,
+          role_id INT NOT NULL DEFAULT 0,
+          guest_customer VARCHAR(1) NOT NULL DEFAULT '0',
+          access_token VARCHAR(255) DEFAULT NULL,
+          security_question_id INT NOT NULL DEFAULT 0,
+          security_answer VARCHAR(191) DEFAULT NULL,
+          user_address1 VARCHAR(191) DEFAULT NULL,
+          user_address2 VARCHAR(191) DEFAULT NULL,
+          user_city VARCHAR(191) DEFAULT NULL,
+          user_state VARCHAR(191) DEFAULT NULL,
+          user_zipcode VARCHAR(191) DEFAULT NULL,
+          user_country VARCHAR(191) DEFAULT NULL,
+          contact_number VARCHAR(191) DEFAULT NULL,
+          display_on_listing VARCHAR(1) NOT NULL DEFAULT 'Y',
+          show_action_checkbox VARCHAR(1) NOT NULL DEFAULT 'Y',
+          web_token VARCHAR(255) DEFAULT NULL,
+          api_token VARCHAR(255) DEFAULT NULL,
+          session_id VARCHAR(255) DEFAULT NULL,
+          device_id VARCHAR(255) DEFAULT NULL,
+          device_name VARCHAR(255) DEFAULT NULL,
+          item_type VARCHAR(25) NOT NULL DEFAULT 'users',
+          wallet_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+          display_order INT NOT NULL DEFAULT 0,
+          display_status VARCHAR(1) NOT NULL DEFAULT 'Y',
+          blocked VARCHAR(1) NOT NULL DEFAULT 'N',
+          deleted_status VARCHAR(1) NOT NULL DEFAULT 'N',
+          deleted_by INT NOT NULL DEFAULT 0,
+          deleted_by_name VARCHAR(255) DEFAULT NULL,
+          deleted_time TIMESTAMP DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT NULL,
+          updated_at TIMESTAMP DEFAULT NULL
+        )
       `;
       await query(sqlQuery);
       
@@ -473,7 +428,7 @@ async function migrate() {
           browser_pattern VARCHAR(255) DEFAULT NULL,
           site_id SMALLINT NOT NULL DEFAULT 0,
           created_at TIMESTAMP DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           expire_at TIMESTAMP DEFAULT NULL
         )
       `;
@@ -656,7 +611,7 @@ async function migrate() {
           deleted_by_name VARCHAR(255) DEFAULT NULL,
           deleted_time TIMESTAMP DEFAULT NULL,
           created_at TIMESTAMP DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
       `;
       await query(sqlQuery);
@@ -745,7 +700,7 @@ async function migrate() {
           deleted_by_name VARCHAR(255) DEFAULT NULL,
           deleted_time TIMESTAMP DEFAULT NULL,
           created_at TIMESTAMP DEFAULT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           expire_at TIMESTAMP DEFAULT NULL,
           transaction_id VARCHAR(255) DEFAULT NULL,
           payment_status VARCHAR(255) DEFAULT NULL,

@@ -30,7 +30,7 @@ consoleLog("Mayank Patel");
 
 
 
-Rename db folder to database operations 
+Rename db folder to database operations
 Create a folder logs inside this log insert, logger and logs.js
-Create a folder called functions and move functions there
-Create a folder for module fields and add separate files for each modules
+Create a folder called functions and move functions there.
+Create a folder for module fields and add separate files for each modules.

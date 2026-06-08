@@ -40,7 +40,7 @@ async function seed() {
     if (checkConfigParentResult.rows[0].count === 0) {
       const configParentSql = `
         INSERT INTO site_config_parent (
-          site_id, site_config_title, display_order, display_status, class, deleted_status, root_user_only, created_at, updated_at
+          site_id, site_config_title, display_order, display_status, classname, deleted_status, root_user_only, created_at, updated_at
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       `;
       const configParentValues = [
@@ -69,7 +69,7 @@ async function seed() {
     if (checkConfigResult.rows[0].count === 0) {
       const configSql = `
         INSERT INTO site_config (
-          site_id, config_title, config_name, config_value, input_type, size, maxlength, input_type_title, class, required,
+          site_id, config_title, config_name, config_value, input_type, size, maxlength, input_type_title, classname, required,
           display_order, comments, display_status, additional, display_on_dashboard, display_on_third_party, site_config_parent_id,
           deleted_status, root_user_only, created_at, updated_at
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
