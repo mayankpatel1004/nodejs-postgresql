@@ -9,7 +9,7 @@ const util = require("util");
 const query = util.promisify(db.query).bind(db);
 const selectQueries = require('../database_operation/selectQueries');
 const updateQueries = require('../database_operation/updateQueries');
-const saveModulesData = require('../database_operation/saveModules');
+const saveMainModule = require('../database_operation/save_main_modules');
 const fs = require('node:fs');
 const multer = require("multer");
 const common_functions = require("../functions/common_functions");
@@ -442,12 +442,15 @@ router.post("/items", attachCommonData, async (req, res) => {
       data = await common_functions.addUserDataToRequest(req.headers.authorization, data);
     }
     let sqlUpdateStatus = ``;
+    let sqlUpdateStatus1 = ``;
     if (data.status == "T") {
       sqlUpdateStatus = updateQueries.updateItemsTrash(data);
+      sqlUpdateStatus1 = updateQueries.updateItemsRelationTrash(data);
     } else {
       sqlUpdateStatus = updateQueries.updateItemsStatus(data);
     }
     let results = await query(sqlUpdateStatus);
+    let results1 = await query(sqlUpdateStatus1);
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.REQUEST_SUCCESS,
@@ -788,7 +791,7 @@ router.get("/item_form", attachCommonData, async (req, res) => {
 });
 
 router.post("/item_form", itemImageUpload, async (req, res) => {
-  await saveModulesData.saveItemForm(req,res,req.body);
+  await saveMainModule.saveItemForm(req,res,req.body);
 });
 /********************* Items Modules Over *********************/
 
@@ -848,10 +851,12 @@ router.post("/item_section", attachCommonData, async (req, res) => {
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
       sqlUpdateStatus = updateQueries.updateItemSectionTrash(data);
+      sqlUpdateStatus1 = updateQueries.updateItemSectionRelationTrash(data);
     } else {
       sqlUpdateStatus = updateQueries.updateItemSectionStatus(data);
     }
     let results = await query(sqlUpdateStatus);
+    let results1 = await query(sqlUpdateStatus1);
     if (results) {
       res.send({
         success: CONSTANTS.SUCCESS_FLAG,
@@ -1087,7 +1092,7 @@ router.get("/item_section_form", attachCommonData, async (req, res) => {
 });
 
 router.post("/item_section_form", sectionImageUpload, async (req, res) => {
-  await saveModulesData.saveItemSectionForm(req,res,req.body);
+  await saveMainModule.saveItemSectionForm(req,res,req.body);
 });
 
 /********************* Item Section Modules Over *********************/
@@ -1131,10 +1136,12 @@ router.post("/roles", attachCommonData, async (req, res) => {
     let sqlUpdateStatus = ``;
     if (data.status == "T") {
       sqlUpdateStatus = updateQueries.updateRoleTrash(data);
+      sqlUpdateStatus1 = updateQueries.updateRoleAccessTrash(data);
     } else {
       sqlUpdateStatus = updateQueries.updateRoleStatus(data);
     }
     const results = await query(sqlUpdateStatus);
+    const results1 = await query(sqlUpdateStatus1);
     if (results) {
       res.send({
         success: CONSTANTS.SUCCESS_FLAG,
@@ -1293,15 +1300,6 @@ router.get("/role_form", attachCommonData, async (req, res) => {
             is_multiple: "N",
             options: common_functions.displayStatus(),
             cls: "form-control js-example-basic-single formfields",
-          },
-          {
-            type: "text",
-            lbl: "Created By",
-            nm: "created_by",
-            val: edit_created_by,
-            ph: "",
-            req: "N",
-            cls: "form-control formfields",
           }
       );
 
@@ -1338,7 +1336,7 @@ router.get("/role_form", attachCommonData, async (req, res) => {
 });
 
 router.post("/role_form", userImageUpload, async (req, res) => {
-  await saveModulesData.saveRoleForm(req,res,req.body);
+  await saveMainModule.saveRoleForm(req,res,req.body);
 });
 
 /********************* Roles Modules Over *********************/
@@ -1617,7 +1615,7 @@ router.get("/user_form", attachCommonData, async (req, res) => {
 });
 
 router.post("/user_form", userImageUpload, async (req, res) => {
-  await saveModulesData.saveUserForm(req,res,req.body);
+  await saveMainModule.saveUserForm(req,res,req.body);
 });
 
 /********************* User Modules Over *********************/

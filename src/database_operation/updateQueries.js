@@ -15,6 +15,17 @@ const queries = {
               logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
         return sqlUpdateStatus;
     },
+    updateItemsRelationTrash: (data) => {
+        sqlUpdateStatus = `UPDATE item_section_relation
+              SET deleted_status = 'Y',
+              deleted_by = '${data.created_by}',
+              deleted_by_name = '${data.created_by_name}',
+              deleted_time = NOW()
+              WHERE item_id IN (${data.pk_ids})`;
+              logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
+        return sqlUpdateStatus;
+    },
+    
     updateItemsStatus: (data) => {
         sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ITEMS} 
               SET display_status = '${data.status}'
@@ -32,6 +43,17 @@ const queries = {
               logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
         return sqlUpdateStatus;
     },
+    updateItemSectionRelationTrash: (data) => {
+        sqlUpdateStatus = `UPDATE item_section_relation 
+              SET deleted_status = 'Y',
+              deleted_by = '${data.created_by}',
+              deleted_by_name = '${data.created_by_name}',
+              deleted_time = NOW() 
+              WHERE section_id IN (${data.pk_ids})`;
+              logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
+        return sqlUpdateStatus;
+    },
+    
     updateItemSectionStatus: (data) => {
         sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ITEM_SECTION} 
               SET display_status = '${data.status}' 
@@ -42,6 +64,18 @@ const queries = {
     updateRoleTrash: (data) => {
         sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ROLES}
                          SET deleted_status = 'Y',
+                         deleted_by = '${data.login_id}',
+                         deleted_by_name = '${data.login_name}',
+                         deleted_time = NOW() 
+                         WHERE role_id IN (${data.pk_ids})`;
+                         logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
+        return sqlUpdateStatus;
+    },
+    updateRoleAccessTrash: (data) => {
+        sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_ROLE_ACCESS}
+                         SET deleted_status = 'Y',
+                         deleted_by = '${data.login_id}',
+                         deleted_by_name = '${data.login_name}',
                          deleted_time = NOW() 
                          WHERE role_id IN (${data.pk_ids})`;
                          logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
@@ -57,6 +91,8 @@ const queries = {
     updateUserTrash: (data) => {
         sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_USERS} 
                           SET deleted_status = 'Y',
+                          deleted_by = '${data.login_id}',
+                          deleted_by_name = '${data.login_name}',
                           deleted_time = NOW() 
                           WHERE user_id IN (${data.pk_ids})`;
                           logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
@@ -64,7 +100,7 @@ const queries = {
     },
     updateUserStatus: (data) => {
         sqlUpdateStatus = `UPDATE ${CONSTANTS.TBL_USERS} 
-                          SET active_status = '${data.status}' 
+                          SET active_status = '${data.status}'
                           WHERE user_id IN (${data.pk_ids})`;
                           logSelectQueryToFile(functions.printQuery(sqlUpdateStatus));
         return sqlUpdateStatus;

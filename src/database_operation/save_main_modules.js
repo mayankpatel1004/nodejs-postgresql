@@ -12,7 +12,7 @@ const queries = {
         try {
             await query("BEGIN");
             if ((!data.item_id || Number(data.item_id) === 0) && req.headers.authorization?.startsWith("Bearer ")) {
-                //data = await functions.addUserDataToRequest(req.headers.authorization, data);
+                data = await functions.addDatabaseCreatedColumns(req.headers.authorization,data);
                 data.item_alias = await functions.get_item_alias("items", "item_alias", data.item_title);
             }
 
@@ -119,6 +119,9 @@ const queries = {
         try {
             await query("BEGIN");
             let roleId = data.edit_id;
+            if (req.headers.authorization?.startsWith("Bearer ")) {
+                data = await functions.addDatabaseCreatedColumns(req.headers.authorization,data);
+            }
             const excludeKeys = new Set(["edit_id", "view", "add", "edit", "delete", "module_id"]);
             const keys = [];
             const values = [];
@@ -170,13 +173,16 @@ const queries = {
                         data.display_status || "Y",
                         0,
                         new Date(),
+                        data.created_by,
+                        data.created_by_name,
+                        data.created_by_role
                     ]);
                 }
 
                 if (inserts.length > 0) {
                     const valueStrings = inserts.map((_, i) => `(${inserts[i].map((__, j) => `$${i * inserts[i].length + j + 1}`).join(",")})`).join(",");
                     const flatValues = inserts.flat();
-                    const sqlBulk = `INSERT INTO ${CONSTANTS.TBL_ROLE_ACCESS} (role_id, module_id, grant_view, grant_add, grant_edit, grant_delete, display_status, display_order, created_at) VALUES ${valueStrings}`;
+                    const sqlBulk = `INSERT INTO ${CONSTANTS.TBL_ROLE_ACCESS} (role_id, module_id, grant_view, grant_add, grant_edit, grant_delete, display_status, display_order, created_at,created_by,created_by_name,created_by_role) VALUES ${valueStrings}`;
                     await query(sqlBulk, flatValues);
                     logInsertQueryToFile(functions.printQuery(sqlBulk,flatValues));
                 }
@@ -207,9 +213,10 @@ const queries = {
     saveUserForm: async (req, res, data) => {
         try {
             await query("BEGIN");
-            if (req.headers.authorization?.startsWith("Bearer ")) {
-                //data = await functions.addUserDataToRequest(req.headers.authorization, data);
+            if(data.edit_id == 0 && req.headers.authorization?.startsWith("Bearer ")){
+                data = await functions.addDatabaseCreatedColumns(req.headers.authorization,data);
             }
+
             if (req.files?.user_photo?.length) {
                 data.user_photo = req.files.user_photo[0].filename;
             }
@@ -315,7 +322,7 @@ const queries = {
             await query("BEGIN");
             let data = req.body;
             if (data.item_section_id == 0 && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
-                //data = await functions.addUserDataToRequest(req.headers.authorization,data);
+                data = await functions.addDatabaseCreatedColumns(req.headers.authorization,data);
                 data.section_alias = await functions.get_item_alias("item_section","section_alias",data.section_title);
             }
             if (req.files?.attachment1?.length) {

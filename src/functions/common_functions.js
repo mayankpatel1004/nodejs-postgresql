@@ -256,6 +256,29 @@ async addUserDataToRequest(headers, data) {
     return data;
   }
 },
+async addDatabaseCreatedColumns(headers, data) {
+  try {
+    if (!headers || !headers.startsWith("Bearer ")) {
+      return data;
+    }
+    const token = headers.split(" ")[1];
+    const decoded = jwt.decode(token);
+    
+    if (decoded) {
+      return {
+        ...data,
+        created_by: decoded.user_id,
+        created_by_name: `${decoded.login_name || ""}`.trim(),
+        created_by_role: decoded.user_role_id,
+      };
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Token decode error:", err);
+    return data;
+  }
+},
 exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     let first_line = report_name + " Details Report\n";
     let csvContent = first_line + "\n";
