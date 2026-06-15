@@ -185,17 +185,16 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
     const user_name = `${user.user_firstname} ${user.user_lastname}`;
-    const html = `<tr>
-        <td>
-          <h4>Hello ${user_name},</h4>
-          <p>There was recently a request to change the password of your account on ${CONSTANTS.COMPANY_NAME}.</p>
-          <p>If you requested this password change, please use the secure code below.</p>
-          <p><strong>${user_token}</strong></p>
-          <p>If you don't want to change your password, just ignore this message.</p>
-          <p>If you have any questions or need further assistance, please contact us.</p>
-        </td>
-      </tr>`;
 
+    const html = `Hello ${user_name}.,<br />
+    We received a request to reset the password for your account.<br />
+    To proceed with resetting your password, please use the verification token below:<br />
+    Please apply <b>${user_token}</b> to change password.<br />
+    This token is valid for **1 day** and can only be used once.<br />
+    If you did not request a password reset, please ignore this email. Your account will remain secure, and no changes will be made.<br />
+    For security reasons, do not share this token with anyone.<br />
+    `;
+    
     const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
     await common_functions.sentAnEmail(user_email, subject, "", html);
     return res.send({

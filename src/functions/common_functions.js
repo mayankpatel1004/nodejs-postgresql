@@ -401,9 +401,103 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     return alias;
   },
   async sentAnEmail(to, subject, text, htmlContent) {
-    const header_html = `<html lang='en'> <head> <meta charset='UTF-8' /> <meta name='viewport' content='width=device-width, initial-scale=1' /> <title>Welcome Email</title> </head> <body style='font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;'> <div style='max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden;'> <div style='background-color: #4a90e2; color: #ffffff; padding: 25px; text-align: center; font-size: 24px; font-weight: 700;'> Welcome to Our Platform! </div> `;
-    const content_html = htmlContent;
-    const footer_html = `<p>Welcome aboard,<br />The Team</p> </div> <div style='background-color: #f1f1f1; font-size: 12px; color: #999999; text-align: center; padding: 20px;'> If this email is suspected, please ignore this email or contact support. </div> </div> </body> </html>`;
+    
+
+    let website_name = "";
+    let company_address = "";
+    let company_contact = "";
+    let company_email = "";
+    let company_city = "";
+    let company_state = "";
+    let company_country = "";
+    let company_zipcode = "";
+
+    const sql = `
+        SELECT config_name, config_value
+        FROM site_config
+        WHERE config_name IN (
+            'FRONT_APPLICATION_TITLE',
+            'COMPANY_NAME',
+            'COMPANY_ADDRESS1',
+            'COMPANY_ADDRESS2',
+            'COMPANY_CITY',
+            'COMPANY_STATE',
+            'COMPANY_COUNTRY',
+            'COMPANY_ZIPCODE',
+            'COMPANY_CONTACT_NUMBER',
+            'COMPANY_EMAIL'
+        )
+    `;
+
+    const result = await query(sql);
+    const configRows = result.rows;
+
+    if (configRows.length > 0) {
+
+        // Convert rows into key-value object
+        const config = {};
+        configRows.forEach(row => {
+            config[row.config_name] = row.config_value;
+        });
+
+        website_name = config.FRONT_APPLICATION_TITLE || "";
+
+        company_address =
+            `${config.COMPANY_ADDRESS1 || ""} ${config.COMPANY_ADDRESS2 || ""}`.trim();
+
+        company_city = config.COMPANY_CITY || "";
+        company_state = config.COMPANY_STATE || "";
+        company_country = config.COMPANY_COUNTRY || "";
+        company_zipcode = config.COMPANY_ZIPCODE || "";
+        company_contact = config.COMPANY_CONTACT_NUMBER || "";
+        company_email = config.COMPANY_EMAIL || "";
+    }
+
+    
+
+    const header_html = `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>${website_name}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f4">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="margin-top:20px;">
+                        
+                        <!-- Header -->
+                        <tr>
+                            <td align="center" bgcolor="#007bff" style="padding:20px;">
+                                ${website_name}
+                            </td>
+                        </tr>
+
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding:30px;">`;
+                            const content_html = htmlContent;
+
+    const footer_html = `
+                            </td>
+                        </tr>
+                        <tr>
+                            <td bgcolor="#f8f9fa"
+                                style="padding:20px;text-align:center;color:#666;font-size:12px;">
+                                <strong>${website_name}</strong><br>
+                                ${company_address}<br>
+                                Email: ${company_email}<br>
+                                Phone: ${company_contact}<br><br>
+                                &copy; ${new Date().getFullYear()} ${website_name} . All Rights Reserved.
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>`;
     const completeHtml = header_html + content_html + footer_html;
     
     try {
