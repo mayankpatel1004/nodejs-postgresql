@@ -146,8 +146,8 @@ router.get('/forgot-password', (req, res) => {
 
 router.post("/forgot-password", async (req, res) => {
   try {
-    const { user_email } = req.body;
-    let sqlQuery = selectQueries.getForgotPasswordQuery(user_email);
+    const { user_email,update_flag } = req.body;
+    let sqlQuery = selectQueries.getForgotPasswordQuery(user_email,update_flag);
     logSelectQueryToFile(common_functions.printQuery(sqlQuery));
     const result = await query(sqlQuery);
     if (!result || result.rows.length === 0) {

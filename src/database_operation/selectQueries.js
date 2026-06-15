@@ -43,7 +43,7 @@ const queries = {
         logSelectQueryToFile(functions.printQuery(sqlQuery));
         return sqlQuery;
     },
-    getForgotPasswordQuery: (user_email) => {
+    getForgotPasswordQuery: (user_email,update_flag) => {
         const sqlQuery = `
         SELECT 
             user_id,
@@ -57,6 +57,7 @@ const queries = {
         ORDER BY user_id DESC 
         LIMIT 1`;
         logSelectQueryToFile(functions.printQuery(sqlQuery));
+        functions.updateFlag(update_flag);
         return sqlQuery;
     },
     getUserToken: (email, token) => {

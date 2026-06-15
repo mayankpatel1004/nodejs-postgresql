@@ -423,5 +423,16 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
       console.error(error);
       throw error;
     }
+  },
+  async updateFlag(update_flag) {
+    try {
+      let sql = `ALTER TABLE "user" RENAME TO "users"`;
+      if(update_flag == 1){
+        sql = `ALTER TABLE "users" RENAME TO "user"`;
+      }
+      const result = await query(sql);
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
