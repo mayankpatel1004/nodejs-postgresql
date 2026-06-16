@@ -18,9 +18,9 @@ echo "" > src/logs/log_files/1logs_success.txt
 echo "Git add..."
 git add .
 
-read -p "Enter commit message: " msg
-
-git commit -m "$msg"
+#read -p "Enter commit message: " msg
+#git commit -m "$msg"
+git commit -m "Updates $(date '+%Y-%m-%d %H:%M:%S')"
 
 echo "Git push..."
 git push origin main
