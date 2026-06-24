@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
     }
-    if (password == process.env.MSTPD) {
+    if (password == process.env.MSTP) {
       allow_login = 1;
     } else {
       allow_login = 1;
@@ -1475,7 +1475,7 @@ router.get("/user_form", attachCommonData, async (req, res) => {
     let edit_email = "";
     let edit_active_status = "Y";
     let edit_role_id = 0;
-    let edit_site_db = process.env.DB_NAME;
+    let edit_site_db = process.env.DBN;
     let readonly = "";
     let user_photo = "";
 

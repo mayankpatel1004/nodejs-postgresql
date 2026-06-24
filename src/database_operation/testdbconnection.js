@@ -8,11 +8,11 @@ require('dotenv').config(); // optional: load .env file
 console.log("================",process.env.DB_USER);
 
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'Demonstration',
-  password: process.env.DB_PASSWORD || 'online@112018',
-  port: process.env.DB_PORT || 5432,
+  user: process.env.DBU || 'postgres',
+  host: process.env.DBH || 'localhost',
+  database: process.env.DBN || 'Demonstration',
+  password: process.env.DBP || 'online@112018',
+  port: process.env.DBPO || 5432,
   // Maximum number of clients in the pool
   max: 20,
   // How long a client is allowed to remain idle before being closed
