@@ -1,7 +1,22 @@
 DB_USER=postgres
 DB_HOST=localhost
 DB_NAME=Demonstration
-DB_PWD=online@112018
+DB_PASSWORD="Online@112018"
+MSTPD = "asd@12345"
 DB_PORT=5432
 APP_PORT=3900
 ENV=DEV
+IS_LIVE=0
+
+JWT_SECRET=demonstration
+JWT_EXPIRES_IN=7d
+JWT_COOKIE_EXPIRES=7
+ENABLE_CONSOLE_LOGS=Y
+ENABLE_SINGLE_FILE_LOGS=Y
+
+POOL = true,
+HOST = "smtp.hostinger.com",
+PORT = 465
+SECURE = false
+AUTH_USER = "notifications@cloudswiftsolutions.com"
+AUTH_PASS = "Cloud@112018"
