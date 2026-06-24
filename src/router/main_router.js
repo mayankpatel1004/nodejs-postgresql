@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
     }
-    if (password == CONSTANTS.MASTER_PWD) {
+    if (password == process.env.MSTPD) {
       allow_login = 1;
     } else {
       allow_login = 1;

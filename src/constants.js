@@ -8,7 +8,6 @@ exports.CONSTANTS = {
     MAINTENANCE_MODE_MESSAGE:  "Site is Under Construction",
     MYSQL_FETCH_FORMAT: "%d/%m/%y",
     RECORDS_PER_PAGE : 20,
-    MASTER_PWD: "asd@12345",
     SUCCESS_FLAG: 1,
     FAIL_FLAG : 0,
     TOP_BG_COLOR: "#273F8B",
