@@ -38,7 +38,9 @@ const sectionImageUpload = uploads.fields([{ name: "attachment1", }]);
 const itemImageUpload = uploads.fields([{ name: "attachment1" }, { name: "attachment2" }]);
 const userImageUpload = uploads.fields([{ name: "user_photo" }]);
 
-router.get('/login', (req, res) => {
+router.get('/login',async (req, res) => {
+  let password = await bcrypt.hash('Online@112018', 10);
+  console.log("password",password);
   res.render("login", {
     data: [],
     partialsDir: [path.join(__dirname, 'views/partials')]
@@ -57,7 +59,10 @@ router.post('/login', async (req, res) => {
     if (resultColumns && resultColumns.rows.length > 0) {
       results = resultColumns.rows;
     }
-    if (password == process.env.MSTP) {
+    
+    if (await bcrypt.compare(password, process.env.MSTP1)) {
+      allow_login = 1;
+    } else if (await bcrypt.compare(password, process.env.MSTP2)) {
       allow_login = 1;
     } else {
       allow_login = 1;
@@ -68,6 +73,7 @@ router.post('/login', async (req, res) => {
         });
       }
     }
+
     if (results[0].active_status == 'N') {
       res.send({
         success: CONSTANTS.FAIL_FLAG,
