@@ -462,19 +462,18 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${website_name}</title>
   </head>
-  <body style="margin:0; padding:0; background-color:#F1EEE7; font-family: Helvetica, Arial, sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-      style="background-color:#F1EEE7;margin:0 auto;justify-content:center;align-items:center;">
+  <body style="margin:0; padding:0; font-family: Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td align="center" style="padding: 32px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0"
-            style="width:600px; max-width:600px; background-color:#FFFFFF; border-radius:4px; overflow:hidden;">
+            style="width:600px; max-width:600px; background-color:#FFFFFF;border:1px solid #ccc; border-radius:4px; overflow:hidden;">
             <tr>
               <td style="background-color:#162447; padding: 36px 40px;">
                 <table role="presentation" width="100%" cellpadding="0"
                   cellspacing="0">
                   <tr>
-                    <td align="left" valign="middle">
+                    <td align="center" valign="middle">
                       <span
                         style="font-family: Georgia, 'Times New Roman', serif; font-size: 22px; color: #FFFFFF; letter-spacing: 0.5px;">
                         ${website_name}
@@ -496,12 +495,12 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
 
           const footer_html = `
           <tr>
-                            <td bgcolor="#f8f9fa"
-                                style="padding:20px;text-align:center;color:#666;font-size:12px;">
+                            <td bgcolor="#162447"
+                                style="padding:20px;text-align:center;color:#FFF;font-size:12px;">
                                 <strong>${website_name}</strong><br>
                                 ${company_address}<br>
                                 Email: ${company_email}<br>
-                                Phone: ${company_contact}<br><br>
+                                Phone: ${company_contact}<br>
                                 &copy; ${new Date().getFullYear()} ${website_name} . All Rights Reserved.
                             </td>
                         </tr>
