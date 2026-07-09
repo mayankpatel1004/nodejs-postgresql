@@ -300,6 +300,13 @@ const queries = {
                     style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
                     ${CONSTANTS.ACCOUNT_SUCCESSFULLY_CREATED} on ${CONSTANTS.COMPANY_NAME}<br />
                     </p>
+                    <p
+                    style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">This email confirms that your account has been successfully created. You can now log in to access our services and explore everything we have to offer.</p>
+                    <p
+                    style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">If you have any questions or need assistance, our support team is always here to help. You can reach us at ${CONSTANTS.COMPANY_EMAIL} or by calling us at ${CONSTANTS.COMPANY_CONTACT}.</p>
+                    <p
+                    style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">Thank you for choosing ${CONSTANTS.COMPANY_NAME}. We look forward to supporting you.</p>
+                    <br /><p>Best regards,<br />The ${CONSTANTS.COMPANY_NAME} Team</p>
                 </td>
                 </tr>
                 <tr>
