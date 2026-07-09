@@ -456,33 +456,46 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
     
 
     const header_html = `<!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>${website_name}</title>
-    </head>
-    <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f4">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${website_name}</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#F1EEE7; font-family: Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+      style="background-color:#F1EEE7;margin:0 auto;justify-content:center;align-items:center;">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+            style="width:600px; max-width:600px; background-color:#FFFFFF; border-radius:4px; overflow:hidden;">
             <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="margin-top:20px;">
-                        
-                        <!-- Header -->
-                        <tr>
-                            <td align="center" bgcolor="#007bff" style="padding:20px;">
-                                ${website_name}
-                            </td>
-                        </tr>
+              <td style="background-color:#162447; padding: 36px 40px;">
+                <table role="presentation" width="100%" cellpadding="0"
+                  cellspacing="0">
+                  <tr>
+                    <td align="left" valign="middle">
+                      <span
+                        style="font-family: Georgia, 'Times New Roman', serif; font-size: 22px; color: #FFFFFF; letter-spacing: 0.5px;">
+                        ${website_name}
+                      </span>
+                    </td>
+                    <td align="right" valign="middle">
 
-                        <!-- Content -->
-                        <tr>
-                            <td style="padding:30px;">`;
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="background-color:#B8A369; height: 4px; line-height:4px; font-size:0;">&nbsp;</td>
+            </tr>`;
                             const content_html = htmlContent;
 
-    const footer_html = `
-                            </td>
-                        </tr>
-                        <tr>
+
+          const footer_html = `
+          <tr>
                             <td bgcolor="#f8f9fa"
                                 style="padding:20px;text-align:center;color:#666;font-size:12px;">
                                 <strong>${website_name}</strong><br>
@@ -492,12 +505,14 @@ exportToCSV(req, res, exportItems, report_name, csvStringifier) {
                                 &copy; ${new Date().getFullYear()} ${website_name} . All Rights Reserved.
                             </td>
                         </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>`;
+          </table>
+        </td>
+      </tr>
+    </table>
+
+  </body>
+</html>`;
+
     const completeHtml = header_html + content_html + footer_html;
     
     try {

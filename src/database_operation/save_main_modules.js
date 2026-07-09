@@ -285,7 +285,35 @@ const queries = {
             if (data.user_email) {
                 const to = data.user_email;
                 const subject = `${CONSTANTS.WELCOME_SUBJECT_PREFIX} - ${CONSTANTS.COMPANY_NAME}`;
-                const html = `Hello ${data.user_firstname},<br/>${CONSTANTS.ACCOUNT_SUCCESSFULLY_CREATED} on ${CONSTANTS.COMPANY_NAME}`;
+                
+                const html = `<tr>
+                <td style="padding: 40px 40px 8px 40px;">
+                    <p
+                    style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 32px; color:#1A1A1A;">
+                    Hello ${data.user_firstname}.
+                    </p>
+                </td>
+                </tr>
+                <tr>
+                <td style="padding: 12px 40px 0 40px;">
+                    <p
+                    style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+                    ${CONSTANTS.ACCOUNT_SUCCESSFULLY_CREATED} on ${CONSTANTS.COMPANY_NAME}<br />
+                    </p>
+                </td>
+                </tr>
+                <tr>
+                <td style="padding: 32px 40px 0 40px;">
+                    <table role="presentation" width="100%" cellpadding="0"
+                    cellspacing="0">
+                    <tr>
+                        <td
+                        style="border-top: 1px solid #E5E0D5; font-size:0; line-height:0;">&nbsp;</td>
+                    </tr>
+                    </table>
+                </td>
+                </tr>`;
+
                 await functions.sentAnEmail(to, subject, "", html);
             }
 

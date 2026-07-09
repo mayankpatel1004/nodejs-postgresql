@@ -192,14 +192,38 @@ router.post("/forgot-password", async (req, res) => {
     }
     const user_name = `${user.user_firstname} ${user.user_lastname}`;
 
-    const html = `Hello ${user_name}.,<br />
-    We received a request to reset the password for your account.<br />
-    To proceed with resetting your password, please use the verification token below:<br />
-    Please apply <b>${user_token}</b> to change password.<br />
-    This token is valid for **1 day** and can only be used once.<br />
-    If you did not request a password reset, please ignore this email. Your account will remain secure, and no changes will be made.<br />
-    For security reasons, do not share this token with anyone.<br />
-    `;
+    const html = `<tr>
+              <td style="padding: 40px 40px 8px 40px;">
+                <p
+                  style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 32px; color:#1A1A1A;">
+                  Hello ${user_name}.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 40px 0 40px;">
+                <p
+                  style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+                  We received a request to reset the password for your account.<br />
+                  To proceed with resetting your password, please use the verification token below:<br />
+                  Please apply <b>${user_token}</b> to change password.<br />
+                  This token is valid for **1 day** and can only be used once.<br />
+                  If you did not request a password reset, please ignore this email. Your account will remain secure, and no changes will be made.<br />
+                  For security reasons, do not share this token with anyone.<br />
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 40px 0 40px;">
+                <table role="presentation" width="100%" cellpadding="0"
+                  cellspacing="0">
+                  <tr>
+                    <td
+                      style="border-top: 1px solid #E5E0D5; font-size:0; line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>`;
     
     const subject = `${CONSTANTS.FORGOTPASSWORD_SUBJECT} - ${CONSTANTS.COMPANY_NAME}`;
     await common_functions.sentAnEmail(user_email, subject, "", html);
