@@ -294,7 +294,7 @@ router.post("/password_token", async (req, res) => {
 
 router.post("/activate_account", async (req, res) => {
   try {
-    const { id, password } = req.body;
+    const { id, password, email } = req.body;
     const encryptPass = bcrypt.hashSync(password, 10);
     let sqlUpdate = updateQueries.activateAccount(encryptPass, "", id);
     const result = await query(sqlUpdate);
@@ -305,6 +305,52 @@ router.post("/activate_account", async (req, res) => {
         data: [],
       });
     }
+
+    try {
+     let to = email;
+      let subject = "Password Updated Successfully - " + CONSTANTS.COMPANY_NAME;
+      const html = `<tr>
+          <td style="padding: 40px 40px 8px 40px;">
+              <p
+              style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 32px; color:#1A1A1A;">
+              Hello ${email}.
+              </p>
+          </td>
+          </tr>
+          <tr>
+          <td style="padding: 12px 40px 0 40px;">
+              <p
+              style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+              Your password changed on ${CONSTANTS.COMPANY_NAME}<br />
+              </p>
+              <p
+              style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+              This is a confirmation that the password for your ${CONSTANTS.COMPANY_NAME} account was successfully updated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}.
+              </p>
+              <p
+              style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;"><b>If you performed this action:</b><br />No further action is required. You can continue to access your account as usual.</p>
+              <p
+              style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+              <b>If you did not perform this action:</b><br />If you did not request this change, please secure your account immediately or contact our support team.<br /><br />For your security, please ensure you use a strong, unique password for your account.
+              </p>
+          </td>
+          </tr>
+          <tr>
+          <td style="padding: 32px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0"
+              cellspacing="0">
+              <tr>
+                  <td
+                  style="border-top: 1px solid #E5E0D5; font-size:0; line-height:0;">&nbsp;</td>
+              </tr>
+              </table>
+          </td>
+          </tr>`;
+        await common_functions.sentAnEmail(to, subject, "", html); 
+    } catch (error) {
+      console.log("Error sending email after password change:", error);
+    };
+
     return res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.REQUEST_SUCCESS,
@@ -313,7 +359,7 @@ router.post("/activate_account", async (req, res) => {
   } catch (error) {
     return res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
-      message: REQUEST_FAIL,
+      message:  CONSTANTS.REQUEST_FAIL,
     });
   }
 });
@@ -1819,15 +1865,57 @@ router.post("/change-password", attachCommonData, async (req, res) => {
       });
     }
 
+    let to = escapedEmail;
+    let subject = "Password Changed Successfully - " + CONSTANTS.COMPANY_NAME;
+    const html = `<tr>
+        <td style="padding: 40px 40px 8px 40px;">
+            <p
+            style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 32px; color:#1A1A1A;">
+            Hello ${escapedEmail}.
+            </p>
+        </td>
+        </tr>
+        <tr>
+        <td style="padding: 12px 40px 0 40px;">
+            <p
+            style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+            Your password changed on ${CONSTANTS.COMPANY_NAME}<br />
+            </p>
+            <p
+            style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+            This is a confirmation that the password for your ${CONSTANTS.COMPANY_NAME} account was successfully updated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}.
+            </p>
+            <p
+            style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;"><b>If you performed this action:</b><br />No further action is required. You can continue to access your account as usual.</p>
+            <p
+            style="margin:0 0 16px 0; font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 24px; color:#4A4A4A;">
+            <b>If you did not perform this action:</b><br />If you did not request this change, please secure your account immediately or contact our support team.<br /><br />For your security, please ensure you use a strong, unique password for your account.
+            </p>
+        </td>
+        </tr>
+        <tr>
+        <td style="padding: 32px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0"
+            cellspacing="0">
+            <tr>
+                <td
+                style="border-top: 1px solid #E5E0D5; font-size:0; line-height:0;">&nbsp;</td>
+            </tr>
+            </table>
+        </td>
+        </tr>`;
+      await common_functions.sentAnEmail(to, subject, "", html);
+    
     res.send({
       success: CONSTANTS.SUCCESS_FLAG,
       message: CONSTANTS.PASSWORD_CHANGED_SUCCESSFULLY,
       data: { user_id },
     });
   } catch (error) {
+    console.log("Error changing password:", error);
     res.status(500).send({
       success: CONSTANTS.FAIL_FLAG,
-      message: REQUEST_FAIL,
+      message: CONSTANTS.REQUEST_FAIL,
     });
   }
 });
